@@ -1,0 +1,23 @@
+# Uncomment the next line to define a global platform for your project
+# platform :ios, '9.0'
+
+target 'SwiftCinemas' do
+  # Comment the next line if you don't want to use dynamic frameworks
+  use_frameworks!
+
+# Pods for SwiftCinemas
+pod 'SwiftyJSON'
+pod 'Realm'
+
+# Includes Cards and PayPal
+pod 'Braintree'
+pod 'BraintreeDropIn'
+
+# Add the pods for the Firebase products you want to use in your app
+# For example, to use Firebase Authentication and Cloud Firestore
+pod 'FirebaseAuth'
+pod 'FirebaseFirestore'
+pod 'FirebaseMessaging'
+pod 'Starscream'
+
+end

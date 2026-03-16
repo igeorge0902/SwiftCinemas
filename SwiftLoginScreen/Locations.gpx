@@ -1,0 +1,12 @@
+<!--
+The approximate change in longitude for a distance of 2 km at this latitude can be calculated. The formula to convert kilometers to degrees of longitude is: [ \text{Change in longitude} = \frac{\text{Distance in km}}{111.32 \times \cos(\text{latitude})} ]
+
+For Budapest (latitude = 47.4979432), the calculation would be: [ \text{Change in longitude} = \frac{2}{111.32 \times \cos(47.4979432)} \approx \frac{2}{111.32 \times 0.68199} \approx 0.0261 ]
+-->
+<?xml version="1.0"?>
+<gpx version="1.1" creator="Xcode">
+    
+    <wpt lat="47.4979432" lon="19.03987">
+        <name>Budapest</name>
+    </wpt>
+</gpx>

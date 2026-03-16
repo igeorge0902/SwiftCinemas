@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SwiftCinemas iOS Client — System Documentation</title>
+<style>
+  :root {
+    --bg: #0d1117; --surface: #161b22; --border: #30363d;
+    --text: #c9d1d9; --text-muted: #8b949e; --accent: #58a6ff;
+    --green: #3fb950; --red: #f85149; --orange: #d29922; --purple: #bc8cff;
+    --teal: #39d353; --pink: #f778ba;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+         background: var(--bg); color: var(--text); line-height: 1.6; }
+  /* ── Layout ── */
+  .wrapper { display: flex; min-height: 100vh; }
+  nav { width: 280px; background: var(--surface); border-right: 1px solid var(--border);
+        padding: 24px 16px; position: fixed; top: 0; bottom: 0; overflow-y: auto; z-index: 10; }
+  main { margin-left: 280px; padding: 40px 48px; max-width: 1100px; flex: 1; }
+  /* ── Nav ── */
+  nav h2 { color: var(--accent); font-size: 16px; margin-bottom: 20px; letter-spacing: .5px; }
+  nav ul { list-style: none; }
+  nav li { margin-bottom: 2px; }
+  nav a { display: block; padding: 6px 12px; color: var(--text-muted); text-decoration: none;
+          border-radius: 6px; font-size: 14px; transition: all .15s; }
+  nav a:hover, nav a.active { background: rgba(88,166,255,.1); color: var(--accent); }
+  nav .section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+                        color: var(--text-muted); margin: 18px 0 6px 12px; }
+  /* ── Content ── */
+  section { margin-bottom: 56px; scroll-margin-top: 20px; }
+  h1 { font-size: 32px; margin-bottom: 8px; color: #fff; }
+  h1 small { font-size: 14px; color: var(--text-muted); font-weight: 400; }
+  h2 { font-size: 24px; margin-bottom: 16px; padding-bottom: 8px;
+       border-bottom: 1px solid var(--border); color: #fff; }
+  h3 { font-size: 18px; margin: 24px 0 12px; color: var(--accent); }
+  h4 { font-size: 15px; margin: 16px 0 8px; color: var(--purple); }
+  p, li { font-size: 15px; margin-bottom: 8px; }
+  ul, ol { padding-left: 24px; margin-bottom: 16px; }
+  a { color: var(--accent); }
+  code { background: rgba(110,118,129,.2); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  pre { background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+        padding: 16px; overflow-x: auto; margin: 12px 0 20px; font-size: 13px; line-height: 1.5; }
+  pre code { background: none; padding: 0; }
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 24px; font-size: 14px; }
+  th, td { padding: 10px 14px; border: 1px solid var(--border); text-align: left; }
+  th { background: var(--surface); color: var(--accent); font-weight: 600; white-space: nowrap; }
+  tr:nth-child(even) td { background: rgba(22,27,34,.5); }
+  /* ── Badges ── */
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px;
+           font-weight: 600; margin-right: 6px; }
+  .badge-blue   { background: rgba(88,166,255,.15); color: var(--accent); }
+  .badge-green  { background: rgba(63,185,80,.15); color: var(--green); }
+  .badge-orange { background: rgba(210,153,34,.15); color: var(--orange); }
+  .badge-red    { background: rgba(248,81,73,.15); color: var(--red); }
+  .badge-purple { background: rgba(188,140,255,.15); color: var(--purple); }
+  .badge-pink   { background: rgba(247,120,186,.15); color: var(--pink); }
+  /* ── Cards ── */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+          padding: 20px; margin: 12px 0; }
+  .card h4 { margin-top: 0; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  /* ── Diagram ── */
+  .diagram-container { background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+                        padding: 20px; margin: 16px 0; overflow-x: auto; }
+  .diagram-container pre { background: none; border: none; padding: 0; margin: 0; color: var(--green); }
+  .diagram-container.svg-diagram { background: #fff; text-align: center; }
+  .diagram-container svg { max-width: 100%; height: auto; }
+  /* ── Priority borders ── */
+  .priority-high   { border-left: 4px solid var(--red); }
+  .priority-medium { border-left: 4px solid var(--orange); }
+  .priority-low    { border-left: 4px solid var(--green); }
+  /* ── Flow steps ── */
+  .flow-step { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+  .flow-num  { background: var(--accent); color: var(--bg); width: 28px; height: 28px;
+               border-radius: 50%; display: flex; align-items: center; justify-content: center;
+               font-weight: 700; font-size: 13px; flex-shrink: 0; margin-top: 2px; }
+  .flow-body { flex: 1; }
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    nav { display: none; }
+    main { margin-left: 0; padding: 20px; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<!-- ═══════════ NAVIGATION ═══════════ -->
+<nav>
+  <h2>📱 SwiftCinemas Docs</h2>
+  <ul>
+    <li><a href="#overview">Overview</a></li>
+    <li class="section-title">Architecture</li>
+    <li><a href="#backend-services">Backend Services</a></li>
+    <li><a href="#request-flow">Request Flow</a></li>
+    <li><a href="#networking-layer">Networking Layer</a></li>
+    <li class="section-title">Security</li>
+    <li><a href="#login-flow">Login Flow</a></li>
+    <li><a href="#registration-flow">Registration Flow</a></li>
+    <li><a href="#hmac-auth">HMAC-SHA512 Auth</a></li>
+    <li><a href="#aes-ciphertext">AES Ciphertext Token</a></li>
+    <li><a href="#session-management">Session &amp; Cookies</a></li>
+    <li><a href="#tls">TLS &amp; Self-Signed Certs</a></li>
+    <li class="section-title">Screens</li>
+    <li><a href="#screen-flow">Screen Flow</a></li>
+    <li><a href="#view-controllers">View Controllers</a></li>
+    <li class="section-title">Data &amp; Networking</li>
+    <li><a href="#data-models">Data Models</a></li>
+    <li><a href="#networking-detail">Networking Detail</a></li>
+    <li><a href="#caching">Caching Strategy</a></li>
+    <li class="section-title">Realtime</li>
+    <li><a href="#websocket">WebSocket</a></li>
+    <li><a href="#firebase-push">Firebase / Push</a></li>
+    <li><a href="#geofencing">Geofencing</a></li>
+    <li class="section-title">Payments</li>
+    <li><a href="#payments">Braintree Checkout</a></li>
+    <li class="section-title">Reference</li>
+    <li><a href="#api-endpoints">API Endpoints</a></li>
+    <li><a href="#dependencies">Dependencies</a></li>
+    <li><a href="#file-inventory">File Inventory</a></li>
+    <li><a href="#build-setup">Build &amp; Setup</a></li>
+    <li><a href="#history">Project History</a></li>
+    <li><a href="#known-issues">Known Issues</a></li>
+    <li><a href="#refactoring">Refactoring Roadmap</a></li>
+    <li><a href="#repos">Related Repositories</a></li>
+  </ul>
+</nav>
+
+<!-- ═══════════ MAIN CONTENT ═══════════ -->
+<main>
+
+<!-- ──────── OVERVIEW ──────── -->
+<section id="overview">
+<h1>SwiftCinemas iOS Client <small>System Documentation — March 2026</small></h1>
+<p>A native iOS client for the Cinemas movie ticket booking platform. Full user journey from authentication through movie discovery, venue selection, seat reservation, Braintree-powered payment, and purchase history management.</p>
+
+<div class="grid-3">
+  <div class="card">
+    <h4><span class="badge badge-blue">Auth</span></h4>
+    <p>Login, registration, voucher activation, device binding, HMAC-SHA512 + AES token security</p>
+  </div>
+  <div class="card">
+    <h4><span class="badge badge-green">Booking</span></h4>
+    <p>Movie browsing, venue discovery, real-time seat map, Braintree payment (Cards &amp; PayPal)</p>
+  </div>
+  <div class="card">
+    <h4><span class="badge badge-purple">Realtime</span></h4>
+    <p>WebSocket notifications, Firebase Cloud Messaging, geofencing proximity alerts</p>
+  </div>
+  <div class="card">
+    <h4><span class="badge badge-orange">Maps</span></h4>
+    <p>MapKit venue annotations, user location tracking, geofence region monitoring</p>
+  </div>
+  <div class="card">
+    <h4><span class="badge badge-pink">Tickets</span></h4>
+    <p>Purchase history, QR code generation, PDF ticket export, calendar integration</p>
+  </div>
+  <div class="card">
+    <h4><span class="badge badge-red">Admin</span></h4>
+    <p>Add and update screenings, manage movies and venues via admin panel</p>
+  </div>
+</div>
+</section>
+
+<!-- ──────── ARCHITECTURE ──────── -->
+<section id="architecture">
+<h2>Architecture</h2>
+
+<h3 id="backend-services">Backend Services</h3>
+<p>The app communicates with four Quarkus microservices behind an NGINX / Apache reverse-proxy layer:</p>
+<table>
+  <tr><th>Service</th><th>Port</th><th>Root Path</th><th>Purpose</th></tr>
+  <tr><td><code>dalogin-quarkus</code></td><td><span class="badge badge-green">443</span></td><td><code>/login</code></td><td>Auth gateway &amp; session management. Proxies purchase/checkout requests to mbooks.</td></tr>
+  <tr><td><code>mbook-quarkus</code></td><td><span class="badge badge-blue">8888</span></td><td><code>/mbook-1</code></td><td>User, device, support API. WebSocket endpoint for notifications.</td></tr>
+  <tr><td><code>mbooks-quarkus</code></td><td><span class="badge badge-purple">8080</span></td><td><code>/mbooks-1</code></td><td>Movie catalogue, booking engine, payment processing.</td></tr>
+  <tr><td><code>simple-service-webapp</code></td><td><span class="badge badge-orange">8085</span></td><td><code>/simple-service-webapp</code></td><td>Serves movie posters, venue photos, and profile pictures.</td></tr>
+</table>
+<p>The default server URL is <code>https://milo.crabdance.com</code>, configured as the global constant <code>serverURL</code> in <code>GeneralRequestManager.swift</code>.</p>
+
+<h3 id="request-flow">Request Flow</h3>
+<div class="diagram-container svg-diagram">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 340" font-family="Arial,sans-serif" font-size="12">
+  <rect width="920" height="340" fill="#f8f9fa" rx="10"/>
+  <defs><marker id="af1" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#666"/></marker></defs>
+
+  <!-- iOS App -->
+  <rect x="30" y="20" width="150" height="55" rx="8" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="105" y="42" text-anchor="middle" fill="#1976d2" font-weight="bold" font-size="14">📱 SwiftCinemas</text>
+  <text x="105" y="60" text-anchor="middle" fill="#555" font-size="10">URLSession + Realm + WS</text>
+
+  <!-- NGINX -->
+  <rect x="30" y="110" width="150" height="40" rx="6" fill="#fff3e0" stroke="#e65100" stroke-width="2"/>
+  <text x="105" y="135" text-anchor="middle" fill="#e65100" font-weight="bold">NGINX Ingress</text>
+  <line x1="105" y1="75" x2="105" y2="108" stroke="#666" stroke-width="1.5" marker-end="url(#af1)"/>
+  <text x="130" y="95" fill="#999" font-size="9">HTTPS/WSS</text>
+
+  <!-- Apache -->
+  <rect x="30" y="185" width="150" height="40" rx="6" fill="#fce4ec" stroke="#c62828" stroke-width="2"/>
+  <text x="105" y="210" text-anchor="middle" fill="#c62828" font-weight="bold">Apache Proxy</text>
+  <line x1="105" y1="150" x2="105" y2="183" stroke="#666" stroke-width="1.5" marker-end="url(#af1)"/>
+
+  <!-- Services -->
+  <rect x="260" y="130" width="155" height="50" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="338" y="150" text-anchor="middle" fill="#2e7d32" font-weight="bold" font-size="13">dalogin</text>
+  <text x="338" y="168" text-anchor="middle" fill="#555" font-size="10">/login · Auth Gateway</text>
+
+  <rect x="260" y="200" width="155" height="50" rx="8" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2"/>
+  <text x="338" y="220" text-anchor="middle" fill="#7b1fa2" font-weight="bold" font-size="13">mbook</text>
+  <text x="338" y="238" text-anchor="middle" fill="#555" font-size="10">/mbook-1 · User/Device</text>
+
+  <rect x="260" y="270" width="155" height="50" rx="8" fill="#fff8e1" stroke="#f57f17" stroke-width="2"/>
+  <text x="338" y="290" text-anchor="middle" fill="#f57f17" font-weight="bold" font-size="13">mbooks</text>
+  <text x="338" y="308" text-anchor="middle" fill="#555" font-size="10">/mbooks-1 · Movies/Book</text>
+
+  <!-- Image Service -->
+  <rect x="450" y="130" width="175" height="50" rx="8" fill="#e0f7fa" stroke="#00838f" stroke-width="2"/>
+  <text x="538" y="150" text-anchor="middle" fill="#00838f" font-weight="bold" font-size="13">image-service</text>
+  <text x="538" y="168" text-anchor="middle" fill="#555" font-size="10">/simple-service-webapp</text>
+
+  <!-- Apache → services arrows -->
+  <line x1="180" y1="195" x2="258" y2="155" stroke="#666" stroke-width="1.5" marker-end="url(#af1)"/>
+  <line x1="180" y1="205" x2="258" y2="225" stroke="#666" stroke-width="1.5" marker-end="url(#af1)"/>
+  <line x1="180" y1="210" x2="258" y2="290" stroke="#666" stroke-width="1.5" marker-end="url(#af1)"/>
+  <line x1="180" y1="200" x2="448" y2="155" stroke="#666" stroke-width="1.5" marker-end="url(#af1)"/>
+
+  <!-- dalogin → mbooks proxy arrow -->
+  <line x1="338" y1="180" x2="338" y2="198" stroke="#2e7d32" stroke-width="2" stroke-dasharray="4 2" marker-end="url(#af1)"/>
+  <text x="355" y="193" fill="#2e7d32" font-size="8">proxy</text>
+  <line x1="338" y1="250" x2="338" y2="268" stroke="#2e7d32" stroke-width="2" stroke-dasharray="4 2" marker-end="url(#af1)"/>
+  <text x="355" y="263" fill="#2e7d32" font-size="8">CheckOut</text>
+
+  <!-- WebSocket -->
+  <rect x="450" y="200" width="175" height="50" rx="8" fill="#ede7f6" stroke="#4a148c" stroke-width="2"/>
+  <text x="538" y="220" text-anchor="middle" fill="#4a148c" font-weight="bold" font-size="13">WebSocket</text>
+  <text x="538" y="238" text-anchor="middle" fill="#555" font-size="10">wss://.../mbook-1/ws</text>
+  <line x1="415" y1="225" x2="448" y2="225" stroke="#4a148c" stroke-width="1.5" marker-end="url(#af1)"/>
+
+  <!-- Kafka → WebSocket -->
+  <rect x="450" y="270" width="175" height="50" rx="8" fill="#fce4ec" stroke="#880e4f" stroke-width="2"/>
+  <text x="538" y="290" text-anchor="middle" fill="#880e4f" font-weight="bold" font-size="13">Kafka</text>
+  <text x="538" y="308" text-anchor="middle" fill="#555" font-size="10">ios-movies-notifications2</text>
+  <line x1="538" y1="270" x2="538" y2="252" stroke="#4a148c" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#af1)"/>
+  <text x="562" y="265" fill="#4a148c" font-size="8">broadcast</text>
+
+  <!-- Databases -->
+  <rect x="680" y="130" width="210" height="50" rx="8" fill="#fce4ec" stroke="#c62828" stroke-width="2"/>
+  <text x="785" y="148" text-anchor="middle" fill="#c62828" font-weight="bold" font-size="13">MySQL: login_</text>
+  <text x="785" y="168" text-anchor="middle" fill="#555" font-size="10">dalogin + mbook sessions</text>
+
+  <rect x="680" y="200" width="210" height="50" rx="8" fill="#fff8e1" stroke="#f57f17" stroke-width="2"/>
+  <text x="785" y="218" text-anchor="middle" fill="#f57f17" font-weight="bold" font-size="13">MySQL: book</text>
+  <text x="785" y="238" text-anchor="middle" fill="#555" font-size="10">movies, venues, tickets</text>
+
+  <!-- DB connections -->
+  <line x1="415" y1="155" x2="678" y2="155" stroke="#c62828" stroke-width="1" stroke-dasharray="3 2"/>
+  <line x1="415" y1="225" x2="678" y2="160" stroke="#c62828" stroke-width="1" stroke-dasharray="3 2"/>
+  <line x1="415" y1="295" x2="678" y2="225" stroke="#f57f17" stroke-width="1" stroke-dasharray="3 2"/>
+
+  <!-- Legend -->
+  <rect x="680" y="270" width="210" height="55" rx="6" fill="#fff" stroke="#ddd"/>
+  <text x="690" y="288" fill="#333" font-weight="bold" font-size="10">iOS Endpoints Used</text>
+  <text x="690" y="302" fill="#555" font-size="9">Login → /login/HelloWorld (HMAC)</text>
+  <text x="690" y="314" fill="#555" font-size="9">Browse → /mbooks-1/rest/book/*</text>
+</svg>
+</div>
+<p>
+  Purchase and checkout requests go through <code>/login/CheckOut</code> and <code>/login/GetAllPurchases</code> —
+  these are proxy servlets in dalogin that inject session-derived headers (<code>uuid</code>, <code>token2</code>,
+  <code>TIME_</code>, cookies) before forwarding to mbooks.
+</p>
+
+<h3 id="networking-layer">Networking Layer — Overview</h3>
+<p>The app uses three request managers, all backed by a shared singleton <code>URLSession</code>:</p>
+<table>
+  <tr><th>Class</th><th>Usage</th><th>Key Feature</th></tr>
+  <tr><td><code>GeneralRequestManager</code></td><td>All API calls (movies, venues, seats, booking, payments, images)</td><td><span class="badge badge-green">Realm cache</span> <span class="badge badge-blue">Ciphertext</span></td></tr>
+  <tr><td><code>RequestManager</code></td><td>WebView-originated login/session calls</td><td>Simple JSON GET/POST wrapper</td></tr>
+  <tr><td><code>RestApiManager</code></td><td>Admin session check, device activation</td><td><span class="badge badge-purple">Singleton</span> Ciphertext header injection</td></tr>
+</table>
+</section>
+
+<!-- ──────── SECURITY ──────── -->
+<section id="security">
+<h2>Security &amp; Authentication</h2>
+
+<h3 id="login-flow">Login Flow</h3>
+<div class="flow-step"><div class="flow-num">1</div><div class="flow-body">User enters username and password in <code>LoginVC</code>.</div></div>
+<div class="flow-step"><div class="flow-num">2</div><div class="flow-body">Password is hashed client-side with <strong>SHA3-512</strong> via <code>CryptoJS.SHA3().hash(password, outputLength: 512)</code>.</div></div>
+<div class="flow-step"><div class="flow-num">3</div><div class="flow-body">An <strong>HMAC-SHA512</strong> signature is computed:
+  <ul style="margin-top:6px">
+    <li>HMAC secret = <code>hmacSHA512(username, password_hash)</code></li>
+    <li>HMAC payload = <code>/login/HelloWorld:user={username}&amp;pswrd={hash}&amp;deviceId={deviceId}:{timestamp}:{body_length}</code></li>
+    <li>Result sent as <code>X-HMAC-HASH</code> header; timestamp as <code>X-MICRO-TIME</code> header.</li>
+  </ul>
+</div></div>
+<div class="flow-step"><div class="flow-num">4</div><div class="flow-body">POST to <code>/login/HelloWorld</code> with URL-encoded body: <code>user=...&amp;pswrd=...&amp;deviceId=...&amp;ios=...</code></div></div>
+<div class="flow-step"><div class="flow-num">5</div><div class="flow-body">On success (HTTP 200, <code>success == 1</code>):
+  <ul style="margin-top:6px">
+    <li><code>JSESSIONID</code> and <code>X-Token</code> stored in <code>UserDefaults</code></li>
+    <li><code>ISLOGGEDIN = 1</code> flag set</li>
+    <li>Cookies (<code>JSESSIONID</code>, <code>XSRF-TOKEN</code>) managed by <code>HTTPCookieStorage.shared</code></li>
+  </ul>
+</div></div>
+
+<div class="diagram-container svg-diagram">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="Arial,sans-serif" font-size="12">
+  <rect width="800" height="420" fill="#f8f9fa" rx="8"/>
+  <defs><marker id="af2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#666"/></marker></defs>
+
+  <!-- Swim lanes -->
+  <text x="100" y="22" text-anchor="middle" fill="#1976d2" font-weight="bold" font-size="13">iOS Client</text>
+  <text x="340" y="22" text-anchor="middle" fill="#2e7d32" font-weight="bold" font-size="13">dalogin</text>
+  <text x="580" y="22" text-anchor="middle" fill="#c62828" font-weight="bold" font-size="13">MySQL login_</text>
+
+  <line x1="100" y1="32" x2="100" y2="410" stroke="#1976d2" stroke-width="1" stroke-dasharray="4 2"/>
+  <line x1="340" y1="32" x2="340" y2="410" stroke="#2e7d32" stroke-width="1" stroke-dasharray="4 2"/>
+  <line x1="580" y1="32" x2="580" y2="410" stroke="#c62828" stroke-width="1" stroke-dasharray="4 2"/>
+
+  <!-- Step 1 -->
+  <rect x="30" y="45" width="140" height="35" rx="4" fill="#e3f2fd" stroke="#1976d2"/>
+  <text x="100" y="60" text-anchor="middle" fill="#1976d2" font-size="11">SHA3-512(password)</text>
+  <text x="100" y="74" text-anchor="middle" fill="#555" font-size="9">CryptoJS.swift</text>
+
+  <!-- Step 2 -->
+  <rect x="30" y="90" width="140" height="35" rx="4" fill="#e3f2fd" stroke="#1976d2"/>
+  <text x="100" y="105" text-anchor="middle" fill="#1976d2" font-size="11">Compute HMAC-512</text>
+  <text x="100" y="119" text-anchor="middle" fill="#555" font-size="9">2-layer: user+hash→secret</text>
+
+  <!-- Step 3: POST -->
+  <line x1="170" y1="108" x2="270" y2="145" stroke="#666" stroke-width="1.5" marker-end="url(#af2)"/>
+  <text x="220" y="122" text-anchor="middle" fill="#666" font-size="9">POST /login/HelloWorld</text>
+  <text x="220" y="133" text-anchor="middle" fill="#999" font-size="8">X-HMAC-HASH + X-MICRO-TIME</text>
+
+  <!-- Step 4: Verify -->
+  <rect x="270" y="145" width="140" height="35" rx="4" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="340" y="160" text-anchor="middle" fill="#2e7d32" font-size="11">Verify HMAC</text>
+  <text x="340" y="174" text-anchor="middle" fill="#555" font-size="9">HelloWorld.doPost()</text>
+
+  <!-- Step 5: DB call -->
+  <line x1="410" y1="162" x2="510" y2="200" stroke="#666" stroke-width="1.5" marker-end="url(#af2)"/>
+  <text x="460" y="183" text-anchor="middle" fill="#666" font-size="9">CALL get_hash(pass, user)</text>
+
+  <rect x="510" y="200" width="140" height="30" rx="4" fill="#fce4ec" stroke="#c62828"/>
+  <text x="580" y="219" text-anchor="middle" fill="#c62828" font-size="11">Verify password hash</text>
+
+  <line x1="510" y1="215" x2="410" y2="245" stroke="#666" stroke-width="1.5" marker-end="url(#af2)"/>
+  <text x="460" y="238" text-anchor="middle" fill="#999" font-size="9">hash match ✓</text>
+
+  <!-- Step 6: Session -->
+  <rect x="270" y="250" width="140" height="40" rx="4" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="340" y="265" text-anchor="middle" fill="#2e7d32" font-size="11">Create Session</text>
+  <text x="340" y="280" text-anchor="middle" fill="#555" font-size="9">Build XSRF-TOKEN (AES)</text>
+
+  <line x1="410" y1="270" x2="510" y2="295" stroke="#666" stroke-width="1.5" marker-end="url(#af2)"/>
+  <text x="460" y="286" text-anchor="middle" fill="#666" font-size="9">insert_device_()</text>
+  <line x1="510" y1="305" x2="410" y2="325" stroke="#666" stroke-width="1.5" marker-end="url(#af2)"/>
+
+  <!-- Step 7: Return to client -->
+  <line x1="270" y1="340" x2="170" y2="365" stroke="#2e7d32" stroke-width="1.5" marker-end="url(#af2)"/>
+  <text x="215" y="348" text-anchor="middle" fill="#2e7d32" font-size="9">{success, JSESSIONID, X-Token}</text>
+  <text x="215" y="360" text-anchor="middle" fill="#999" font-size="8">Set-Cookie: JSESSIONID, XSRF-TOKEN</text>
+
+  <!-- Step 8: Store -->
+  <rect x="30" y="370" width="140" height="35" rx="4" fill="#e3f2fd" stroke="#1976d2"/>
+  <text x="100" y="385" text-anchor="middle" fill="#1976d2" font-size="11">Store in UserDefaults</text>
+  <text x="100" y="399" text-anchor="middle" fill="#555" font-size="9">ISLOGGEDIN = 1</text>
+</svg>
+</div>
+
+<h3 id="registration-flow">Registration Flow</h3>
+<div class="flow-step"><div class="flow-num">1</div><div class="flow-body">User enters username, email, password, confirm password, and optional voucher code in <code>SignupVC</code>.</div></div>
+<div class="flow-step"><div class="flow-num">2</div><div class="flow-body">Password is SHA3-512 hashed client-side.</div></div>
+<div class="flow-step"><div class="flow-num">3</div><div class="flow-body">POST to <code>/login/register</code> with user credentials and device ID.</div></div>
+<div class="flow-step"><div class="flow-num">4</div><div class="flow-body">If a voucher is provided, it is validated via <code>/login/voucher</code>.</div></div>
+<div class="flow-step"><div class="flow-num">5</div><div class="flow-body">Account activation email can be triggered via <code>/login/activation</code>.</div></div>
+
+<h3 id="hmac-auth">HMAC-SHA512 Authentication</h3>
+<p>
+  The login request uses a two-layer HMAC scheme. All crypto operations are performed via
+  <strong>CryptoJS JavaScript libraries executed in JavaScriptCore</strong> (<code>CryptoJS.swift</code>):
+</p>
+<pre><code>hmacSecret = HMAC-SHA512(key=password_hash, data=username)
+hmacHash   = HMAC-SHA512(key=hmacSecret, data=canonical_request_string)</code></pre>
+<p>The canonical request string format is: <code>{path}:{body_params}:{timestamp}:{content_length}</code></p>
+<div class="card">
+<h4>Available CryptoJS classes</h4>
+<p>
+  <span class="badge badge-blue">AES</span>
+  <span class="badge badge-green">MD5</span>
+  <span class="badge badge-purple">SHA256</span>
+  <span class="badge badge-orange">SHA3</span>
+  <span class="badge badge-pink">hmacSHA512</span>
+</p>
+<p>Each loads the corresponding <code>.js</code> file from the app bundle and evaluates it in a shared <code>JSContext</code>.</p>
+</div>
+
+<h3 id="aes-ciphertext">AES Ciphertext Token</h3>
+<p>
+  After login, subsequent API requests include a <code>Ciphertext</code> header containing an AES-128
+  encrypted token. Encryption uses PBKDF2 key derivation:
+</p>
+<pre><code>Key size:        128 bits
+Iteration count: 1000
+Salt:            3FF2EC019C627B945225DEBAD71A01B6985FE84C95A70EB132882F88C0A59A55
+IV:              F27D5C9927726BCEFE7510B1BDD3D137
+Passphrase:      SecretPassphrase</code></pre>
+<p>
+  The token value (<code>X-Token</code>) is received from the server at login and stored in
+  <code>UserDefaults</code>. It is encrypted by <code>ciphertext.swift</code> before being sent
+  as the <code>Ciphertext</code> header. An additional <code>X-Token: client-secret</code> header
+  and <code>X-Device: {deviceId}</code> header are attached to every request by <code>GeneralRequestManager.dataTask()</code>.
+</p>
+
+<h3 id="session-management">Session &amp; Cookie Management</h3>
+<div class="card">
+<table>
+  <tr><th>Key</th><th>Storage</th><th>Description</th></tr>
+  <tr><td><code>JSESSIONID</code></td><td><code>HTTPCookieStorage</code></td><td>Session cookie managed by the shared cookie jar</td></tr>
+  <tr><td><code>XSRF-TOKEN</code></td><td><code>HTTPCookieStorage</code></td><td>Anti-CSRF cookie set by the server's <code>CookieFilter</code></td></tr>
+  <tr><td><code>ISLOGGEDIN</code></td><td><code>UserDefaults</code></td><td>Login state flag (<code>1</code> = logged in)</td></tr>
+  <tr><td><code>ISWEBLOGGEDIN</code></td><td><code>UserDefaults</code></td><td>WebView login state flag</td></tr>
+  <tr><td><code>USERNAME</code></td><td><code>UserDefaults</code></td><td>Current username</td></tr>
+  <tr><td><code>JSESSIONID</code></td><td><code>UserDefaults</code></td><td>Session ID (duplicate for programmatic access)</td></tr>
+  <tr><td><code>X-Token</code></td><td><code>UserDefaults</code></td><td>AES ciphertext source token</td></tr>
+  <tr><td><code>deviceId</code></td><td><code>UserDefaults</code></td><td><code>UIDevice.identifierForVendor</code></td></tr>
+</table>
+</div>
+<p>Cookie accept policy is <code>HTTPCookie.AcceptPolicy.always</code> (configured in <code>CustomSessionConfiguration</code>). Logout clears the <code>UserDefaults</code> persistent domain and navigates to <code>LoginVC</code>.</p>
+
+<h3 id="tls">TLS &amp; Self-Signed Certificates</h3>
+<p>
+  <code>CustomURLSessionDelegate</code> implements <code>URLSessionDelegate</code> to handle TLS
+  certificate challenges. Self-signed certificates are accepted for hosts listed in
+  <code>Constants.selfSignedHosts</code>:
+</p>
+<pre><code>static let selfSignedHosts: Set&lt;String&gt; = ["milo.crabdance.com", "localhost", "igeorge1982.local"]</code></pre>
+</section>
+
+<!-- ──────── SCREEN FLOW ──────── -->
+<section id="screen-flow">
+<h2>Screen Flow &amp; Navigation</h2>
+<div class="diagram-container">
+<pre><code>LoginVC ──────────────────┐
+   │                      │ (dismiss on success)
+   ├──▶ SignupVC          │
+   │                      │
+   └──▶ HomeVC ◀──────────┘
+          │
+          ├──▶ MoviesVC (paginated, searchable, categorised)
+          │      │
+          │      ├──▶ MovieDetailVC (IMDB link, full description)
+          │      │
+          │      └──▶ VenuesVC (venues for selected movie)
+          │             │
+          │             └──▶ VenuesDetailsVC (venue image, dates, seat map, video)
+          │                    │
+          │                    ├──▶ PopOverDates (screening date picker)
+          │                    ├──▶ [Seat grid] — SeatCells (tap to select/deselect)
+          │                    ├──▶ iOSCalendarVC ──▶ AttendeesVC
+          │                    └──▶ BasketVC (review seats → Braintree checkout)
+          │
+          ├──▶ WebViewController (AngularJS web UI in WKWebView)
+          │
+          ├──▶ MapViewController (all venue locations on MapKit)
+          │      │
+          │      └──▶ VenueForMoviesVC (movies at selected venue)
+          │             └──▶ VenuesDetailsVC
+          │
+          └──▶ MenuVC (user profile, cookies display)
+                 │
+                 ├──▶ PurchasesVC (purchase history, sort by date)
+                 │      └──▶ TicketsVC (tickets, QR codes, PDF export)
+                 │
+                 └──▶ AdminVC (add new screening)
+                        ├──▶ MoviesVC (movie picker — reused as popover)
+                        ├──▶ VenuesVC (venue picker — reused as popover)
+                        └──▶ AdminUpdateVC (update existing screening)</code></pre>
+</div>
+<p>
+  Navigation uses Storyboard segues (<code>Storyboard.storyboard</code>) and programmatic
+  <code>present()</code> / <code>dismiss()</code> calls. The login gate is enforced in
+  <code>HomeVC.viewDidAppear()</code> — if <code>ISLOGGEDIN != 1</code>, the user is redirected
+  to <code>LoginVC</code>.
+</p>
+</section>
+
+<!-- ──────── VIEW CONTROLLERS ──────── -->
+<section id="view-controllers">
+<h2>View Controllers Reference</h2>
+
+<div class="grid-2">
+  <div class="card" id="vc-login">
+    <h4><span class="badge badge-blue">LoginVC</span> Login</h4>
+    <p><code>LoginVC.swift</code> · 253 lines</p>
+    <ul>
+      <li>Username/password fields with background image</li>
+      <li>SHA3-512 hashing → HMAC-SHA512 signing → POST <code>/login/HelloWorld</code></li>
+      <li>Stores <code>JSESSIONID</code>, <code>X-Token</code>, <code>USERNAME</code>, <code>deviceId</code> in <code>UserDefaults</code></li>
+      <li>Reads and logs all cookies after successful login</li>
+    </ul>
+  </div>
+
+  <div class="card" id="vc-signup">
+    <h4><span class="badge badge-blue">SignupVC</span> Registration</h4>
+    <p><code>SignupVC.swift</code> · 289 lines</p>
+    <ul>
+      <li>Fields: username, email, password, confirm password, voucher code</li>
+      <li>SHA3-512 hashing → POST <code>/login/register</code></li>
+      <li>Voucher validation via <code>/login/voucher</code></li>
+    </ul>
+  </div>
+
+  <div class="card" id="vc-home">
+    <h4><span class="badge badge-green">HomeVC</span> Home Dashboard</h4>
+    <p><code>HomeVC.swift</code> · 264 lines</p>
+    <ul>
+      <li>Entry point after login; checks <code>ISLOGGEDIN</code> state</li>
+      <li>Triggers initial movie pre-fetch (<code>MoviesData.addData()</code>)</li>
+      <li>Navigation to Movies, Map, Web, Menu, Basket</li>
+      <li>Logout: GET <code>/login/logout</code>, clears <code>UserDefaults</code></li>
+    </ul>
+  </div>
+
+  <div class="card" id="vc-movies">
+    <h4><span class="badge badge-green">MoviesVC</span> Movie Catalogue</h4>
+    <p><code>MoviesVC.swift</code> · 720 lines</p>
+    <ul>
+      <li>Paginated <code>UITableView</code> with pull-to-refresh</li>
+      <li><code>UISearchController</code> for title/description search</li>
+      <li>Category filtering (action, drama, etc.)</li>
+      <li>Endpoint: <code>/mbooks-1/rest/book/movies/paging</code></li>
+      <li>Images from <code>/simple-service-webapp/webapi/</code> with Realm caching</li>
+      <li>Segues to <code>VenuesVC</code> or <code>MovieDetailVC</code></li>
+      <li>Reused in Admin flow as movie picker popover</li>
+    </ul>
+  </div>
+
+  <div class="card" id="vc-moviedetail">
+    <h4><span class="badge badge-green">MovieDetailVC</span> Movie Detail</h4>
+    <p><code>MovieDetailVC.swift</code></p>
+    <ul>
+      <li>Movie poster (large), full description, IMDB link</li>
+      <li>IMDB opens in <code>SFSafariViewController</code> or external browser</li>
+    </ul>
+  </div>
+
+  <div class="card" id="vc-venues">
+    <h4><span class="badge badge-orange">VenuesVC</span> Venue List</h4>
+    <p><code>VenuesVC.swift</code> · 368 lines</p>
+    <ul>
+      <li><code>UITableView</code> of venues for a selected movie</li>
+      <li>Endpoint: <code>/mbooks-1/rest/book/venue/{movieId}</code></li>
+      <li>Venue name, address, thumbnail, MapKit annotations</li>
+      <li>Segue to <code>VenuesDetailsVC</code>; reused in Admin as venue picker</li>
+    </ul>
+  </div>
+
+  <div class="card" id="vc-venuedetails">
+    <h4><span class="badge badge-orange">VenuesDetailsVC</span> Venue Detail &amp; Seats</h4>
+    <p><code>VenuesDetailsVC.swift</code> · 564 lines</p>
+    <ul>
+      <li>Scroll view with movie poster + venue image</li>
+      <li>Screening date picker (<code>PopOverDates</code>)</li>
+      <li>Seat grid: <span style="color:var(--green)">■</span> available, <span style="color:var(--red)">■</span> reserved</li>
+      <li>Tap available seat → added to <code>BasketData_</code></li>
+      <li>Calendar integration (iOS + Google Calendar)</li>
+      <li>Video playback via <code>AVKit</code></li>
+    </ul>
+  </div>
+
+  <div class="card" id="vc-basket">
+    <h4><span class="badge badge-purple">BasketVC</span> Basket &amp; Checkout</h4>
+    <p><code>BasketVC.swift</code> · 362 lines</p>
+    <ul>
+      <li><code>UICollectionView</code> of selected seat <code>FeedCells</code></li>
+      <li>Tap to remove individual seats</li>
+      <li><strong>Checkout:</strong> GET client token → Braintree Drop-In → POST nonce</li>
+      <li>Success: clears basket, confirmation alert</li>
+      <li>Failure: error with failed ticket details</li>
+    </ul>
+  </div>
+
+  <div class="card" id="vc-map">
+    <h4><span class="badge badge-orange">MapViewController</span> Venue Map</h4>
+    <p><code>MapViewController.swift</code> · 385 lines</p>
+    <ul>
+      <li>Full-screen <code>MKMapView</code> with user location tracking</li>
+      <li>Venues from <code>/mbooks-1/rest/book/locations</code></li>
+      <li>Custom annotation pins (<code>PlacesData</code> as <code>MKAnnotation</code>)</li>
+      <li>Tap pin → <code>VenueForMoviesVC</code></li>
+    </ul>
+  </div>
+
+  <div class="card" id="vc-menu">
+    <h4><span class="badge badge-pink">MenuVC</span> User Menu</h4>
+    <p><code>MenuVC.swift</code> · 189 lines</p>
+    <ul>
+      <li>Displays username, JSESSIONID, XSRF-TOKEN cookies</li>
+      <li>Profile image from <code>/simple-service-webapp/webapi/profiles/</code></li>
+      <li>Navigation to Purchases, Admin</li>
+    </ul>
+  </div>
+
+  <div class="card" id="vc-purchases">
+    <h4><span class="badge badge-pink">PurchasesVC</span> Purchase History</h4>
+    <p><code>PurchasesVC.swift</code> · 304 lines</p>
+    <ul>
+      <li><code>UITableView</code> of past purchases</li>
+      <li>Sortable by purchase date or screening date</li>
+      <li>Endpoint: <code>/login/GetAllPurchases</code></li>
+      <li>Tap → <code>TicketsVC</code>; listens for <code>newDataNotif</code></li>
+    </ul>
+  </div>
+
+  <div class="card" id="vc-tickets">
+    <h4><span class="badge badge-pink">TicketsVC</span> Ticket Details</h4>
+    <p><code>TicketsVC.swift</code> · 376 lines</p>
+    <ul>
+      <li><code>UICollectionView</code> of ticket <code>FeedCells</code></li>
+      <li>Endpoint: <code>/login/ManagePurchases?purchaseId=X</code></li>
+      <li>QR code per ticket via <code>CIQRCodeGenerator</code></li>
+      <li>PDF export: renders to PDF, presents in <code>PDFView</code></li>
+    </ul>
+  </div>
+
+  <div class="card" id="vc-admin">
+    <h4><span class="badge badge-red">AdminVC</span> Admin Panel</h4>
+    <p><code>AdminVC.swift</code> · 283 lines</p>
+    <ul>
+      <li>Form: movie, date, venue, rows, seats/row, ID, category</li>
+      <li>Date picker for screening date</li>
+      <li>Movie/venue selection via popover</li>
+      <li>POST <code>/mbooks-1/rest/book/admin/addscreen</code></li>
+      <li>Admin session validated via <code>/login/admin</code></li>
+    </ul>
+  </div>
+
+  <div class="card" id="vc-adminupdate">
+    <h4><span class="badge badge-red">AdminUpdateVC</span> Update Screenings</h4>
+    <p><code>AdminUpdateVC.swift</code></p>
+    <ul>
+      <li>Update existing screening details (date, venue, seats)</li>
+      <li>Uses <code>ScreenData_</code> and <code>ScreenData_2</code> models</li>
+    </ul>
+  </div>
+
+  <div class="card" id="vc-webview">
+    <h4><span class="badge badge-blue">WebViewController</span> Embedded Web UI</h4>
+    <p><code>WebViewController.swift</code> · 116 lines</p>
+    <ul>
+      <li><code>WKWebView</code> loading <code>/login/index.html</code></li>
+      <li>Clears cookies before loading for fresh session</li>
+      <li>Back and Reload buttons</li>
+    </ul>
+  </div>
+
+  <div class="card" id="vc-calendar">
+    <h4><span class="badge badge-purple">iOSCalendarVC</span> Calendar</h4>
+    <p><code>iOSCalenderVC.swift</code> · 167 lines</p>
+    <ul>
+      <li>Lists iOS calendars via <code>EventKit</code></li>
+      <li>Creates event for selected screening date</li>
+      <li>Navigates to <code>AttendeesVC</code> for contacts</li>
+    </ul>
+  </div>
+</div>
+</section>
+
+<!-- ──────── DATA MODELS ──────── -->
+<section id="data-models">
+<h2>Data Models</h2>
+
+<div class="diagram-container svg-diagram">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 220" font-family="Arial,sans-serif" font-size="12">
+  <rect width="860" height="220" fill="#f8f9fa" rx="8"/>
+  <defs><marker id="af5" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#666"/></marker></defs>
+
+  <text x="430" y="20" text-anchor="middle" fill="#333" font-weight="bold" font-size="13">User Journey → Data Model Flow</text>
+
+  <!-- Row 1: Server → Models -->
+  <rect x="20" y="40" width="110" height="40" rx="6" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="75" y="64" text-anchor="middle" fill="#1976d2" font-weight="bold" font-size="11">MoviesData</text>
+
+  <rect x="150" y="40" width="100" height="40" rx="6" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="200" y="64" text-anchor="middle" fill="#2e7d32" font-weight="bold" font-size="11">PlacesData</text>
+
+  <rect x="270" y="40" width="100" height="40" rx="6" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2"/>
+  <text x="320" y="64" text-anchor="middle" fill="#7b1fa2" font-weight="bold" font-size="11">DatesData</text>
+
+  <rect x="390" y="40" width="100" height="40" rx="6" fill="#fff8e1" stroke="#f57f17" stroke-width="2"/>
+  <text x="440" y="64" text-anchor="middle" fill="#f57f17" font-weight="bold" font-size="11">SeatsData</text>
+
+  <rect x="510" y="40" width="100" height="40" rx="6" fill="#fff3e0" stroke="#e65100" stroke-width="2"/>
+  <text x="560" y="64" text-anchor="middle" fill="#e65100" font-weight="bold" font-size="11">BasketData</text>
+
+  <rect x="630" y="40" width="100" height="40" rx="6" fill="#fce4ec" stroke="#c62828" stroke-width="2"/>
+  <text x="680" y="64" text-anchor="middle" fill="#c62828" font-weight="bold" font-size="11">TicketsData</text>
+
+  <rect x="750" y="40" width="100" height="40" rx="6" fill="#ede7f6" stroke="#4a148c" stroke-width="2"/>
+  <text x="800" y="64" text-anchor="middle" fill="#4a148c" font-weight="bold" font-size="11">PurchaseData</text>
+
+  <!-- Arrows -->
+  <line x1="130" y1="60" x2="148" y2="60" stroke="#666" marker-end="url(#af5)"/>
+  <line x1="250" y1="60" x2="268" y2="60" stroke="#666" marker-end="url(#af5)"/>
+  <line x1="370" y1="60" x2="388" y2="60" stroke="#666" marker-end="url(#af5)"/>
+  <line x1="490" y1="60" x2="508" y2="60" stroke="#666" marker-end="url(#af5)"/>
+  <line x1="610" y1="60" x2="628" y2="60" stroke="#666" marker-end="url(#af5)"/>
+  <line x1="730" y1="60" x2="748" y2="60" stroke="#666" marker-end="url(#af5)"/>
+
+  <!-- Row 2: View controllers -->
+  <rect x="20" y="105" width="110" height="35" rx="4" fill="#fff" stroke="#1976d2"/>
+  <text x="75" y="126" text-anchor="middle" fill="#1976d2" font-size="10">MoviesVC</text>
+  <rect x="150" y="105" width="100" height="35" rx="4" fill="#fff" stroke="#2e7d32"/>
+  <text x="200" y="126" text-anchor="middle" fill="#2e7d32" font-size="10">MapViewController</text>
+  <rect x="270" y="105" width="100" height="35" rx="4" fill="#fff" stroke="#7b1fa2"/>
+  <text x="320" y="126" text-anchor="middle" fill="#7b1fa2" font-size="10">VenuesDetailsVC</text>
+  <rect x="390" y="105" width="100" height="35" rx="4" fill="#fff" stroke="#f57f17"/>
+  <text x="440" y="126" text-anchor="middle" fill="#f57f17" font-size="10">VenuesDetailsVC</text>
+  <rect x="510" y="105" width="100" height="35" rx="4" fill="#fff" stroke="#e65100"/>
+  <text x="560" y="126" text-anchor="middle" fill="#e65100" font-size="10">BasketVC</text>
+  <rect x="630" y="105" width="100" height="35" rx="4" fill="#fff" stroke="#c62828"/>
+  <text x="680" y="126" text-anchor="middle" fill="#c62828" font-size="10">TicketsVC</text>
+  <rect x="750" y="105" width="100" height="35" rx="4" fill="#fff" stroke="#4a148c"/>
+  <text x="800" y="126" text-anchor="middle" fill="#4a148c" font-size="10">PurchasesVC</text>
+
+  <line x1="75" y1="80" x2="75" y2="103" stroke="#1976d2" stroke-width="1" stroke-dasharray="3 2"/>
+  <line x1="200" y1="80" x2="200" y2="103" stroke="#2e7d32" stroke-width="1" stroke-dasharray="3 2"/>
+  <line x1="320" y1="80" x2="320" y2="103" stroke="#7b1fa2" stroke-width="1" stroke-dasharray="3 2"/>
+  <line x1="440" y1="80" x2="440" y2="103" stroke="#f57f17" stroke-width="1" stroke-dasharray="3 2"/>
+  <line x1="560" y1="80" x2="560" y2="103" stroke="#e65100" stroke-width="1" stroke-dasharray="3 2"/>
+  <line x1="680" y1="80" x2="680" y2="103" stroke="#c62828" stroke-width="1" stroke-dasharray="3 2"/>
+  <line x1="800" y1="80" x2="800" y2="103" stroke="#4a148c" stroke-width="1" stroke-dasharray="3 2"/>
+
+  <!-- Row 3: Source -->
+  <rect x="20" y="165" width="470" height="35" rx="6" fill="#e0f7fa" stroke="#00838f"/>
+  <text x="255" y="186" text-anchor="middle" fill="#00838f" font-weight="bold" font-size="11">Server API (mbooks-quarkus, simple-service-webapp)</text>
+
+  <rect x="510" y="165" width="100" height="35" rx="6" fill="#fff3e0" stroke="#e65100"/>
+  <text x="560" y="186" text-anchor="middle" fill="#e65100" font-weight="bold" font-size="11">Client-side</text>
+
+  <rect x="630" y="165" width="220" height="35" rx="6" fill="#e0f7fa" stroke="#00838f"/>
+  <text x="740" y="186" text-anchor="middle" fill="#00838f" font-weight="bold" font-size="11">Server API (via /login proxy)</text>
+</svg>
+</div>
+<table>
+  <tr><th>Model</th><th>File</th><th>Key Fields</th><th>Source Endpoint</th><th>Global</th></tr>
+  <tr>
+    <td><code>MoviesData</code></td>
+    <td><code>MoviesData.swift</code></td>
+    <td>movieId, name, detail, large_picture, imdb</td>
+    <td><code>/mbooks-1/rest/book/movies/paging</code></td>
+    <td><code>TableData_</code></td>
+  </tr>
+  <tr>
+    <td><code>SeatsData</code></td>
+    <td><code>SeatsData.swift</code></td>
+    <td>seatId, seatNumber, seatRow, isReserved, price, tax</td>
+    <td><code>/mbooks-1/rest/book/seats/{id}</code></td>
+    <td><code>SeatsData_</code></td>
+  </tr>
+  <tr>
+    <td><code>DatesData</code></td>
+    <td><code>DatesData.swift</code></td>
+    <td>screeningDatesId, screeningDate, movieId</td>
+    <td><code>/mbooks-1/rest/book/dates/{screenId}</code></td>
+    <td><code>ScreeningDates</code></td>
+  </tr>
+  <tr>
+    <td><code>BasketData</code></td>
+    <td><code>BasketData.swift</code></td>
+    <td>movie_name, seatId, seats_seatNumber, seats_seatRow, price, tax, screening_date, venue_name, movie_picture, screeningDateId</td>
+    <td><span class="badge badge-orange">Client-side</span></td>
+    <td><code>BasketData_</code></td>
+  </tr>
+  <tr>
+    <td><code>PurchaseData</code></td>
+    <td><code>PurchaseData.swift</code></td>
+    <td>orderId, purchaseId, movie_name, venue_name, dates</td>
+    <td><code>/login/GetAllPurchases</code></td>
+    <td><code>TableData</code></td>
+  </tr>
+  <tr>
+    <td><code>AllTicketsData</code></td>
+    <td><code>AllTicketsData.swift</code></td>
+    <td>movie_name, venue_name, seat details, screening_date, ticketId</td>
+    <td><code>/login/ManagePurchases</code></td>
+    <td><em>local</em></td>
+  </tr>
+  <tr>
+    <td><code>TicketsData</code></td>
+    <td><code>TicketsData.swift</code></td>
+    <td>movie_name, seats_seatNumber, price, tax, ticketId</td>
+    <td><span class="badge badge-purple">Booking response</span></td>
+    <td><code>TicketsData_</code></td>
+  </tr>
+  <tr>
+    <td><code>ScreenData</code></td>
+    <td><code>ScreenData.swift</code></td>
+    <td>ScreeningId, movie, venue, date, rows, seats</td>
+    <td><span class="badge badge-red">Admin</span></td>
+    <td><code>ScreenData_</code></td>
+  </tr>
+  <tr>
+    <td><code>Admin_ScreenData</code></td>
+    <td><code>Admin_ScreenData.swift</code></td>
+    <td>Admin update fields</td>
+    <td><span class="badge badge-red">Admin</span></td>
+    <td><code>ScreenData_2</code></td>
+  </tr>
+  <tr>
+    <td><code>PlacesData</code></td>
+    <td><code>PlacesData.swift</code></td>
+    <td>locationId, title, address, coordinate, thumbnail</td>
+    <td><code>/mbooks-1/rest/book/locations</code></td>
+    <td><code>PlacesData_</code></td>
+  </tr>
+  <tr>
+    <td><code>CachedResponse</code></td>
+    <td><code>CachedResponse.swift</code></td>
+    <td>data, encoding, mimeType, url, query, timestamp</td>
+    <td><span class="badge badge-green">Realm store</span></td>
+    <td>—</td>
+  </tr>
+</table>
+<div class="card priority-medium">
+<h4>⚠️ Global Mutable State</h4>
+<p>Most data model arrays are declared as <strong>file-level global variables</strong> (<code>var</code>) rather than encapsulated within a data manager. This pattern was established in 2016 and is a known area of technical debt.</p>
+</div>
+</section>
+
+<!-- ──────── NETWORKING DETAIL ──────── -->
+<section id="networking-detail">
+<h2>Networking Layer — Detail</h2>
+
+<div class="diagram-container svg-diagram">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 300" font-family="Arial,sans-serif" font-size="12">
+  <rect width="860" height="300" fill="#f8f9fa" rx="8"/>
+  <defs><marker id="af4" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#666"/></marker></defs>
+
+  <text x="430" y="22" text-anchor="middle" fill="#333" font-weight="bold" font-size="14">Networking Layer Architecture</text>
+
+  <!-- URLSession singleton -->
+  <rect x="310" y="40" width="240" height="50" rx="8" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="430" y="60" text-anchor="middle" fill="#1976d2" font-weight="bold" font-size="13">URLSession.sharedCustomSession</text>
+  <text x="430" y="78" text-anchor="middle" fill="#555" font-size="10">CustomConfig + CustomDelegate (TLS)</text>
+
+  <!-- Three managers -->
+  <rect x="30" y="130" width="220" height="60" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="140" y="150" text-anchor="middle" fill="#2e7d32" font-weight="bold" font-size="12">GeneralRequestManager</text>
+  <text x="140" y="166" text-anchor="middle" fill="#555" font-size="9">Per-request instance · Ciphertext headers</text>
+  <text x="140" y="180" text-anchor="middle" fill="#555" font-size="9">Realm cache · JSON + Data responses</text>
+
+  <rect x="280" y="130" width="220" height="60" rx="8" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2"/>
+  <text x="390" y="150" text-anchor="middle" fill="#7b1fa2" font-weight="bold" font-size="12">RequestManager</text>
+  <text x="390" y="166" text-anchor="middle" fill="#555" font-size="9">Per-request instance · Simple GET/POST</text>
+  <text x="390" y="180" text-anchor="middle" fill="#555" font-size="9">WebView login flows · No cache</text>
+
+  <rect x="530" y="130" width="220" height="60" rx="8" fill="#fff8e1" stroke="#f57f17" stroke-width="2"/>
+  <text x="640" y="150" text-anchor="middle" fill="#f57f17" font-weight="bold" font-size="12">RestApiManager</text>
+  <text x="640" y="166" text-anchor="middle" fill="#555" font-size="9">Singleton · Admin + Activation</text>
+  <text x="640" y="180" text-anchor="middle" fill="#555" font-size="9">Ciphertext header injection</text>
+
+  <!-- Session arrows -->
+  <line x1="430" y1="90" x2="140" y2="128" stroke="#666" stroke-width="1" marker-end="url(#af4)"/>
+  <line x1="430" y1="90" x2="390" y2="128" stroke="#666" stroke-width="1" marker-end="url(#af4)"/>
+  <line x1="430" y1="90" x2="640" y2="128" stroke="#666" stroke-width="1" marker-end="url(#af4)"/>
+
+  <!-- Downstream -->
+  <rect x="30" y="230" width="110" height="40" rx="6" fill="#e0f7fa" stroke="#00838f"/>
+  <text x="85" y="254" text-anchor="middle" fill="#00838f" font-weight="bold" font-size="11">Realm Cache</text>
+  <line x1="100" y1="190" x2="85" y2="228" stroke="#00838f" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#af4)"/>
+
+  <rect x="160" y="230" width="130" height="40" rx="6" fill="#e3f2fd" stroke="#1976d2"/>
+  <text x="225" y="248" text-anchor="middle" fill="#1976d2" font-weight="bold" font-size="11">CustomURLRequest</text>
+  <text x="225" y="262" text-anchor="middle" fill="#555" font-size="9">Factory method</text>
+
+  <rect x="310" y="230" width="130" height="40" rx="6" fill="#fce4ec" stroke="#c62828"/>
+  <text x="375" y="248" text-anchor="middle" fill="#c62828" font-weight="bold" font-size="11">CryptoJS.swift</text>
+  <text x="375" y="262" text-anchor="middle" fill="#555" font-size="9">AES / HMAC / SHA3</text>
+
+  <rect x="460" y="230" width="130" height="40" rx="6" fill="#fff3e0" stroke="#e65100"/>
+  <text x="525" y="248" text-anchor="middle" fill="#e65100" font-weight="bold" font-size="11">ciphertext.swift</text>
+  <text x="525" y="262" text-anchor="middle" fill="#555" font-size="9">AES-128 token encrypt</text>
+
+  <rect x="610" y="230" width="140" height="40" rx="6" fill="#ede7f6" stroke="#4a148c"/>
+  <text x="680" y="248" text-anchor="middle" fill="#4a148c" font-weight="bold" font-size="11">UserDefaults</text>
+  <text x="680" y="262" text-anchor="middle" fill="#555" font-size="9">X-Token, deviceId, etc.</text>
+
+  <!-- Links from managers to supporting classes -->
+  <line x1="140" y1="190" x2="225" y2="228" stroke="#666" stroke-width="1" stroke-dasharray="3 2"/>
+  <line x1="140" y1="190" x2="375" y2="228" stroke="#666" stroke-width="1" stroke-dasharray="3 2"/>
+  <line x1="140" y1="190" x2="525" y2="228" stroke="#666" stroke-width="1" stroke-dasharray="3 2"/>
+  <line x1="640" y1="190" x2="680" y2="228" stroke="#666" stroke-width="1" stroke-dasharray="3 2"/>
+</svg>
+</div>
+
+<h3 id="general-request-manager">GeneralRequestManager</h3>
+<p><code>GeneralRequestManager.swift</code> · 465 lines — the primary network client.</p>
+<pre><code>GeneralRequestManager(
+    url: String,
+    errors: String,
+    method: String,            // "GET" or "POST"
+    headers: [String: String]?,
+    queryParameters: [String: String]?,
+    bodyParameters: [String: String]?,
+    isCacheable: String?,      // "1" to enable Realm caching
+    contentType: String,
+    bodyToPost: Data?
+)</code></pre>
+
+<h4>Key methods</h4>
+<table>
+  <tr><th>Method</th><th>Returns</th><th>Description</th></tr>
+  <tr><td><code>getResponse()</code></td><td><code>JSON</code></td><td>Parsed SwiftyJSON; checks Realm cache first if cacheable</td></tr>
+  <tr><td><code>getData()</code></td><td><code>JSON</code></td><td>Alternate entry point (same caching logic)</td></tr>
+  <tr><td><code>getData_()</code></td><td><code>Data</code></td><td>Raw data (used for image loading)</td></tr>
+  <tr><td><code>dataTask()</code></td><td>—</td><td>Core method: builds request, injects headers, handles errors</td></tr>
+</table>
+
+<h4>Request header injection (in <code>dataTask()</code>)</h4>
+<pre><code>if url contains serverURL:
+    headers["Ciphertext"] = UserDefaults["X-Token"]  // AES-encrypted token
+    headers["X-Token"]    = "client-secret"
+    headers["X-Device"]   = deviceId</code></pre>
+
+<h3 id="request-manager">RequestManager</h3>
+<p><code>RequestManager.swift</code> · 166 lines — simplified wrapper for WebView-originated login flows. No Realm caching, no Ciphertext headers.</p>
+
+<h3 id="rest-api-manager">RestApiManager</h3>
+<p><code>RestApiManager.swift</code> · 147 lines — singleton (<code>RestApiManager.sharedInstance</code>) for admin session validation and device activation. Injects <code>Ciphertext</code> header from <code>UserDefaults["X-Token"]</code>.</p>
+
+<h3 id="custom-url-session">Custom URLSession Infrastructure</h3>
+<table>
+  <tr><th>File</th><th>Purpose</th></tr>
+  <tr><td><code>CustomURLSession.swift</code></td><td>Extends <code>URLSession</code> with <code>sharedCustomSession</code> singleton (custom config + delegate)</td></tr>
+  <tr><td><code>CustomSessionConfiguration.swift</code></td><td>Extends <code>URLSessionConfiguration</code>: HTTP pipelining, <code>sessionSendsLaunchEvents</code>, always-accept cookies</td></tr>
+  <tr><td><code>CustomURLSessionDelegate.swift</code></td><td>TLS challenges: accepts self-signed certs for allowed hosts</td></tr>
+  <tr><td><code>CustomURLRequest.swift</code></td><td>Factory method: builds requests with query params, JSON/URL-encoded/image bodies, custom headers</td></tr>
+</table>
+</section>
+
+<!-- ──────── CACHING ──────── -->
+<section id="caching">
+<h2>Caching Strategy</h2>
+<table>
+  <tr><th>Layer</th><th>Technology</th><th>What It Caches</th><th>TTL</th></tr>
+  <tr><td><span class="badge badge-green">Realm</span></td><td><code>CachedResponse</code> (RLMObject)</td><td>API responses (movies, images) keyed by URL or query</td><td>1 hour</td></tr>
+  <tr><td><span class="badge badge-blue">CoreData</span></td><td><code>CachedURLResponse</code> entity</td><td>Web resources from WebView requests</td><td>Manual eviction</td></tr>
+  <tr><td><span class="badge badge-purple">URLCache</span></td><td>iOS standard URL cache</td><td>Protocol-level HTTP caching</td><td>HTTP headers</td></tr>
+</table>
+
+<h4>Realm caching flow in GeneralRequestManager</h4>
+<div class="flow-step"><div class="flow-num">1</div><div class="flow-body">If <code>isCacheable == "1"</code>, query Realm for a <code>CachedResponse</code> matching the URL/query.</div></div>
+<div class="flow-step"><div class="flow-num">2</div><div class="flow-body">If found and <code>timestamp + 3600 &gt; now</code> → return cached data immediately (no network call).</div></div>
+<div class="flow-step"><div class="flow-num">3</div><div class="flow-body">If found but expired → make network call, delete stale Realm entry.</div></div>
+<div class="flow-step"><div class="flow-num">4</div><div class="flow-body">If not found → make network call, save response to Realm.</div></div>
+
+<p><strong>AppDelegate cleanup:</strong> On launch, <code>checkRealm()</code> evicts expired movie-paging cache entries from Realm.</p>
+</section>
+
+<!-- ──────── REALTIME ──────── -->
+<section id="realtime">
+<h2>Realtime Features</h2>
+
+<div class="grid-3">
+  <div class="card" id="websocket">
+    <h4><span class="badge badge-green">WebSocket</span></h4>
+    <p><code>BroadCasting/Websocket.swift</code> · 57 lines</p>
+    <ul>
+      <li>Connects to <code>wss://milo.crabdance.com/mbook-1/ws</code></li>
+      <li>Native <code>URLSessionWebSocketTask</code></li>
+      <li>Uses shared <code>URLSession.sharedCustomSession</code></li>
+      <li>Receives string + binary messages from Kafka consumers</li>
+      <li>Auto-reconnects after 3 seconds on disconnect</li>
+      <li>Initialised in <code>AppDelegate</code></li>
+    </ul>
+  </div>
+
+  <div class="card" id="firebase-push">
+    <h4><span class="badge badge-orange">Firebase / Push</span></h4>
+    <p><code>AppDelegate.swift</code> + <code>FireBaseGoogleService-Info.plist</code></p>
+    <ul>
+      <li>Firebase configured from plist</li>
+      <li>Registers for remote notifications</li>
+      <li>Device token printed for server targeting</li>
+      <li>Foreground: banners with sound</li>
+    </ul>
+  </div>
+
+  <div class="card" id="geofencing">
+    <h4><span class="badge badge-purple">Geofencing</span></h4>
+    <p><code>GeoFence.swift</code> · 27 lines</p>
+    <ul>
+      <li>Venues fetched from <code>/mbooks-1/rest/book/locations</code></li>
+      <li><code>CLCircularRegion</code> · 500m radius per venue</li>
+      <li>Entry → local notification</li>
+      <li>Requires <code>Always</code> location permission</li>
+      <li>Background location updates enabled</li>
+    </ul>
+  </div>
+</div>
+</section>
+
+<!-- ──────── PAYMENTS ──────── -->
+<section id="payments">
+<h2>Payment Processing</h2>
+<p>Payments are handled via <strong>Braintree</strong> (Cards &amp; PayPal) through the Drop-In UI.</p>
+
+<div class="flow-step"><div class="flow-num">1</div><div class="flow-body"><strong>Get client token:</strong> GET <code>/login/CheckOut</code> → response contains <code>clientToken</code></div></div>
+<div class="flow-step"><div class="flow-num">2</div><div class="flow-body"><strong>Present Drop-In:</strong> <code>BTDropInController(authorization: clientToken, request: BTDropInRequest())</code></div></div>
+<div class="flow-step"><div class="flow-num">3</div><div class="flow-body"><strong>User selects payment method</strong> → Braintree returns <code>paymentMethodNonce</code></div></div>
+<div class="flow-step"><div class="flow-num">4</div><div class="flow-body"><strong>Submit payment:</strong> POST <code>/login/CheckOut</code> with URL-encoded body:
+<pre style="margin-top:8px"><code>payment_method_nonce={nonce}&amp;seatsToBeReserved={json_array}&amp;orderId={timestamp}</code></pre></div></div>
+<div class="flow-step"><div class="flow-num">5</div><div class="flow-body"><strong>Server processes:</strong> dalogin forwards to mbooks → Braintree server-side transaction → pessimistic seat locking → ticket creation.</div></div>
+<div class="flow-step"><div class="flow-num">6</div><div class="flow-body"><strong>Response contains:</strong>
+  <ul style="margin-top:6px">
+    <li><code>seatsforscreen</code> — updated seat map</li>
+    <li><code>tickets</code> — booked ticket details</li>
+    <li><code>ResponseText</code>, <code>Status</code>, <code>Amount</code>, <code>TaxAmount</code> — payment result</li>
+  </ul>
+</div></div>
+
+<p>Seat reservation data is a dictionary of <code>NSDictionary</code> values (<code>Seats</code> global), serialised to JSON for the POST body.</p>
+
+<div class="diagram-container svg-diagram">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 360" font-family="Arial,sans-serif" font-size="12">
+  <rect width="880" height="360" fill="#f8f9fa" rx="8"/>
+  <defs><marker id="af3" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#666"/></marker></defs>
+
+  <!-- Step boxes row 1 -->
+  <rect x="20" y="20" width="155" height="55" rx="8" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="98" y="42" text-anchor="middle" fill="#1976d2" font-weight="bold">1. Browse Movies</text>
+  <text x="98" y="58" text-anchor="middle" fill="#555" font-size="10">MoviesVC → /movies/paging</text>
+
+  <rect x="195" y="20" width="155" height="55" rx="8" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="273" y="42" text-anchor="middle" fill="#1976d2" font-weight="bold">2. Select Venue</text>
+  <text x="273" y="58" text-anchor="middle" fill="#555" font-size="10">VenuesVC → /venue/{id}</text>
+
+  <rect x="370" y="20" width="155" height="55" rx="8" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="448" y="42" text-anchor="middle" fill="#1976d2" font-weight="bold">3. Pick Seats</text>
+  <text x="448" y="58" text-anchor="middle" fill="#555" font-size="10">VenuesDetailsVC → /seats/{id}</text>
+
+  <rect x="545" y="20" width="155" height="55" rx="8" fill="#fff3e0" stroke="#e65100" stroke-width="2"/>
+  <text x="623" y="42" text-anchor="middle" fill="#e65100" font-weight="bold">4. Add to Basket</text>
+  <text x="623" y="58" text-anchor="middle" fill="#555" font-size="10">BasketData_ + Seats dict</text>
+
+  <rect x="720" y="20" width="140" height="55" rx="8" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2"/>
+  <text x="790" y="42" text-anchor="middle" fill="#7b1fa2" font-weight="bold">5. Checkout</text>
+  <text x="790" y="58" text-anchor="middle" fill="#555" font-size="10">BasketVC.book()</text>
+
+  <line x1="175" y1="48" x2="193" y2="48" stroke="#666" marker-end="url(#af3)"/>
+  <line x1="350" y1="48" x2="368" y2="48" stroke="#666" marker-end="url(#af3)"/>
+  <line x1="525" y1="48" x2="543" y2="48" stroke="#666" marker-end="url(#af3)"/>
+  <line x1="700" y1="48" x2="718" y2="48" stroke="#666" marker-end="url(#af3)"/>
+
+  <!-- Checkout detail row -->
+  <rect x="60" y="110" width="170" height="50" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="145" y="130" text-anchor="middle" fill="#2e7d32" font-weight="bold">5a. Client Token</text>
+  <text x="145" y="148" text-anchor="middle" fill="#555" font-size="10">GET /login/CheckOut</text>
+
+  <rect x="260" y="110" width="170" height="50" rx="8" fill="#ede7f6" stroke="#4a148c" stroke-width="2"/>
+  <text x="345" y="130" text-anchor="middle" fill="#4a148c" font-weight="bold">5b. Braintree UI</text>
+  <text x="345" y="148" text-anchor="middle" fill="#555" font-size="10">BTDropInController</text>
+
+  <rect x="460" y="110" width="170" height="50" rx="8" fill="#fff8e1" stroke="#f57f17" stroke-width="2"/>
+  <text x="545" y="130" text-anchor="middle" fill="#f57f17" font-weight="bold">5c. Submit Nonce</text>
+  <text x="545" y="148" text-anchor="middle" fill="#555" font-size="10">POST /login/CheckOut</text>
+
+  <line x1="230" y1="135" x2="258" y2="135" stroke="#666" marker-end="url(#af3)"/>
+  <line x1="430" y1="135" x2="458" y2="135" stroke="#666" marker-end="url(#af3)"/>
+  <line x1="790" y1="75" x2="145" y2="108" stroke="#666" stroke-width="1" stroke-dasharray="4 2" marker-end="url(#af3)"/>
+
+  <!-- Server processing -->
+  <rect x="60" y="195" width="570" height="60" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="345" y="218" text-anchor="middle" fill="#2e7d32" font-weight="bold" font-size="13">Server: dalogin → mbooks (BookController.fullCheckOut2)</text>
+  <text x="345" y="240" text-anchor="middle" fill="#555" font-size="10">PESSIMISTIC_WRITE seat lock → Braintree sale() → Ticket + Purchase creation → Kafka notify</text>
+  <line x1="545" y1="160" x2="345" y2="193" stroke="#666" marker-end="url(#af3)"/>
+
+  <!-- Response -->
+  <rect x="60" y="290" width="250" height="50" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="185" y="310" text-anchor="middle" fill="#2e7d32" font-weight="bold">✅ Success Response</text>
+  <text x="185" y="328" text-anchor="middle" fill="#555" font-size="10">{seatsforscreen, tickets, Amount, Status}</text>
+
+  <rect x="340" y="290" width="250" height="50" rx="8" fill="#fce4ec" stroke="#c62828" stroke-width="2"/>
+  <text x="465" y="310" text-anchor="middle" fill="#c62828" font-weight="bold">❌ Failure Response</text>
+  <text x="465" y="328" text-anchor="middle" fill="#555" font-size="10">{Error, failedTickets} → rollback</text>
+
+  <line x1="250" y1="255" x2="185" y2="288" stroke="#2e7d32" marker-end="url(#af3)"/>
+  <line x1="440" y1="255" x2="465" y2="288" stroke="#c62828" marker-end="url(#af3)"/>
+
+  <!-- Kafka → WebSocket note -->
+  <rect x="640" y="195" width="220" height="60" rx="8" fill="#ede7f6" stroke="#4a148c" stroke-width="2"/>
+  <text x="750" y="218" text-anchor="middle" fill="#4a148c" font-weight="bold">Kafka → WebSocket</text>
+  <text x="750" y="240" text-anchor="middle" fill="#555" font-size="10">Broadcast to all iOS clients</text>
+  <line x1="630" y1="225" x2="638" y2="225" stroke="#4a148c" stroke-width="1.5" marker-end="url(#af3)"/>
+</svg>
+</div>
+</section>
+
+<!-- ──────── API ENDPOINTS ──────── -->
+<section id="api-endpoints">
+<h2>API Endpoints Reference</h2>
+
+<h4>Authentication — <code>/login</code> <span class="badge badge-blue">dalogin-quarkus</span></h4>
+<table>
+  <tr><th>Method</th><th>Path</th><th>Description</th><th>Headers</th></tr>
+  <tr><td><span class="badge badge-green">POST</span></td><td><code>/login/HelloWorld</code></td><td>Login</td><td><code>X-HMAC-HASH</code>, <code>X-MICRO-TIME</code></td></tr>
+  <tr><td><span class="badge badge-green">POST</span></td><td><code>/login/register</code></td><td>User registration</td><td>—</td></tr>
+  <tr><td><span class="badge badge-green">POST</span></td><td><code>/login/voucher</code></td><td>Voucher validation</td><td>—</td></tr>
+  <tr><td><span class="badge badge-green">POST</span></td><td><code>/login/activation</code></td><td>Send activation email</td><td>—</td></tr>
+  <tr><td><span class="badge badge-blue">GET</span></td><td><code>/login/logout</code></td><td>Logout</td><td>—</td></tr>
+  <tr><td><span class="badge badge-blue">GET</span></td><td><code>/login/admin</code></td><td>Admin session check</td><td><code>Ciphertext</code></td></tr>
+  <tr><td><span class="badge badge-blue">GET</span></td><td><code>/login/index.html</code></td><td>Web UI (WebView)</td><td>—</td></tr>
+</table>
+
+<h4>Movies &amp; Booking — <code>/mbooks-1/rest/book</code> <span class="badge badge-purple">mbooks-quarkus</span></h4>
+<table>
+  <tr><th>Method</th><th>Path</th><th>Description</th><th>Headers</th></tr>
+  <tr><td><span class="badge badge-blue">GET</span></td><td><code>/movies/paging?setFirstResult=N</code></td><td>Paginated movie list</td><td><code>Ciphertext</code>, <code>X-Token</code>, <code>X-Device</code></td></tr>
+  <tr><td><span class="badge badge-blue">GET</span></td><td><code>/movies/paging?category=X</code></td><td>Movies by category</td><td>same</td></tr>
+  <tr><td><span class="badge badge-blue">GET</span></td><td><code>/venue/{movieId}</code></td><td>Venues showing a movie</td><td>same</td></tr>
+  <tr><td><span class="badge badge-blue">GET</span></td><td><code>/dates/{screenId}</code></td><td>Screening dates</td><td>same</td></tr>
+  <tr><td><span class="badge badge-blue">GET</span></td><td><code>/seats/{screeningDateId}</code></td><td>Seat map</td><td>same</td></tr>
+  <tr><td><span class="badge badge-blue">GET</span></td><td><code>/locations</code></td><td>All venue locations</td><td>same</td></tr>
+  <tr><td><span class="badge badge-green">POST</span></td><td><code>/admin/addscreen</code></td><td>Add new screening (admin)</td><td>same</td></tr>
+</table>
+
+<h4>Purchases — proxied through <code>/login</code> <span class="badge badge-orange">dalogin → mbooks</span></h4>
+<table>
+  <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+  <tr><td><span class="badge badge-blue">GET</span></td><td><code>/login/CheckOut</code></td><td>Get Braintree client token</td></tr>
+  <tr><td><span class="badge badge-green">POST</span></td><td><code>/login/CheckOut</code></td><td>Submit payment + book tickets</td></tr>
+  <tr><td><span class="badge badge-blue">GET</span></td><td><code>/login/GetAllPurchases</code></td><td>Purchase history</td></tr>
+  <tr><td><span class="badge badge-blue">GET</span></td><td><code>/login/ManagePurchases?purchaseId=X</code></td><td>Tickets for a purchase</td></tr>
+</table>
+
+<h4>Images — <code>/simple-service-webapp/webapi</code> <span class="badge badge-pink">simple-service-webapp</span></h4>
+<table>
+  <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+  <tr><td><span class="badge badge-blue">GET</span></td><td><code>/{movies|venues|profiles|images}/{filename}</code></td><td>Movie posters, venue photos, profile pictures, general images</td></tr>
+</table>
+
+<h4>WebSocket</h4>
+<table>
+  <tr><th>Protocol</th><th>URL</th><th>Description</th></tr>
+  <tr><td><span class="badge badge-green">WSS</span></td><td><code>wss://milo.crabdance.com/mbook-1/ws</code></td><td>Movie notification broadcast from Kafka consumers</td></tr>
+</table>
+</section>
+
+<!-- ──────── DEPENDENCIES ──────── -->
+<section id="dependencies">
+<h2>Dependencies (CocoaPods)</h2>
+<table>
+  <tr><th>Pod</th><th>Purpose</th><th>Status</th></tr>
+  <tr><td><code>SwiftyJSON</code></td><td>JSON parsing</td><td><span class="badge badge-green">Active</span></td></tr>
+  <tr><td><code>Realm</code></td><td>Local object caching (1-hour TTL)</td><td><span class="badge badge-green">Active</span></td></tr>
+  <tr><td><code>Braintree</code></td><td>Payment processing (Cards)</td><td><span class="badge badge-green">Active</span></td></tr>
+  <tr><td><code>BraintreeDropIn</code></td><td>Payment UI (Drop-In controller)</td><td><span class="badge badge-green">Active</span></td></tr>
+  <tr><td><code>FirebaseAuth</code></td><td>Firebase Authentication</td><td><span class="badge badge-orange">Minimal</span></td></tr>
+  <tr><td><code>FirebaseFirestore</code></td><td>Firebase Firestore</td><td><span class="badge badge-orange">Minimal</span></td></tr>
+  <tr><td><code>FirebaseMessaging</code></td><td>Push notifications (FCM)</td><td><span class="badge badge-green">Active</span></td></tr>
+  <tr><td><code>Starscream</code></td><td>WebSocket client</td><td><span class="badge badge-red">Legacy</span> replaced by native <code>URLSessionWebSocketTask</code></td></tr>
+</table>
+<p><strong>Bridging:</strong> Objective-C bridging header (<code>SwiftLoginScreen-Bridging-Header.h</code>) imports AFNetworking headers (<code>AFNetworkReachabilityManager.h</code>, <code>AFSecurityPolicy.h</code>) — <span class="badge badge-red">Legacy</span> appears unused.</p>
+</section>
+
+<!-- ──────── FILE INVENTORY ──────── -->
+<section id="file-inventory">
+<h2>Source File Inventory</h2>
+
+<h4>View Controllers</h4>
+<table>
+  <tr><th>File</th><th>Lines</th><th>Description</th></tr>
+  <tr><td><code>LoginVC.swift</code></td><td>253</td><td>Login screen with HMAC authentication</td></tr>
+  <tr><td><code>SignupVC.swift</code></td><td>289</td><td>Registration screen</td></tr>
+  <tr><td><code>HomeVC.swift</code></td><td>264</td><td>Home dashboard, logout</td></tr>
+  <tr><td><code>MoviesVC.swift</code></td><td>720</td><td>Movie catalogue (paginated, searchable)</td></tr>
+  <tr><td><code>MovieDetailVC.swift</code></td><td>—</td><td>Movie detail with IMDB link</td></tr>
+  <tr><td><code>VenuesVC.swift</code></td><td>368</td><td>Venue list for a movie</td></tr>
+  <tr><td><code>VenueForMoviesVC.swift</code></td><td>233</td><td>Movies at a venue (from map)</td></tr>
+  <tr><td><code>VenuesDetailsVC.swift</code></td><td>564</td><td>Venue detail, dates, seat map, calendar</td></tr>
+  <tr><td><code>BasketVC.swift</code></td><td>362</td><td>Shopping basket, Braintree checkout</td></tr>
+  <tr><td><code>MapViewController.swift</code></td><td>385</td><td>MapKit venue map</td></tr>
+  <tr><td><code>MenuVC.swift</code></td><td>189</td><td>User menu, profile, cookies</td></tr>
+  <tr><td><code>PurchasesVC.swift</code></td><td>304</td><td>Purchase history list</td></tr>
+  <tr><td><code>TicketsVC.swift</code></td><td>376</td><td>Ticket details, QR, PDF</td></tr>
+  <tr><td><code>AdminVC.swift</code></td><td>283</td><td>Admin: add screening</td></tr>
+  <tr><td><code>AdminUpdateVC.swift</code></td><td>—</td><td>Admin: update screening</td></tr>
+  <tr><td><code>WebViewController.swift</code></td><td>116</td><td>WKWebView for AngularJS web UI</td></tr>
+  <tr><td><code>iOSCalenderVC.swift</code></td><td>167</td><td>iOS calendar integration</td></tr>
+  <tr><td><code>AttendeesVC.swift</code></td><td>—</td><td>Attendee selection from contacts</td></tr>
+  <tr><td><code>PopOver.swift</code></td><td>—</td><td>Generic popover</td></tr>
+  <tr><td><code>PopOverDates.swift</code></td><td>—</td><td>Screening date picker popover</td></tr>
+  <tr><td><code>ViewController.swift</code></td><td>—</td><td>Base/initial view controller</td></tr>
+</table>
+
+<h4>Networking</h4>
+<table>
+  <tr><th>File</th><th>Lines</th><th>Description</th></tr>
+  <tr><td><code>GeneralRequestManager.swift</code></td><td>465</td><td>Primary API client with Realm caching</td></tr>
+  <tr><td><code>RequestManager.swift</code></td><td>166</td><td>Simple request manager for WebView flows</td></tr>
+  <tr><td><code>RestApiManager.swift</code></td><td>147</td><td>Admin/activation singleton</td></tr>
+  <tr><td><code>CustomURLSession.swift</code></td><td>24</td><td>Shared URLSession singleton</td></tr>
+  <tr><td><code>CustomSessionConfiguration.swift</code></td><td>27</td><td>URLSession configuration</td></tr>
+  <tr><td><code>CustomURLSessionDelegate.swift</code></td><td>52</td><td>TLS challenge handler</td></tr>
+  <tr><td><code>CustomURLRequest.swift</code></td><td>63</td><td>URLRequest factory</td></tr>
+  <tr><td><code>Responses.swift</code></td><td>—</td><td>Response handling utilities</td></tr>
+</table>
+
+<h4>Data Models</h4>
+<table>
+  <tr><th>File</th><th>Description</th></tr>
+  <tr><td><code>MoviesData.swift</code></td><td>Movie data model + initial data fetch</td></tr>
+  <tr><td><code>SeatsData.swift</code></td><td>Seat data model + fetch by screening date ID</td></tr>
+  <tr><td><code>DatesData.swift</code></td><td>Screening dates data model</td></tr>
+  <tr><td><code>BasketData.swift</code></td><td>Basket item (client-side selected seat)</td></tr>
+  <tr><td><code>PurchaseData.swift</code></td><td>Purchase record from server</td></tr>
+  <tr><td><code>AllTicketsData.swift</code></td><td>Ticket details per purchase</td></tr>
+  <tr><td><code>TicketsData.swift</code></td><td>Ticket info from booking response</td></tr>
+  <tr><td><code>ScreenData.swift</code></td><td>Screen/screening data for admin</td></tr>
+  <tr><td><code>Admin_ScreenData.swift</code></td><td>Admin update data</td></tr>
+  <tr><td><code>PlacesData.swift</code></td><td>Venue location (MKAnnotation)</td></tr>
+  <tr><td><code>CachedResponse.swift</code></td><td>Realm cache object</td></tr>
+  <tr><td><code>CachedURLResponse.swift</code></td><td>CoreData cache entity</td></tr>
+  <tr><td><code>CachedURLResponse+CoreDataProperties.swift</code></td><td>CoreData generated properties</td></tr>
+  <tr><td><code>People.swift</code></td><td>CoreData People entity</td></tr>
+  <tr><td><code>People+CoreDataProperties.swift</code></td><td>CoreData generated properties</td></tr>
+</table>
+
+<h4>Security &amp; Crypto</h4>
+<table>
+  <tr><th>File</th><th>Description</th></tr>
+  <tr><td><code>CryptoJS.swift</code></td><td>JavaScriptCore bridge: AES, MD5, SHA256, SHA3, HMAC-SHA512</td></tr>
+  <tr><td><code>ciphertext.swift</code></td><td>AES-128 encryption for Ciphertext header</td></tr>
+  <tr><td><code>*.js</code> (20+ files)</td><td>CryptoJS JavaScript libraries (aes, sha512, hmac, pbkdf2, etc.)</td></tr>
+</table>
+
+<h4>UI Components</h4>
+<table>
+  <tr><th>File</th><th>Description</th></tr>
+  <tr><td><code>FeedCells.swift</code></td><td>Collection view cell (image + text + status)</td></tr>
+  <tr><td><code>SeatCells.swift</code></td><td>Seat grid cell (label + price)</td></tr>
+  <tr><td><code>CustomTableViewCell.swift</code></td><td>Custom table cell</td></tr>
+  <tr><td><code>CustomListTableViewCell.swift</code></td><td>Custom list table cell</td></tr>
+  <tr><td><code>TableViewCell.swift</code></td><td>Table cell</td></tr>
+  <tr><td><code>TableViewCellExt.swift</code></td><td>Table cell extension</td></tr>
+  <tr><td><code>ListViewCell.swift</code></td><td>List view cell</td></tr>
+  <tr><td><code>MovieCollectionViewCell.swift</code></td><td>Movie grid cell</td></tr>
+</table>
+
+<h4>Utilities</h4>
+<table>
+  <tr><th>File</th><th>Description</th></tr>
+  <tr><td><code>GeoFence.swift</code></td><td>Geofence manager — CLCircularRegion setup</td></tr>
+  <tr><td><code>MapView.swift</code></td><td>Map helper</td></tr>
+  <tr><td><code>Time.swift</code></td><td>Timestamp utilities (<code>getCurrentMillis()</code>)</td></tr>
+  <tr><td><code>RegEx.swift</code></td><td>Regex utilities</td></tr>
+  <tr><td><code>Helpers.swift</code></td><td>Random colour generation, UIColor extension</td></tr>
+  <tr><td><code>UIViewExt.swift</code></td><td>UIView extensions</td></tr>
+  <tr><td><code>JSON.swift</code></td><td>JSON utilities</td></tr>
+  <tr><td><code>File.swift</code></td><td>File utilities</td></tr>
+</table>
+
+<h4>Broadcasting</h4>
+<table>
+  <tr><th>File</th><th>Description</th></tr>
+  <tr><td><code>BroadCasting/Websocket.swift</code></td><td>WebSocket manager — native URLSessionWebSocketTask</td></tr>
+</table>
+
+<h4>Configuration / Resources</h4>
+<table>
+  <tr><th>File</th><th>Description</th></tr>
+  <tr><td><code>AppDelegate.swift</code></td><td>App lifecycle, Firebase, geofencing, WebSocket, Realm cleanup</td></tr>
+  <tr><td><code>Info.plist</code></td><td>App configuration</td></tr>
+  <tr><td><code>FireBaseGoogleService-Info.plist</code></td><td>Firebase configuration</td></tr>
+  <tr><td><code>GoogleService-Info.plist</code></td><td>Google services config</td></tr>
+  <tr><td><code>Storyboard.storyboard</code></td><td>Main storyboard</td></tr>
+  <tr><td><code>Launch Screen.storyboard</code></td><td>Launch screen</td></tr>
+  <tr><td><code>Images.xcassets</code></td><td>Asset catalogue</td></tr>
+  <tr><td><code>Locations.gpx</code></td><td>Test GPS locations</td></tr>
+  <tr><td><code>SwiftLoginScreen.entitlements</code></td><td>App entitlements</td></tr>
+  <tr><td><code>CoreDataModel.xcdatamodeld</code></td><td>CoreData schema</td></tr>
+</table>
+</section>
+
+<!-- ──────── BUILD & SETUP ──────── -->
+<section id="build-setup">
+<h2>Build &amp; Setup</h2>
+
+<div class="grid-2">
+  <div class="card">
+    <h4>Prerequisites</h4>
+    <ul>
+      <li>Xcode 15+ (Swift 5.x)</li>
+      <li>CocoaPods (<code>gem install cocoapods</code>)</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>Quick Start</h4>
+    <pre><code>cd SwiftCinemas
+pod install
+open SwiftCinemas.xcworkspace</code></pre>
+    <p>⚠️ Always open <code>.xcworkspace</code>, not <code>.xcodeproj</code>.</p>
+  </div>
+</div>
+
+<h4>Configuration</h4>
+<table>
+  <tr><th>Setting</th><th>File</th><th>What to Change</th></tr>
+  <tr><td>Server URL</td><td><code>GeneralRequestManager.swift</code></td><td><code>let serverURL = "https://..."</code></td></tr>
+  <tr><td>Self-signed hosts</td><td><code>CustomURLSessionDelegate.swift</code></td><td><code>Constants.selfSignedHosts</code></td></tr>
+  <tr><td>Firebase</td><td><code>FireBaseGoogleService-Info.plist</code></td><td>Replace with your Firebase project config</td></tr>
+  <tr><td>Braintree sandbox</td><td><code>BasketVC.swift</code></td><td><code>lazy var token = "sandbox_..."</code></td></tr>
+  <tr><td>WebSocket URL</td><td><code>BroadCasting/Websocket.swift</code></td><td><code>let url = URL(string: "wss://...")!</code></td></tr>
+</table>
+
+<h4>xcconfig Files</h4>
+<ul>
+  <li><code>Project-Shared.xcconfig</code> — shared build settings</li>
+  <li><code>Project-Debug.xcconfig</code> — debug build settings</li>
+  <li><code>Project-Release.xcconfig</code> — release build settings</li>
+</ul>
+</section>
+
+<!-- ──────── HISTORY ──────── -->
+<section id="history">
+<h2>Project History</h2>
+<table>
+  <tr><th>Year</th><th>Milestone</th></tr>
+  <tr><td><span class="badge badge-blue">2015</span></td><td>Initial development as <code>SwiftLoginScreen</code> (Swift 1.x). Login, networking, session management.</td></tr>
+  <tr><td><span class="badge badge-green">2016</span></td><td>Movie browsing, venue discovery, seat selection, MapKit, calendar integration.</td></tr>
+  <tr><td><span class="badge badge-purple">2017</span></td><td>Braintree payment integration, purchase history, basket/checkout flow.</td></tr>
+  <tr><td><span class="badge badge-orange">2019</span></td><td>Updated to Swift 4.2, Xcode 11.1.</td></tr>
+  <tr><td><span class="badge badge-pink">2020</span></td><td>Admin panel for screen management.</td></tr>
+  <tr><td><span class="badge badge-green">2025</span></td><td>Renamed to <code>SwiftCinemas</code>. Native WebSocket, Firebase Cloud Messaging, geofencing, WKWebView migration.</td></tr>
+  <tr><td><span class="badge badge-blue">2026</span></td><td>Backend migrated from WildFly to Quarkus microservices on Kubernetes. Documentation.</td></tr>
+</table>
+</section>
+
+<!-- ──────── KNOWN ISSUES ──────── -->
+<section id="known-issues">
+<h2>Known Issues &amp; Technical Debt</h2>
+
+<div class="card priority-high">
+<h4>Architecture</h4>
+<ul>
+  <li><strong>Global mutable state:</strong> Most data model arrays (<code>TableData_</code>, <code>SeatsData_</code>, <code>BasketData_</code>, <code>PlacesData_</code>, etc.) are file-level global variables, creating implicit coupling between view controllers and potential race conditions.</li>
+  <li><strong>Three request managers:</strong> <code>GeneralRequestManager</code>, <code>RequestManager</code>, and <code>RestApiManager</code> overlap in responsibility and should be consolidated.</li>
+  <li><strong>No dependency injection:</strong> View controllers directly instantiate request managers and reference global data. No protocol-based abstractions for testing.</li>
+</ul>
+</div>
+
+<div class="card priority-high">
+<h4>Security</h4>
+<ul>
+  <li><strong>Hardcoded AES credentials:</strong> Salt, IV, and passphrase are embedded in <code>ciphertext.swift</code>. Should be loaded from secure configuration.</li>
+  <li><strong>Braintree sandbox token</strong> hardcoded in <code>BasketVC.swift</code>.</li>
+  <li><strong>CryptoJS via JavaScriptCore:</strong> Running JavaScript crypto in <code>JSContext</code> is functional but fragile and not performant. Native Swift crypto (CryptoKit or CommonCrypto) would be preferable.</li>
+</ul>
+</div>
+
+<div class="card priority-medium">
+<h4>Networking</h4>
+<ul>
+  <li><strong>Force-unwrapping:</strong> Extensive use of <code>!</code> on JSON parsing, data casts, and URL construction. Network failures or malformed responses will crash the app.</li>
+  <li><strong>Deprecated APIs:</strong> <code>UIAlertView</code> is used in several places (deprecated since iOS 9).</li>
+  <li><strong>No structured error handling:</strong> Errors are shown via ad-hoc alerts; no centralised error type or user-facing error messages.</li>
+</ul>
+</div>
+
+<div class="card priority-medium">
+<h4>UI</h4>
+<ul>
+  <li><strong>Programmatic UI:</strong> Most UI is built programmatically with hardcoded frames, not using Auto Layout. May not adapt well to all device sizes.</li>
+  <li><strong>No SwiftUI:</strong> Entire app is UIKit-based. Migration to SwiftUI would modernise the codebase.</li>
+</ul>
+</div>
+
+<div class="card priority-low">
+<h4>Testing</h4>
+<ul>
+  <li><strong>No unit tests:</strong> <code>SwiftLoginScreenTests/</code> exists but contains minimal coverage.</li>
+  <li><strong>No UI tests.</strong></li>
+</ul>
+</div>
+
+<div class="card priority-low">
+<h4>Dependencies</h4>
+<ul>
+  <li><strong>Starscream</strong> pod is still in the Podfile but replaced by native <code>URLSessionWebSocketTask</code>. Can be removed.</li>
+  <li><strong>AFNetworking headers</strong> are included via bridging header but functionality appears unused (replaced by <code>URLSession</code>).</li>
+</ul>
+</div>
+</section>
+
+<!-- ──────── REFACTORING ROADMAP ──────── -->
+<section id="refactoring">
+<h2>Refactoring Roadmap</h2>
+<p>Prioritised improvements specific to the iOS client, ordered by impact and risk.</p>
+
+<h3>Phase 1 — Safety &amp; Correctness</h3>
+
+<div class="card priority-high">
+<h4>🔴 HIGH — Eliminate Force-Unwrapping on Network Data</h4>
+<p><strong>Where:</strong> <code>GeneralRequestManager.swift</code> (<code>dataTask()</code>), <code>LoginVC.swift</code>, <code>MoviesData.swift</code>, <code>SeatsData.swift</code>, all data model <code>init(add:)</code> constructors</p>
+<p><strong>Problem:</strong> Pervasive use of <code>!</code> on <code>data!</code>, <code>json["key"] as! Type</code>, and <code>URL(string:)!</code>. Any malformed server response, network timeout, or missing JSON field causes an instant crash. This is the #1 source of production crashes in the app.</p>
+<p><strong>Fix:</strong> Replace force-unwraps with <code>guard let</code> / <code>if let</code> chains. Use SwiftyJSON's optional accessors (<code>.string</code>, <code>.int</code>) instead of <code>as! Type</code> casts. Return <code>nil</code> or display user-friendly errors instead of crashing.</p>
+<pre><code>// BEFORE (crash-prone)
+let name = (add["name"] as! String)
+let json: JSON = try! JSON(data: data!)
+
+// AFTER (safe)
+guard let data = data else { onCompletion(nil, .noData); return }
+let json = try? JSON(data: data)
+let name = add["name"] as? String ?? "Unknown"</code></pre>
+</div>
+
+<div class="card priority-high">
+<h4>🔴 HIGH — Remove Global Mutable State</h4>
+<p><strong>Where:</strong> <code>MoviesData.swift</code> (<code>TableData_</code>), <code>SeatsData.swift</code> (<code>SeatsData_</code>), <code>BasketData.swift</code> (<code>BasketData_</code>), <code>PlacesData.swift</code> (<code>PlacesData_</code>), <code>PurchasesVC.swift</code> (<code>TableData</code>), and 10+ more file-level <code>var</code> declarations</p>
+<p><strong>Problem:</strong> ~20 global mutable variables are shared across view controllers via file-level <code>var</code>. Multiple VCs can read/write the same array concurrently (e.g., during screen transitions), causing data races and stale UI. Deinit methods manually call <code>.removeAll()</code> which can race with background network callbacks.</p>
+<p><strong>Fix:</strong> Introduce a <code>DataManager</code> (or per-domain managers: <code>MovieStore</code>, <code>BookingStore</code>, <code>PurchaseStore</code>) as <code>@MainActor</code> classes. Pass data through segues/initialisers or use Combine publishers. Remove all file-level <code>var</code> model arrays.</p>
+<pre><code>// BEFORE
+var SeatsData_: [SeatsData] = .init()  // global, any VC can mutate
+
+// AFTER
+@MainActor
+class BookingStore {
+    static let shared = BookingStore()
+    private(set) var seats: [SeatsData] = []
+    func loadSeats(for screeningDateId: Int) async { ... }
+}</code></pre>
+</div>
+
+<div class="card priority-high">
+<h4>🔴 HIGH — Externalise Hardcoded Secrets</h4>
+<p><strong>Where:</strong> <code>ciphertext.swift</code> (AES Salt, IV, Passphrase), <code>BasketVC.swift</code> (Braintree sandbox token), <code>GeneralRequestManager.swift</code> (<code>serverURL</code>), <code>Websocket.swift</code> (WebSocket URL)</p>
+<p><strong>Problem:</strong> AES encryption constants (<code>Salt</code>, <code>IV</code>, <code>Passphrase</code>), Braintree sandbox token, and server URLs are committed in source code. The AES constants must match the server — any drift causes auth failures. Sandbox token should never appear in release builds.</p>
+<p><strong>Fix:</strong> Move secrets to <code>xcconfig</code> files excluded from Git, or use Xcode build configuration + <code>Info.plist</code> variables. Use <code>#if DEBUG</code> for sandbox vs production tokens. Server URL should come from environment-specific config.</p>
+<pre><code>// In Project-Debug.xcconfig (gitignored)
+SERVER_URL = https:$()/$()/localhost
+BRAINTREE_TOKEN = sandbox_dpdzm97y...
+
+// In code
+let serverURL = Bundle.main.infoDictionary?["SERVER_URL"] as? String ?? "https://milo.crabdance.com"</code></pre>
+</div>
+
+<h3>Phase 2 — Architecture Improvements</h3>
+
+<div class="card priority-medium">
+<h4>🟡 MEDIUM — Consolidate Three Request Managers into One</h4>
+<p><strong>Where:</strong> <code>GeneralRequestManager.swift</code> (465 lines), <code>RequestManager.swift</code> (166 lines), <code>RestApiManager.swift</code> (147 lines)</p>
+<p><strong>Problem:</strong> Three overlapping network clients with duplicated URL building, error handling, and header injection logic. <code>GeneralRequestManager</code> does everything but is 465 lines of tangled caching + networking + error UI. <code>RequestManager</code> is a subset. <code>RestApiManager</code> is a singleton variant. Developers don't know which to use.</p>
+<p><strong>Fix:</strong> Create a single <code>APIClient</code> class with a clean protocol-based design. Extract caching into a <code>ResponseCache</code> protocol (Realm implementation). Extract error handling into a central <code>ErrorPresenter</code>. Use async/await for cleaner call sites.</p>
+<pre><code>protocol APIClientProtocol {
+    func request&lt;T: Decodable&gt;(_ endpoint: Endpoint) async throws -> T
+    func requestData(_ endpoint: Endpoint) async throws -> Data
+}
+
+class APIClient: APIClientProtocol {
+    private let session: URLSession
+    private let cache: ResponseCache
+    private let headerProvider: HeaderProvider  // Ciphertext + X-Token + X-Device
+    ...
+}</code></pre>
+</div>
+
+<div class="card priority-medium">
+<h4>🟡 MEDIUM — Replace CryptoJS/JavaScriptCore with Native Swift Crypto</h4>
+<p><strong>Where:</strong> <code>CryptoJS.swift</code> (664 lines), 20+ bundled <code>.js</code> files, <code>ciphertext.swift</code></p>
+<p><strong>Problem:</strong> All cryptographic operations (SHA3, HMAC-SHA512, AES-128, MD5) run JavaScript code in a <code>JSContext</code>. This is slow (~5× vs native), fragile (silent <code>JSContext</code> errors), and inflates the app bundle by ~200KB of JS files. The shared <code>cryptoJScontext</code> is a global mutable <code>JSContext</code>.</p>
+<p><strong>Fix:</strong> Use <code>CryptoKit</code> (iOS 13+) for HMAC-SHA512 and SHA256. Use <code>CommonCrypto</code> for AES-128 with PBKDF2. Use a Swift SHA3 library (e.g., <code>CryptoSwift</code>) for SHA3-512. Remove all <code>.js</code> files and <code>CryptoJS.swift</code>.</p>
+<pre><code>import CryptoKit
+import CommonCrypto
+
+func hmacSHA512(data: String, key: String) -> String {
+    let key = SymmetricKey(data: Data(key.utf8))
+    let mac = HMAC&lt;SHA512&gt;.authenticationCode(for: Data(data.utf8), using: key)
+    return Data(mac).base64EncodedString()
+}</code></pre>
+</div>
+
+<div class="card priority-medium">
+<h4>🟡 MEDIUM — Replace Deprecated UIAlertView with UIAlertController</h4>
+<p><strong>Where:</strong> <code>GeneralRequestManager.swift</code>, <code>LoginVC.swift</code>, <code>HomeVC.swift</code>, <code>RestApiManager.swift</code></p>
+<p><strong>Problem:</strong> <code>UIAlertView</code> has been deprecated since iOS 9 (2015). Multiple instances create alert views from background threads with <code>alertView.show()</code>, which is undefined behaviour on modern iOS.</p>
+<p><strong>Fix:</strong> Replace all <code>UIAlertView</code> with <code>UIAlertController</code>. Ensure alerts are presented on the main thread via the topmost view controller. The existing <code>UIAlertController.popUp()</code> extension in <code>MoviesData.swift</code> is a good pattern — extend it app-wide.</p>
+</div>
+
+<div class="card priority-medium">
+<h4>🟡 MEDIUM — Introduce Structured Error Handling</h4>
+<p><strong>Where:</strong> All networking code, all view controllers</p>
+<p><strong>Problem:</strong> Errors are handled ad-hoc: some show alerts, some print to console, some are silently ignored. HTTP status codes 300, 404, 503 have special-case handling in <code>GeneralRequestManager.dataTask()</code>. There's no centralised error type.</p>
+<p><strong>Fix:</strong> Define an <code>AppError</code> enum (network, auth, server, parsing). Create an <code>ErrorHandler</code> service that maps errors to user-facing messages. Use <code>Result&lt;T, AppError&gt;</code> or async/await with typed throws.</p>
+<pre><code>enum AppError: Error {
+    case networkFailure(underlying: Error)
+    case httpError(statusCode: Int, message: String)
+    case authRequired
+    case activationRequired(voucherActive: Bool)
+    case decodingFailed
+}</code></pre>
+</div>
+
+<h3>Phase 3 — Modernisation</h3>
+
+<div class="card priority-low">
+<h4>🟢 LOW — Adopt async/await + Combine</h4>
+<p><strong>Where:</strong> All networking calls, all data loading</p>
+<p><strong>Problem:</strong> All network calls use nested closure callbacks with <code>DispatchQueue.main.async</code> dispatches. This creates callback pyramids, makes error propagation difficult, and makes it hard to reason about execution order.</p>
+<p><strong>Fix:</strong> Wrap <code>URLSession</code> data tasks in async/await (available since iOS 15). Use Combine publishers for reactive data updates. This aligns with Apple's modern concurrency model and eliminates manual dispatch.</p>
+</div>
+
+<div class="card priority-low">
+<h4>🟢 LOW — Migrate to SwiftUI (Incremental)</h4>
+<p><strong>Where:</strong> All view controllers</p>
+<p><strong>Problem:</strong> The entire UI is UIKit with programmatic frame-based layout. No Auto Layout, no size classes — screens may not render correctly on all device sizes (especially iPad, Dynamic Type).</p>
+<p><strong>Fix:</strong> Start with leaf screens (MovieDetailVC, TicketsVC) and wrap them in <code>UIHostingController</code>. Gradually migrate from the outside in. Keep <code>Storyboard.storyboard</code> as the navigation spine until all screens are migrated.</p>
+</div>
+
+<div class="card priority-low">
+<h4>🟢 LOW — Add Test Coverage</h4>
+<p><strong>Where:</strong> <code>SwiftLoginScreenTests/</code></p>
+<p><strong>Problem:</strong> Zero meaningful test coverage. No unit tests for crypto (HMAC, AES), data model parsing, or networking. No UI tests for the booking flow.</p>
+<p><strong>Fix:</strong> Add unit tests for: (1) HMAC-SHA512 computation with known vectors, (2) AES encryption/decryption round-trip, (3) data model <code>init(add:)</code> with valid and malformed dictionaries, (4) Realm caching TTL logic. Add UI tests for the login → browse → select → checkout happy path.</p>
+</div>
+
+<div class="card priority-low">
+<h4>🟢 LOW — Clean Up Legacy Dependencies</h4>
+<p><strong>Where:</strong> <code>Podfile</code>, <code>SwiftLoginScreen-Bridging-Header.h</code></p>
+<p><strong>Problem:</strong> <code>Starscream</code> pod is in the Podfile but replaced by native <code>URLSessionWebSocketTask</code>. <code>AFNetworkReachabilityManager.h</code> and <code>AFSecurityPolicy.h</code> are imported in the bridging header but the functionality is handled by <code>CustomURLSessionDelegate</code>. Dead code increases build time and binary size.</p>
+<p><strong>Fix:</strong> Remove <code>Starscream</code> from Podfile. Remove AFNetworking headers and <code>.m</code> files from the project. Run <code>pod install</code> to clean up.</p>
+</div>
+</section>
+
+<!-- ──────── RELATED REPOS ──────── -->
+<section id="repos">
+<h2>Related Repositories</h2>
+<table>
+  <tr><th>Repository</th><th>Description</th></tr>
+  <tr><td><a href="https://github.com/igeorge0902/SwiftCinemas">SwiftCinemas</a></td><td>This iOS client</td></tr>
+  <tr><td><a href="https://github.com/igeorge0902/dalogin-quarkus">dalogin-quarkus</a></td><td>Auth gateway (Quarkus)</td></tr>
+  <tr><td><a href="https://github.com/igeorge0902/mbook-quarkus">mbook-quarkus</a></td><td>User/device API (Quarkus)</td></tr>
+  <tr><td><a href="https://github.com/igeorge0902/mbooks-quarkus">mbooks-quarkus</a></td><td>Movie/booking API (Quarkus)</td></tr>
+  <tr><td><a href="https://github.com/igeorge0902/simple-service-webapp-quarkus">simple-service-webapp-quarkus</a></td><td>Image service (Quarkus)</td></tr>
+  <tr><td><a href="https://github.com/igeorge0902/k8infra">k8infra</a></td><td>Kubernetes manifests &amp; DB schemas</td></tr>
+</table>
+</section>
+
+<p style="text-align:center; color:var(--text-muted); margin-top:48px; padding-bottom:40px; font-size:13px;">
+  Copyright © 2015–2026 George Gaspar. All rights reserved.<br>
+  SwiftCinemas iOS Client — System Documentation — March 2026
+</p>
+
+</main>
+</div>
+</body>
+</html>
+
