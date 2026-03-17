@@ -108,6 +108,7 @@
     <li><a href="#tls">TLS &amp; Self-Signed Certs</a></li>
     <li class="section-title">Screens</li>
     <li><a href="#screen-flow">Screen Flow</a></li>
+    <li><a href="#booking-navigation">Booking Navigation Deep-Dive</a></li>
     <li><a href="#view-controllers">View Controllers</a></li>
     <li class="section-title">Data &amp; Networking</li>
     <li><a href="#data-models">Data Models</a></li>
@@ -487,6 +488,555 @@ Passphrase:      SecretPassphrase</code></pre>
   <code>HomeVC.viewDidAppear()</code> — if <code>ISLOGGEDIN != 1</code>, the user is redirected
   to <code>LoginVC</code>.
 </p>
+</section>
+
+<!-- ──────── BOOKING NAVIGATION DEEP-DIVE ──────── -->
+<section id="booking-navigation">
+<h2>Booking Navigation Deep-Dive</h2>
+<p>This section traces the complete data flow through the iOS booking journey — from browsing movies to selecting a venue, picking a screening date, viewing the seat map, and checking out. Each step documents which API is called, what parameters are passed via segue properties, and how the backend entity graph satisfies the request.</p>
+
+<!-- ── Step-by-step sequence diagram ── -->
+<h3>End-to-End Sequence</h3>
+<div class="diagram-container svg-diagram">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 620" font-family="Arial,sans-serif" font-size="11">
+  <rect width="920" height="620" fill="#f8f9fa" rx="8"/>
+  <defs>
+    <marker id="bk1" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#1976d2"/></marker>
+    <marker id="bk2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#2e7d32"/></marker>
+    <marker id="bk3" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#e65100"/></marker>
+  </defs>
+
+  <text x="460" y="22" text-anchor="middle" fill="#333" font-weight="bold" font-size="14">Booking Flow: iOS View → API → Entity Graph → Next View</text>
+
+  <!-- Column headers (lifelines) -->
+  <rect x="30"  y="40" width="120" height="30" rx="6" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="90"  y="60" text-anchor="middle" fill="#1976d2" font-weight="bold">iOS View</text>
+  <rect x="220" y="40" width="140" height="30" rx="6" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="290" y="60" text-anchor="middle" fill="#2e7d32" font-weight="bold">REST API</text>
+  <rect x="440" y="40" width="140" height="30" rx="6" fill="#fff8e1" stroke="#f57f17" stroke-width="2"/>
+  <text x="510" y="60" text-anchor="middle" fill="#f57f17" font-weight="bold">DAO / HQL</text>
+  <rect x="660" y="40" width="220" height="30" rx="6" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2"/>
+  <text x="770" y="60" text-anchor="middle" fill="#7b1fa2" font-weight="bold">Entity Graph Loaded</text>
+
+  <!-- Lifelines -->
+  <line x1="90"  y1="70" x2="90"  y2="600" stroke="#1976d2" stroke-width="1" stroke-dasharray="4 3"/>
+  <line x1="290" y1="70" x2="290" y2="600" stroke="#2e7d32" stroke-width="1" stroke-dasharray="4 3"/>
+  <line x1="510" y1="70" x2="510" y2="600" stroke="#f57f17" stroke-width="1" stroke-dasharray="4 3"/>
+  <line x1="770" y1="70" x2="770" y2="600" stroke="#7b1fa2" stroke-width="1" stroke-dasharray="4 3"/>
+
+  <!-- Step 1: Browse Movies -->
+  <rect x="10" y="90" width="160" height="22" rx="4" fill="#e3f2fd" stroke="#1976d2"/>
+  <text x="90" y="105" text-anchor="middle" fill="#1976d2" font-weight="bold" font-size="10">1. MoviesVC</text>
+  <line x1="150" y1="101" x2="218" y2="101" stroke="#1976d2" stroke-width="1.5" marker-end="url(#bk1)"/>
+  <text x="184" y="96" text-anchor="middle" fill="#555" font-size="9">GET</text>
+  <rect x="200" y="90" width="180" height="22" rx="4" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="290" y="105" text-anchor="middle" fill="#2e7d32" font-size="10">/book/movies/paging</text>
+  <line x1="380" y1="101" x2="438" y2="101" stroke="#2e7d32" stroke-width="1.5" marker-end="url(#bk2)"/>
+  <rect x="420" y="90" width="180" height="22" rx="4" fill="#fff8e1" stroke="#f57f17"/>
+  <text x="510" y="105" text-anchor="middle" fill="#f57f17" font-size="10">getAllMovies(offset,cat)</text>
+  <line x1="600" y1="101" x2="658" y2="101" stroke="#f57f17" stroke-width="1.5" marker-end="url(#bk3)"/>
+  <rect x="640" y="86" width="260" height="30" rx="4" fill="#f3e5f5" stroke="#7b1fa2"/>
+  <text x="770" y="100" text-anchor="middle" fill="#7b1fa2" font-size="10">Movie (LAZY screens)</text>
+  <text x="770" y="112" text-anchor="middle" fill="#888" font-size="9">→ no joins, L2 cached "movies"</text>
+
+  <!-- Step 2: Select Movie → Venues -->
+  <rect x="10" y="140" width="160" height="22" rx="4" fill="#e3f2fd" stroke="#1976d2"/>
+  <text x="90" y="155" text-anchor="middle" fill="#1976d2" font-weight="bold" font-size="10">2. VenuesVC</text>
+  <line x1="150" y1="151" x2="218" y2="151" stroke="#1976d2" stroke-width="1.5" marker-end="url(#bk1)"/>
+  <text x="184" y="146" text-anchor="middle" fill="#555" font-size="9">GET</text>
+  <rect x="200" y="140" width="180" height="22" rx="4" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="290" y="155" text-anchor="middle" fill="#2e7d32" font-size="10">/book/venue/{movieId}</text>
+  <line x1="380" y1="151" x2="438" y2="151" stroke="#2e7d32" stroke-width="1.5" marker-end="url(#bk2)"/>
+  <rect x="420" y="140" width="180" height="22" rx="4" fill="#fff8e1" stroke="#f57f17"/>
+  <text x="510" y="155" text-anchor="middle" fill="#f57f17" font-size="10">getVenuesForMovie(movieId)</text>
+  <line x1="600" y1="151" x2="658" y2="151" stroke="#f57f17" stroke-width="1.5" marker-end="url(#bk3)"/>
+  <rect x="640" y="130" width="260" height="42" rx="4" fill="#f3e5f5" stroke="#7b1fa2"/>
+  <text x="770" y="146" text-anchor="middle" fill="#7b1fa2" font-size="10">Venues → Screen → Movie (EAGER)</text>
+  <text x="770" y="158" text-anchor="middle" fill="#888" font-size="9">→ Venues.location (EAGER)</text>
+  <text x="770" y="168" text-anchor="middle" fill="#888" font-size="9">→ L2 cached "venues"</text>
+
+  <!-- Step 3: Select Venue → VenuesDetailsVC -->
+  <rect x="10" y="200" width="160" height="22" rx="4" fill="#e3f2fd" stroke="#1976d2"/>
+  <text x="90" y="215" text-anchor="middle" fill="#1976d2" font-weight="bold" font-size="10">3. VenuesDetailsVC</text>
+  <rect x="200" y="195" width="340" height="35" rx="4" fill="#fff3e0" stroke="#e65100"/>
+  <text x="370" y="210" text-anchor="middle" fill="#e65100" font-size="10">No API call — data passed via segue properties</text>
+  <text x="370" y="224" text-anchor="middle" fill="#888" font-size="9">movieId, movieName, venuesId, locationId, venues_picture, screen_screenId</text>
+
+  <!-- Step 4: Tap Dates → ScreeningDates -->
+  <rect x="10" y="255" width="160" height="22" rx="4" fill="#e3f2fd" stroke="#1976d2"/>
+  <text x="90" y="270" text-anchor="middle" fill="#1976d2" font-weight="bold" font-size="10">4. addDatesData()</text>
+  <line x1="150" y1="266" x2="218" y2="266" stroke="#1976d2" stroke-width="1.5" marker-end="url(#bk1)"/>
+  <text x="184" y="261" text-anchor="middle" fill="#555" font-size="9">GET</text>
+  <rect x="200" y="255" width="180" height="22" rx="4" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="290" y="270" text-anchor="middle" fill="#2e7d32" font-size="10">/book/dates/{locId}/{movId}</text>
+  <line x1="380" y1="266" x2="438" y2="266" stroke="#2e7d32" stroke-width="1.5" marker-end="url(#bk2)"/>
+  <rect x="420" y="255" width="180" height="22" rx="4" fill="#fff8e1" stroke="#f57f17"/>
+  <text x="510" y="270" text-anchor="middle" fill="#f57f17" font-size="10">getScreeningDates...(loc,mov)</text>
+  <line x1="600" y1="266" x2="658" y2="266" stroke="#f57f17" stroke-width="1.5" marker-end="url(#bk3)"/>
+  <rect x="640" y="250" width="260" height="35" rx="4" fill="#f3e5f5" stroke="#7b1fa2"/>
+  <text x="770" y="265" text-anchor="middle" fill="#7b1fa2" font-size="10">ScreeningDates → Venues (EAGER)</text>
+  <text x="770" y="278" text-anchor="middle" fill="#888" font-size="9">→ NOT cached (freshness)</text>
+
+  <!-- Step 5: Pick Date → PopOverDates -->
+  <rect x="10" y="310" width="160" height="22" rx="4" fill="#e3f2fd" stroke="#1976d2"/>
+  <text x="90" y="325" text-anchor="middle" fill="#1976d2" font-weight="bold" font-size="10">5. PopOverDates</text>
+  <rect x="200" y="310" width="340" height="22" rx="4" fill="#fff3e0" stroke="#e65100"/>
+  <text x="370" y="325" text-anchor="middle" fill="#e65100" font-size="10">User picks date → sets global screeningDateId</text>
+
+  <!-- Step 6: Tap Book → Seats -->
+  <rect x="10" y="355" width="160" height="22" rx="4" fill="#e3f2fd" stroke="#1976d2"/>
+  <text x="90" y="370" text-anchor="middle" fill="#1976d2" font-weight="bold" font-size="10">6. SeatsData.addData()</text>
+  <line x1="150" y1="366" x2="218" y2="366" stroke="#1976d2" stroke-width="1.5" marker-end="url(#bk1)"/>
+  <text x="184" y="361" text-anchor="middle" fill="#555" font-size="9">GET</text>
+  <rect x="200" y="355" width="180" height="22" rx="4" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="290" y="370" text-anchor="middle" fill="#2e7d32" font-size="10">/book/seats/{screeningDateId}</text>
+  <line x1="380" y1="366" x2="438" y2="366" stroke="#2e7d32" stroke-width="1.5" marker-end="url(#bk2)"/>
+  <rect x="420" y="355" width="180" height="22" rx="4" fill="#fff8e1" stroke="#f57f17"/>
+  <text x="510" y="370" text-anchor="middle" fill="#f57f17" font-size="10">getSeatsForScreening(dateId)</text>
+  <line x1="600" y1="366" x2="658" y2="366" stroke="#f57f17" stroke-width="1.5" marker-end="url(#bk3)"/>
+  <rect x="640" y="350" width="260" height="35" rx="4" fill="#f3e5f5" stroke="#7b1fa2"/>
+  <text x="770" y="365" text-anchor="middle" fill="#7b1fa2" font-size="10">Seats (via ScreeningDates→Venues→Screen)</text>
+  <text x="770" y="378" text-anchor="middle" fill="#888" font-size="9">→ NOT cached, PESSIMISTIC_WRITE lock</text>
+
+  <!-- Step 7: Select Seats → PopOver grid -->
+  <rect x="10" y="405" width="160" height="22" rx="4" fill="#e3f2fd" stroke="#1976d2"/>
+  <text x="90" y="420" text-anchor="middle" fill="#1976d2" font-weight="bold" font-size="10">7. PopOver (seat grid)</text>
+  <rect x="200" y="405" width="340" height="30" rx="4" fill="#fff3e0" stroke="#e65100"/>
+  <text x="370" y="418" text-anchor="middle" fill="#e65100" font-size="10">Tap seats → populate seatsToBeReserved + BasketData_</text>
+  <text x="370" y="430" text-anchor="middle" fill="#888" font-size="9">Client-side only — seatId, price, screeningDateId, movie/venue names</text>
+
+  <!-- Step 8: BasketVC → Checkout -->
+  <rect x="10" y="460" width="160" height="22" rx="4" fill="#e3f2fd" stroke="#1976d2"/>
+  <text x="90" y="475" text-anchor="middle" fill="#1976d2" font-weight="bold" font-size="10">8. BasketVC → Checkout</text>
+  <line x1="150" y1="471" x2="218" y2="471" stroke="#1976d2" stroke-width="1.5" marker-end="url(#bk1)"/>
+  <text x="184" y="466" text-anchor="middle" fill="#555" font-size="9">POST</text>
+  <rect x="200" y="460" width="180" height="22" rx="4" fill="#e8f5e9" stroke="#2e7d32"/>
+  <text x="290" y="475" text-anchor="middle" fill="#2e7d32" font-size="10">/book/payment/fullcheckout2</text>
+  <line x1="380" y1="471" x2="438" y2="471" stroke="#2e7d32" stroke-width="1.5" marker-end="url(#bk2)"/>
+  <rect x="420" y="460" width="180" height="22" rx="4" fill="#fff8e1" stroke="#f57f17"/>
+  <text x="510" y="475" text-anchor="middle" fill="#f57f17" font-size="10">bookTickets() + Braintree</text>
+  <line x1="600" y1="471" x2="658" y2="471" stroke="#f57f17" stroke-width="1.5" marker-end="url(#bk3)"/>
+  <rect x="640" y="456" width="260" height="35" rx="4" fill="#f3e5f5" stroke="#7b1fa2"/>
+  <text x="770" y="471" text-anchor="middle" fill="#7b1fa2" font-size="10">Ticket + Purchase created</text>
+  <text x="770" y="484" text-anchor="middle" fill="#888" font-size="9">→ Seats.isReserved = "1"</text>
+
+  <!-- Legend -->
+  <rect x="30" y="520" width="860" height="80" rx="6" fill="#fff" stroke="#ccc"/>
+  <text x="50" y="540" fill="#333" font-weight="bold" font-size="11">Legend</text>
+  <rect x="50" y="550" width="12" height="12" fill="#e3f2fd" stroke="#1976d2"/>  <text x="70" y="561" fill="#555" font-size="10">iOS View Controller</text>
+  <rect x="220" y="550" width="12" height="12" fill="#e8f5e9" stroke="#2e7d32"/> <text x="240" y="561" fill="#555" font-size="10">REST Endpoint (mbooks-quarkus)</text>
+  <rect x="440" y="550" width="12" height="12" fill="#fff8e1" stroke="#f57f17"/> <text x="460" y="561" fill="#555" font-size="10">DAO / HQL Query</text>
+  <rect x="640" y="550" width="12" height="12" fill="#f3e5f5" stroke="#7b1fa2"/> <text x="660" y="561" fill="#555" font-size="10">Entity Graph Loaded</text>
+  <rect x="50" y="575" width="12" height="12" fill="#fff3e0" stroke="#e65100"/>  <text x="70" y="586" fill="#555" font-size="10">Client-side data pass (no API call)</text>
+</svg>
+</div>
+
+<!-- ── Step 1: Browse Movies ── -->
+<h3>Step 1 — Browse Movies (<code>MoviesVC</code>)</h3>
+<h4>Trigger</h4>
+<p>User taps "Movies" from <code>HomeVC</code>. <code>MoviesVC.viewWillAppear()</code> calls <code>addData(category: "nil")</code>.</p>
+<h4>API Call</h4>
+<pre><code>GET /mbooks-1/rest/book/movies/paging?setFirstResult=0
+    (optional: &amp;category=drama)</code></pre>
+<h4>Backend Entity Path</h4>
+<pre><code>BookController.getAllMoviesWithPaging()
+  → DAO.getAllMovies(setFirstResult, category)
+    → HQL: "from Movie order by name asc"
+    → .setFirstResult(N).setMaxResults(30)
+    → L2 cached, region "movies"</code></pre>
+<h4>Entity Graph</h4>
+<p><code>Movie.screens</code> is <strong>LAZY</strong> — only the <code>Movie</code> row is loaded. No Screen, Venue, or Seat data is fetched. This keeps the browse list fast and paginated.</p>
+<h4>JSON Response → iOS Model</h4>
+<table>
+  <tr><th>JSON Key</th><th>Source</th><th><code>MoviesData</code> Field</th></tr>
+  <tr><td><code>movieId</code></td><td><code>Movie.movieId</code> (String)</td><td><code>movieId: Int</code> (parsed)</td></tr>
+  <tr><td><code>name</code></td><td><code>Movie.name</code></td><td><code>name: String</code></td></tr>
+  <tr><td><code>detail</code></td><td><code>Movie.detail</code></td><td><code>detail: String</code></td></tr>
+  <tr><td><code>large_picture</code></td><td><code>Movie.large_picture</code></td><td><code>large_picture: String</code></td></tr>
+  <tr><td><code>iMDB_url</code></td><td><code>Movie.iMDB_url</code></td><td><code>imdb: String</code></td></tr>
+</table>
+<h4>Data Stored</h4>
+<p>Appended to <code>MoviesVC.TableData: [MoviesData]</code> (local to the VC). Global <code>TableData_</code> is available but not used in this flow.</p>
+
+<!-- ── Step 2: Select Movie → Venues ── -->
+<h3>Step 2 — Select Movie → Venue List (<code>VenuesVC</code>)</h3>
+<h4>Trigger</h4>
+<p>User taps a movie row. Storyboard segue <code>"goto_venues"</code> fires. <code>MoviesVC.prepare(for:sender:)</code> populates the destination:</p>
+<pre><code>// MoviesVC.prepare(for:sender:)
+let nextSegue = segue.destination as? VenuesVC
+let data = TableData[indexPath.section]   // MoviesData
+
+nextSegue.movieId          = data.movieId           // Int — primary key
+nextSegue.movieName        = data.name              // String
+nextSegue.selectDetails    = data.detail            // String
+nextSegue.selectLarge_picture = data.large_picture  // String (image path)
+nextSegue.imdb             = data.imdb              // String (IMDB URL)</code></pre>
+
+<div class="diagram-container svg-diagram">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 120" font-family="Arial,sans-serif" font-size="11">
+  <rect width="720" height="120" fill="#f8f9fa" rx="8"/>
+  <defs><marker id="sg1" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#1976d2"/></marker></defs>
+  <text x="360" y="18" text-anchor="middle" fill="#333" font-weight="bold" font-size="12">Segue Data: MoviesVC → VenuesVC</text>
+  <rect x="30" y="35" width="160" height="50" rx="6" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="110" y="55" text-anchor="middle" fill="#1976d2" font-weight="bold">MoviesVC</text>
+  <text x="110" y="70" text-anchor="middle" fill="#555" font-size="9">TableData[section]</text>
+  <line x1="190" y1="60" x2="298" y2="60" stroke="#1976d2" stroke-width="2" marker-end="url(#sg1)"/>
+  <text x="244" y="52" text-anchor="middle" fill="#333" font-size="9" font-weight="bold">segue</text>
+  <rect x="300" y="30" width="390" height="70" rx="6" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="495" y="48" text-anchor="middle" fill="#2e7d32" font-weight="bold">VenuesVC (received properties)</text>
+  <text x="370" y="66" fill="#555" font-size="10">movieId: Int</text>
+  <text x="370" y="80" fill="#555" font-size="10">movieName: String</text>
+  <text x="370" y="94" fill="#555" font-size="10">selectDetails: String</text>
+  <text x="550" y="66" fill="#555" font-size="10">selectLarge_picture: String</text>
+  <text x="550" y="80" fill="#555" font-size="10">imdb: String</text>
+</svg>
+</div>
+
+<h4>API Call (in <code>VenuesVC.viewWillAppear</code>)</h4>
+<pre><code>GET /mbooks-1/rest/book/venue/{movieId}</code></pre>
+<h4>Backend Entity Path</h4>
+<pre><code>BookController.getVenuesForMovie(movieId)
+  → DAO.getVenuesForMovie(movieId)
+    → HQL: "select venues from Venues as venues
+             inner join venues.screen.movie as movie
+             where movie.movieId = :mMovieId"
+    → L2 cached, region "venues"</code></pre>
+<h4>Entity Graph</h4>
+<p>The HQL selects <code>Venues</code> entities joined through <code>Screen → Movie</code>. Because of EAGER fetch annotations:</p>
+<ul>
+  <li><code>Venues.screen</code> → <strong>EAGER</strong> → <code>Screen</code> loaded (includes <code>screen_screenId</code>)</li>
+  <li><code>Venues.location</code> → <strong>EAGER</strong> → <code>Location</code> loaded (provides <code>locationId</code>)</li>
+  <li><code>Screen.movie</code> → <strong>EAGER</strong> → <code>Movie</code> re-loaded</li>
+  <li><code>Screen.seat</code> → <strong>EAGER</strong> → ⚠️ all Seats loaded (not needed here, but unavoidable with current annotations)</li>
+</ul>
+<h4>JSON Response → iOS Model</h4>
+<p>The API returns the <code>Venues</code> entity directly via <code>json.put("venues", venue)</code>. The iOS client parses into a local <code>VenuesVC.datastruct</code>:</p>
+<table>
+  <tr><th>JSON Key</th><th>Entity Source</th><th><code>datastruct</code> Field</th></tr>
+  <tr><td><code>venuesId</code></td><td><code>Venues.venuesId</code></td><td><code>venuesId: Int</code></td></tr>
+  <tr><td><code>name</code></td><td><code>Venues.name</code></td><td><code>name: String</code></td></tr>
+  <tr><td><code>address</code></td><td><code>Venues.address</code></td><td><code>address: String</code></td></tr>
+  <tr><td><code>venues_picture</code></td><td><code>Venues.venues_picture</code></td><td><code>venues_picture: String</code></td></tr>
+  <tr><td><code>screen_screenId</code></td><td><code>Venues.screen_screenId</code></td><td><code>screen_screenId: String</code></td></tr>
+  <tr><td><code>locationId</code></td><td><code>Venues.locationId</code> (@Transient)</td><td><code>locationId: Int</code></td></tr>
+</table>
+<div class="card priority-medium">
+<h4>⚠️ <code>locationId</code> is @Transient</h4>
+<p>The <code>locationId</code> field on <code>Venues</code> is <code>@Transient</code> — it is not a persisted column. It gets populated from the EAGER-loaded <code>Venues.location.locationId</code> during JSON serialization. If the <code>Location</code> relationship were ever changed to LAZY, <code>locationId</code> would serialize as <code>0</code> and break the downstream dates query.</p>
+</div>
+
+<!-- ── Step 3: Select Venue → VenuesDetailsVC ── -->
+<h3>Step 3 — Select Venue → Venue Detail (<code>VenuesDetailsVC</code>)</h3>
+<h4>Trigger</h4>
+<p>User taps a venue row. Segue <code>"goto_venues_details"</code>. <code>VenuesVC.prepare(for:sender:)</code> merges movie data (carried from Step 2) with venue data (from Step 2's API response):</p>
+<pre><code>// VenuesVC.prepare(for:sender:)
+let data = TableData[indexPath.row]      // Venue datastruct
+
+nextSegue.selectVenues_picture = data.venues_picture   // from Venues API
+nextSegue.selectVenueId        = data.venuesId          // from Venues API
+nextSegue.venueName            = data.name              // from Venues API
+nextSegue.selectAddress        = data.address           // from Venues API
+nextSegue.screen_screenId      = data.screen_screenId   // from Venues API
+nextSegue.locationId           = data.locationId        // from Venues API (@Transient)
+
+nextSegue.movieId              = movieId                // carried from MoviesVC
+nextSegue.movieName            = movieName              // carried from MoviesVC
+nextSegue.movieDetails         = selectDetails          // carried from MoviesVC
+nextSegue.selectLarge_picture  = selectLarge_picture    // carried from MoviesVC
+nextSegue.iMDB                 = imdb                   // carried from MoviesVC</code></pre>
+
+<div class="diagram-container svg-diagram">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 160" font-family="Arial,sans-serif" font-size="11">
+  <rect width="720" height="160" fill="#f8f9fa" rx="8"/>
+  <defs><marker id="sg2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#2e7d32"/></marker></defs>
+  <text x="360" y="18" text-anchor="middle" fill="#333" font-weight="bold" font-size="12">Segue Data: VenuesVC → VenuesDetailsVC</text>
+  <rect x="30" y="30" width="140" height="60" rx="6" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="100" y="50" text-anchor="middle" fill="#2e7d32" font-weight="bold">VenuesVC</text>
+  <text x="100" y="65" text-anchor="middle" fill="#555" font-size="9">movie props (Step 2)</text>
+  <text x="100" y="78" text-anchor="middle" fill="#555" font-size="9">+ venue API data</text>
+  <line x1="170" y1="60" x2="248" y2="60" stroke="#2e7d32" stroke-width="2" marker-end="url(#sg2)"/>
+  <text x="209" y="52" text-anchor="middle" fill="#333" font-size="9" font-weight="bold">segue</text>
+  <rect x="250" y="25" width="440" height="125" rx="6" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2"/>
+  <text x="470" y="42" text-anchor="middle" fill="#7b1fa2" font-weight="bold">VenuesDetailsVC (received properties)</text>
+  <text x="340" y="60" fill="#1976d2" font-size="10" font-weight="bold">From Movie (carried):</text>
+  <text x="340" y="74" fill="#555" font-size="10">movieId, movieName, movieDetails</text>
+  <text x="340" y="88" fill="#555" font-size="10">selectLarge_picture, iMDB</text>
+  <text x="540" y="60" fill="#e65100" font-size="10" font-weight="bold">From Venue API:</text>
+  <text x="540" y="74" fill="#555" font-size="10">selectVenueId, venueName</text>
+  <text x="540" y="88" fill="#555" font-size="10">selectVenues_picture, selectAddress</text>
+  <text x="540" y="102" fill="#555" font-size="10">screen_screenId, locationId</text>
+  <text x="340" y="118" fill="#c62828" font-size="10" font-weight="bold">Key for next API:</text>
+  <text x="340" y="134" fill="#c62828" font-size="10">locationId + movieId → /book/dates/{locationId}/{movieId}</text>
+</svg>
+</div>
+
+<p><strong>No API call on entry.</strong> <code>VenuesDetailsVC.viewDidLoad()</code> calls <code>addDatesData()</code> immediately (Step 4), using the <code>locationId</code> and <code>movieId</code> passed via segue.</p>
+
+<!-- ── Step 4: Load Screening Dates ── -->
+<h3>Step 4 — Load Screening Dates (<code>VenuesDetailsVC.addDatesData()</code>)</h3>
+<h4>API Call (auto-triggered in <code>viewDidLoad</code>)</h4>
+<pre><code>GET /mbooks-1/rest/book/dates/{locationId}/{movieId}</code></pre>
+<p>Both path parameters come from segue properties set in Step 3. Example: <code>/book/dates/2/1002</code></p>
+<h4>Backend Entity Path</h4>
+<pre><code>BookController.getDatesForMovieOnVenue(locationId, movieId)
+  → DAO.getScreeningDatesForMovieOnVenue(locationId, movieId)
+    → HQL: "select date from ScreeningDates as date
+             inner join date.venues.location as location
+             where date.movieId = :mMovieId
+               and location.locationId = :mLocationId"</code></pre>
+<h4>Entity Graph</h4>
+<ul>
+  <li><code>ScreeningDates.venues</code> → <strong>EAGER</strong> → <code>Venues</code> loaded</li>
+  <li><code>Venues.location</code> → <strong>EAGER</strong> → <code>Location</code> loaded</li>
+  <li>Not L2-cached — freshness required for screening availability</li>
+</ul>
+<h4>JSON Response → iOS Model</h4>
+<table>
+  <tr><th>JSON Key</th><th>Entity Source</th><th><code>DatesData</code> Field</th></tr>
+  <tr><td><code>screeningDatesId</code></td><td><code>ScreeningDates.screeningDatesId</code></td><td><code>screeningDatesId: Int</code></td></tr>
+  <tr><td><code>screeningDate</code></td><td><code>ScreeningDates.screeningDate</code> (Timestamp)</td><td><code>screeningDate: String</code></td></tr>
+  <tr><td><code>movieId</code></td><td><code>ScreeningDates.movieId</code></td><td><code>movieId: Int</code></td></tr>
+</table>
+<h4>Data Stored</h4>
+<p>Appended to the <strong>global</strong> <code>ScreeningDates: [DatesData]</code> array. This global is read by <code>PopOverDates</code> in the next step.</p>
+
+<!-- ── Step 5: Pick a Date ── -->
+<h3>Step 5 — Pick a Screening Date (<code>PopOverDates</code>)</h3>
+<h4>Trigger</h4>
+<p>User taps the "Dates" button in <code>VenuesDetailsVC</code>. A <code>UIPickerView</code> popover appears, populated from the global <code>ScreeningDates</code> array.</p>
+<h4>No API Call</h4>
+<p>The picker reads directly from <code>ScreeningDates</code> (populated in Step 4). When the user selects a row:</p>
+<pre><code>// PopOverDates.pickerView(_:didSelectRow:inComponent:)
+screeningDateId = String(ScreeningDates[row - 1].screeningDatesId)
+myDateString    = SelectScreeningDateText!.split(separator: ".")</code></pre>
+<p>This sets the <strong>global variables</strong>:</p>
+<ul>
+  <li><code>screeningDateId: String?</code> — the primary key of the selected <code>ScreeningDates</code> row</li>
+  <li><code>SelectScreeningDateText: String?</code> — the human-readable date string</li>
+  <li><code>myDateString: [String.SubSequence]?</code> — date parts split by <code>"."</code></li>
+</ul>
+<p>These globals are later consumed by <code>PopOver</code> (seat grid) and <code>BasketVC</code> (checkout).</p>
+
+<div class="diagram-container svg-diagram">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 100" font-family="Arial,sans-serif" font-size="11">
+  <rect width="720" height="100" fill="#f8f9fa" rx="8"/>
+  <text x="360" y="18" text-anchor="middle" fill="#333" font-weight="bold" font-size="12">Global State Set by PopOverDates</text>
+  <rect x="30" y="35" width="130" height="40" rx="6" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="95" y="60" text-anchor="middle" fill="#1976d2" font-weight="bold" font-size="10">PopOverDates</text>
+  <line x1="160" y1="55" x2="208" y2="55" stroke="#c62828" stroke-width="2" marker-end="url(#bk1)"/>
+  <text x="184" y="48" text-anchor="middle" fill="#c62828" font-size="9">sets</text>
+  <rect x="210" y="30" width="480" height="55" rx="6" fill="#fce4ec" stroke="#c62828" stroke-width="2"/>
+  <text x="450" y="48" text-anchor="middle" fill="#c62828" font-weight="bold" font-size="10">Global Variables (file-level)</text>
+  <text x="320" y="68" fill="#555" font-size="10">screeningDateId: String?</text>
+  <text x="530" y="68" fill="#555" font-size="10">SelectScreeningDateText: String?</text>
+  <text x="320" y="80" fill="#888" font-size="9">(ScreeningDates PK)</text>
+  <text x="530" y="80" fill="#888" font-size="9">(human-readable date)</text>
+</svg>
+</div>
+
+<!-- ── Step 6: Load Seats ── -->
+<h3>Step 6 — Load Seat Map (<code>SeatsData.addData()</code>)</h3>
+<h4>Trigger</h4>
+<p>User taps "Book" in <code>VenuesDetailsVC</code>. If <code>screeningDateId</code> is set (from Step 5), the seat map is loaded:</p>
+<pre><code>// VenuesDetailsVC.book()
+SeatsData.addData(Int(screeningDateId!)!)</code></pre>
+<h4>API Call</h4>
+<pre><code>GET /mbooks-1/rest/book/seats/{screeningDateId}</code></pre>
+<h4>Backend Entity Path</h4>
+<pre><code>BookController.getSeatsForScreenForMovieOnVenue(screeningDateId)
+  → DAO.getSeatsForScreening(screeningDateId)
+    → HQL: "select screeningdates.venues.screen.seat
+             from ScreeningDates as screeningdates
+             where screeningDatesId = :mScreeningDatesId"</code></pre>
+<h4>Entity Graph Navigation</h4>
+<p>The HQL traverses four levels of the entity graph: <code>ScreeningDates → Venues → Screen → Seats (collection)</code>. All links are EAGER, so a single query resolves the entire chain. The result is a <code>List&lt;Seats&gt;</code>.</p>
+<ul>
+  <li><strong>NOT cached</strong> — seat availability must always be fresh from the database</li>
+  <li>On the booking path, individual seats are locked with <code>PESSIMISTIC_WRITE</code></li>
+</ul>
+<h4>JSON Response → iOS Model</h4>
+<table>
+  <tr><th>JSON Key</th><th>Entity Source</th><th><code>SeatsData</code> Field</th></tr>
+  <tr><td><code>seatId</code></td><td><code>Seats.seatId</code></td><td><code>seatId: Int</code></td></tr>
+  <tr><td><code>seatNumber</code></td><td><code>Seats.seatNumber</code></td><td><code>seatNumber: String</code></td></tr>
+  <tr><td><code>seatRow</code></td><td><code>Seats.seatRow</code></td><td><code>seatRow: String</code></td></tr>
+  <tr><td><code>isReserved</code></td><td><code>Seats.isReserved</code></td><td><code>isReserved: String</code> ("0"/"1")</td></tr>
+  <tr><td><code>price</code></td><td><code>Seats.price</code></td><td><code>price: Int</code></td></tr>
+  <tr><td><code>tax</code></td><td><code>Seats.tax</code></td><td><code>tax: Double</code></td></tr>
+</table>
+<h4>Data Stored</h4>
+<p>Stored in the <strong>global</strong> <code>SeatsData_: [SeatsData]</code> array. The <code>PopOver</code> view controller (seat grid) reads this array to render the seat map as a table grouped by <code>seatRow</code>.</p>
+
+<!-- ── Step 7: Select Seats ── -->
+<h3>Step 7 — Select Seats (<code>PopOver</code> seat grid)</h3>
+<h4>No API Call</h4>
+<p>The <code>PopOver</code> presents a <code>UITableView</code> grouped by seat rows. Tapping an available seat adds it to two global structures:</p>
+<pre><code>// Globals (PopOver.swift)
+seatsToBeReserved[seatId] = seatNumber    // [Int: String] — for checkout POST
+BasketData_[seatId] = BasketData(add: [   // [Int: BasketData] — for BasketVC display
+    "movie_name":     SelectMovieName,
+    "seatId":         seat.seatId,
+    "seats_seatRow":  seat.seatRow,
+    "seats_seatNumber": seat.seatNumber,
+    "price":          seat.price,
+    "tax":            seat.tax,
+    "screeningDateId": screeningDateId,
+    "movie_picture":  SelectMoviePicture,
+    "venue_name":     SelectVenueName,
+    "screening_date": SelectScreeningDateText
+])</code></pre>
+<p>Note how <code>BasketData</code> aggregates fields from <strong>three different steps</strong>:</p>
+<ul>
+  <li><strong>Movie info</strong> (<code>SelectMovieName</code>, <code>SelectMoviePicture</code>) — set in <code>VenuesDetailsVC.book()</code> from segue props</li>
+  <li><strong>Venue info</strong> (<code>SelectVenueName</code>, <code>SelectVenueForMovie</code>) — set in <code>VenuesDetailsVC.book()</code> from segue props</li>
+  <li><strong>Seat + Date info</strong> (<code>seatId</code>, <code>price</code>, <code>screeningDateId</code>) — from <code>SeatsData_</code> (Step 6) and <code>PopOverDates</code> globals (Step 5)</li>
+</ul>
+
+<!-- ── Step 8: Checkout ── -->
+<h3>Step 8 — Checkout (<code>BasketVC</code>)</h3>
+<h4>Trigger</h4>
+<p>User taps "Basket" in <code>PopOver</code>, navigating to <code>BasketVC</code>. The collection view displays items from the global <code>BasketData_</code> dictionary.</p>
+<h4>API Call (on "CheckOut" tap)</h4>
+<pre><code>POST /mbooks-1/rest/book/payment/fullcheckout2
+Body (form-urlencoded):
+  orderId={purchaseId}
+  seatsToBeReserved={"seatsToBeReserved": [{seatId, screeningDateId, seatNumber}, ...]}
+  payment_method_nonce={braintreeNonce}
+Header:
+  uuid={userUUID}</code></pre>
+<h4>Backend</h4>
+<p>The controller iterates the <code>seatsToBeReserved</code> JSON array, locks each seat (<code>PESSIMISTIC_WRITE</code>), creates <code>Ticket</code> entities, computes totals, processes payment via Braintree, then creates a <code>Purchase</code> record linking all tickets. Seats are marked <code>isReserved = "1"</code>.</p>
+
+<!-- ── Complete data lineage ── -->
+<h3>Complete Data Lineage</h3>
+<p>The following diagram shows how each parameter is born, carried, and consumed across the entire booking flow:</p>
+<div class="diagram-container svg-diagram">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 380" font-family="Arial,sans-serif" font-size="10">
+  <rect width="920" height="380" fill="#f8f9fa" rx="8"/>
+  <text x="460" y="18" text-anchor="middle" fill="#333" font-weight="bold" font-size="13">Parameter Lineage Across the Booking Flow</text>
+
+  <!-- Column headers -->
+  <rect x="10"  y="30" width="110" height="24" rx="4" fill="#e3f2fd" stroke="#1976d2" stroke-width="1.5"/>
+  <text x="65"  y="46" text-anchor="middle" fill="#1976d2" font-weight="bold" font-size="10">Parameter</text>
+  <rect x="130" y="30" width="120" height="24" rx="4" fill="#e8f5e9" stroke="#2e7d32" stroke-width="1.5"/>
+  <text x="190" y="46" text-anchor="middle" fill="#2e7d32" font-weight="bold" font-size="10">Born At</text>
+  <rect x="260" y="30" width="120" height="24" rx="4" fill="#fff8e1" stroke="#f57f17" stroke-width="1.5"/>
+  <text x="320" y="46" text-anchor="middle" fill="#f57f17" font-weight="bold" font-size="10">Carried Via</text>
+  <rect x="390" y="30" width="180" height="24" rx="4" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="1.5"/>
+  <text x="480" y="46" text-anchor="middle" fill="#7b1fa2" font-weight="bold" font-size="10">Consumed At</text>
+  <rect x="580" y="30" width="330" height="24" rx="4" fill="#fce4ec" stroke="#c62828" stroke-width="1.5"/>
+  <text x="745" y="46" text-anchor="middle" fill="#c62828" font-weight="bold" font-size="10">Backend Entity</text>
+
+  <!-- movieId -->
+  <text x="65" y="74" text-anchor="middle" fill="#333" font-weight="bold">movieId</text>
+  <text x="190" y="74" text-anchor="middle" fill="#555">Step 1 (API)</text>
+  <text x="320" y="74" text-anchor="middle" fill="#555">segue prop</text>
+  <text x="480" y="74" text-anchor="middle" fill="#555">Step 2 API path, Step 4 API path</text>
+  <text x="745" y="74" text-anchor="middle" fill="#888">Movie.movieId (PK)</text>
+
+  <!-- movieName -->
+  <text x="65" y="98" text-anchor="middle" fill="#333" font-weight="bold">movieName</text>
+  <text x="190" y="98" text-anchor="middle" fill="#555">Step 1 (API)</text>
+  <text x="320" y="98" text-anchor="middle" fill="#555">segue prop chain</text>
+  <text x="480" y="98" text-anchor="middle" fill="#555">Step 7 → BasketData_.movie_name</text>
+  <text x="745" y="98" text-anchor="middle" fill="#888">Movie.name</text>
+
+  <!-- large_picture -->
+  <text x="65" y="122" text-anchor="middle" fill="#333" font-weight="bold">large_picture</text>
+  <text x="190" y="122" text-anchor="middle" fill="#555">Step 1 (API)</text>
+  <text x="320" y="122" text-anchor="middle" fill="#555">segue prop chain</text>
+  <text x="480" y="122" text-anchor="middle" fill="#555">Step 3 image load, Step 7 basket</text>
+  <text x="745" y="122" text-anchor="middle" fill="#888">Movie.large_picture</text>
+
+  <!-- venuesId -->
+  <text x="65" y="146" text-anchor="middle" fill="#333" font-weight="bold">venuesId</text>
+  <text x="190" y="146" text-anchor="middle" fill="#555">Step 2 (API)</text>
+  <text x="320" y="146" text-anchor="middle" fill="#555">segue prop</text>
+  <text x="480" y="146" text-anchor="middle" fill="#555">Step 3 (map segue)</text>
+  <text x="745" y="146" text-anchor="middle" fill="#888">Venues.venuesId (PK)</text>
+
+  <!-- locationId -->
+  <text x="65" y="170" text-anchor="middle" fill="#333" font-weight="bold">locationId</text>
+  <text x="190" y="170" text-anchor="middle" fill="#555">Step 2 (API, @Transient)</text>
+  <text x="320" y="170" text-anchor="middle" fill="#555">segue prop</text>
+  <text x="480" y="170" text-anchor="middle" fill="#555">Step 4 API path</text>
+  <text x="745" y="170" text-anchor="middle" fill="#888">Venues.location.locationId</text>
+
+  <!-- screeningDatesId -->
+  <text x="65" y="194" text-anchor="middle" fill="#333" font-weight="bold">screeningDatesId</text>
+  <text x="190" y="194" text-anchor="middle" fill="#555">Step 4 (API)</text>
+  <text x="320" y="194" text-anchor="middle" fill="#555">global var</text>
+  <text x="480" y="194" text-anchor="middle" fill="#555">Step 6 API path, Step 7 basket</text>
+  <text x="745" y="194" text-anchor="middle" fill="#888">ScreeningDates.screeningDatesId (PK)</text>
+
+  <!-- screeningDate -->
+  <text x="65" y="218" text-anchor="middle" fill="#333" font-weight="bold">screeningDate</text>
+  <text x="190" y="218" text-anchor="middle" fill="#555">Step 4 (API)</text>
+  <text x="320" y="218" text-anchor="middle" fill="#555">global var</text>
+  <text x="480" y="218" text-anchor="middle" fill="#555">Step 7 basket display + calendar</text>
+  <text x="745" y="218" text-anchor="middle" fill="#888">ScreeningDates.screeningDate</text>
+
+  <!-- seatId -->
+  <text x="65" y="242" text-anchor="middle" fill="#333" font-weight="bold">seatId</text>
+  <text x="190" y="242" text-anchor="middle" fill="#555">Step 6 (API)</text>
+  <text x="320" y="242" text-anchor="middle" fill="#555">global dict</text>
+  <text x="480" y="242" text-anchor="middle" fill="#555">Step 8 checkout POST body</text>
+  <text x="745" y="242" text-anchor="middle" fill="#888">Seats.seatId (PK)</text>
+
+  <!-- price/tax -->
+  <text x="65" y="266" text-anchor="middle" fill="#333" font-weight="bold">price / tax</text>
+  <text x="190" y="266" text-anchor="middle" fill="#555">Step 6 (API)</text>
+  <text x="320" y="266" text-anchor="middle" fill="#555">BasketData_</text>
+  <text x="480" y="266" text-anchor="middle" fill="#555">Step 8 total calculation</text>
+  <text x="745" y="266" text-anchor="middle" fill="#888">Seats.price, Seats.tax</text>
+
+  <!-- Divider -->
+  <line x1="10" y1="286" x2="910" y2="286" stroke="#ccc" stroke-width="1"/>
+  <text x="460" y="302" text-anchor="middle" fill="#333" font-weight="bold" font-size="11">Transport Mechanisms</text>
+  <rect x="50" y="312" width="120" height="24" rx="12" fill="#e3f2fd" stroke="#1976d2"/>
+  <text x="110" y="328" text-anchor="middle" fill="#1976d2" font-size="10">Segue Properties</text>
+  <rect x="200" y="312" width="120" height="24" rx="12" fill="#fce4ec" stroke="#c62828"/>
+  <text x="260" y="328" text-anchor="middle" fill="#c62828" font-size="10">Global Variables</text>
+  <rect x="350" y="312" width="120" height="24" rx="12" fill="#fff3e0" stroke="#e65100"/>
+  <text x="410" y="328" text-anchor="middle" fill="#e65100" font-size="10">Global Dicts</text>
+  <text x="110" y="355" text-anchor="middle" fill="#555" font-size="9">movieId, movieName,</text>
+  <text x="110" y="367" text-anchor="middle" fill="#555" font-size="9">venuesId, locationId, etc.</text>
+  <text x="260" y="355" text-anchor="middle" fill="#555" font-size="9">screeningDateId,</text>
+  <text x="260" y="367" text-anchor="middle" fill="#555" font-size="9">ScreeningDates, SeatsData_</text>
+  <text x="410" y="355" text-anchor="middle" fill="#555" font-size="9">seatsToBeReserved,</text>
+  <text x="410" y="367" text-anchor="middle" fill="#555" font-size="9">BasketData_, Seats</text>
+</svg>
+</div>
+
+<!-- ── Refactoring Reasoning ── -->
+<h3>Refactoring Considerations</h3>
+<div class="card priority-high">
+<h4>🔴 Global Mutable State as Data Bus</h4>
+<p>The booking flow relies on <strong>13+ file-level global variables</strong> to shuttle data between view controllers. This pattern was expedient in 2016 but creates several problems:</p>
+<ul>
+  <li><strong>Race conditions:</strong> If the user navigates back and forward quickly, stale globals from a previous flow can contaminate the current one (e.g., <code>screeningDateId</code> from a previous venue selection).</li>
+  <li><strong>Memory leaks:</strong> <code>SeatsData_</code> and <code>ScreeningDates</code> arrays accumulate across navigations; they are only cleared in specific <code>deinit</code> methods which may not fire if view controllers are retained.</li>
+  <li><strong>Testing impossibility:</strong> No way to unit-test <code>PopOverDates</code> or <code>PopOver</code> without first populating file-level globals.</li>
+</ul>
+<p><strong>Recommended refactoring:</strong> Introduce a <code>BookingSession</code> class (or struct) that encapsulates all transient booking state. Pass it via segue properties or dependency injection instead of globals.</p>
+</div>
+
+<div class="card priority-medium">
+<h4>🟡 @Transient locationId Fragility</h4>
+<p>The <code>locationId</code> field on <code>Venues</code> is <code>@Transient</code> — it exists only for JSON serialization convenience. The actual FK is <code>Venues.location.locationId</code> via the EAGER <code>@ManyToOne</code> relationship. If anyone changes <code>Venues.location</code> to LAZY fetch, <code>locationId</code> will serialize as <code>0</code>, silently breaking the dates API call in Step 4.</p>
+<p><strong>Recommended fix:</strong> Either make <code>locationId</code> a real persisted column (<code>@Column(name="location_locationId", insertable=false, updatable=false)</code>) or add a dedicated getter that safely navigates <code>location.getLocationId()</code>.</p>
+</div>
+
+<div class="card priority-medium">
+<h4>🟡 EAGER Screen.seat Loads All Seats on Venue Query</h4>
+<p>In Step 2, fetching venues for a movie loads <code>Venues → Screen → Seats (ALL)</code> because <code>Screen.seat</code> is EAGER with <code>CascadeType.ALL</code>. For a venue with 200 seats, this means 200 Seat entities are loaded just to display the venue name and picture. The seat data is thrown away — it's not needed until Step 6.</p>
+<p><strong>Recommended fix:</strong> Change <code>Screen.seat</code> to <code>FetchType.LAZY</code>. The seat map in Step 6 already uses a dedicated HQL query (<code>getSeatsForScreening</code>) that navigates the relationship explicitly, so the EAGER annotation provides no benefit there. The only place that depends on the EAGER load is admin venue insertion (<code>insertNewScreen</code>), which can use <code>Hibernate.initialize()</code> instead.</p>
+</div>
+
+<div class="card priority-low">
+<h4>🟢 Dual Image Loading</h4>
+<p><code>VenuesDetailsVC</code> makes two separate image requests (<code>loadMovieImage()</code> + <code>loadVenueImage()</code>) via <code>GeneralRequestManager</code>. Both go through the Realm cache layer. Consider using a shared image cache manager (e.g., Kingfisher/SDWebImage) or at minimum batching the requests.</p>
+</div>
 </section>
 
 <!-- ──────── VIEW CONTROLLERS ──────── -->
