@@ -120,6 +120,12 @@
     <li><a href="#geofencing">Geofencing</a></li>
     <li class="section-title">Payments</li>
     <li><a href="#payments">Braintree Checkout</a></li>
+    <li class="section-title">Admin</li>
+    <li><a href="#admin-overview">Admin Overview</a></li>
+    <li><a href="#admin-add-venue">Add Venue / Screen</a></li>
+    <li><a href="#admin-update-venue">Update Venue / Screen</a></li>
+    <li><a href="#admin-delete-venue">Delete Venue / Screen</a></li>
+    <li><a href="#admin-entity-cascade">Entity Cascade Effects</a></li>
     <li class="section-title">Reference</li>
     <li><a href="#api-endpoints">API Endpoints</a></li>
     <li><a href="#dependencies">Dependencies</a></li>
@@ -869,28 +875,263 @@ SeatsData.addData(Int(screeningDateId!)!)</code></pre>
 
 <!-- ── Step 7: Select Seats ── -->
 <h3>Step 7 — Select Seats (<code>PopOver</code> seat grid)</h3>
-<h4>No API Call</h4>
-<p>The <code>PopOver</code> presents a <code>UITableView</code> grouped by seat rows. Tapping an available seat adds it to two global structures:</p>
-<pre><code>// Globals (PopOver.swift)
-seatsToBeReserved[seatId] = seatNumber    // [Int: String] — for checkout POST
-BasketData_[seatId] = BasketData(add: [   // [Int: BasketData] — for BasketVC display
-    "movie_name":     SelectMovieName,
-    "seatId":         seat.seatId,
-    "seats_seatRow":  seat.seatRow,
-    "seats_seatNumber": seat.seatNumber,
-    "price":          seat.price,
-    "tax":            seat.tax,
-    "screeningDateId": screeningDateId,
-    "movie_picture":  SelectMoviePicture,
-    "venue_name":     SelectVenueName,
-    "screening_date": SelectScreeningDateText
-])</code></pre>
-<p>Note how <code>BasketData</code> aggregates fields from <strong>three different steps</strong>:</p>
+<h4>No API Call — Pure Client-Side Rendering</h4>
+<p>The <code>PopOver</code> class (<code>PopOver.swift</code>, 351 lines, nicknamed "Crown Jewel") is the seat map that the user interacts with to select seats for booking. It uses a <strong>UITableView + UICollectionView composite pattern</strong>: one table row per seat row, with a horizontally-scrolling collection view inside each row to display individual seats.</p>
+
+<h4>Architecture — Table-in-Collection Pattern</h4>
+<div class="diagram-container svg-diagram">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 520" font-family="Arial,sans-serif" font-size="12">
+  <rect width="860" height="520" fill="#f8f9fa" rx="8"/>
+  <defs><marker id="sp1" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#666"/></marker></defs>
+
+  <text x="430" y="24" text-anchor="middle" fill="#333" font-weight="bold" font-size="15">Seat Selection PopOver — Component Architecture</text>
+
+  <!-- PopOver container -->
+  <rect x="20" y="45" width="820" height="460" rx="10" fill="none" stroke="#1976d2" stroke-width="2" stroke-dasharray="6 3"/>
+  <text x="40" y="65" fill="#1976d2" font-weight="bold" font-size="12">PopOver (UIViewController)</text>
+
+  <!-- Top bar -->
+  <rect x="40" y="75" width="380" height="35" rx="6" fill="#333" stroke="none"/>
+  <text x="140" y="97" text-anchor="middle" fill="#fff" font-weight="bold" font-size="11">Clear</text>
+  <rect x="420" y="75" width="380" height="35" rx="6" fill="#333" stroke="none"/>
+  <text x="610" y="97" text-anchor="middle" fill="#fff" font-weight="bold" font-size="11">Basket</text>
+
+  <!-- Date label -->
+  <rect x="40" y="118" width="760" height="25" rx="4" fill="#fff8e1" stroke="#f57f17" stroke-width="1"/>
+  <text x="420" y="135" text-anchor="middle" fill="#f57f17" font-size="11">📅 Screening date label (from myDateString global)</text>
+
+  <!-- UITableView -->
+  <rect x="40" y="150" width="760" height="340" rx="8" fill="#fff" stroke="#ccc" stroke-width="1.5"/>
+  <text x="55" y="170" fill="#1976d2" font-weight="bold" font-size="11">UITableView (tableView_) — rows = numberOfRows.count</text>
+
+  <!-- Row A -->
+  <rect x="55" y="180" width="730" height="65" rx="6" fill="#f5f5f5" stroke="#ddd" stroke-width="1"/>
+  <text x="65" y="198" fill="#555" font-weight="bold" font-size="10">TableViewCell (row 0) — tag=0 → filter seatRow=="1"</text>
+  <!-- CollectionView inside row A -->
+  <rect x="70" y="204" width="700" height="36" rx="4" fill="#e3f2fd" stroke="#1976d2" stroke-width="1"/>
+  <text x="80" y="218" fill="#1976d2" font-size="9">UICollectionView (horizontal scroll)</text>
+  <!-- Seat cells in row A -->
+  <rect x="85" y="208" width="65" height="28" rx="4" fill="#bdbdbd" stroke="#666" stroke-width="1"/>
+  <text x="118" y="220" text-anchor="middle" fill="#333" font-size="9" font-weight="bold">A1</text>
+  <text x="118" y="230" text-anchor="middle" fill="#555" font-size="7">3.99 Ft</text>
+  <rect x="158" y="208" width="65" height="28" rx="4" fill="#bdbdbd" stroke="#666" stroke-width="1"/>
+  <text x="191" y="220" text-anchor="middle" fill="#333" font-size="9" font-weight="bold">A2</text>
+  <text x="191" y="230" text-anchor="middle" fill="#555" font-size="7">3.99 Ft</text>
+  <rect x="231" y="208" width="65" height="28" rx="4" fill="#616161" stroke="#333" stroke-width="1"/>
+  <text x="264" y="220" text-anchor="middle" fill="#fff" font-size="9" font-weight="bold">A3 🔒</text>
+  <text x="264" y="230" text-anchor="middle" fill="#ccc" font-size="7">reserved</text>
+  <rect x="304" y="208" width="65" height="28" rx="4" fill="#bdbdbd" stroke="#000" stroke-width="4"/>
+  <text x="337" y="220" text-anchor="middle" fill="#333" font-size="9" font-weight="bold">A4 ✓</text>
+  <text x="337" y="230" text-anchor="middle" fill="#555" font-size="7">selected</text>
+  <rect x="377" y="208" width="65" height="28" rx="4" fill="#bdbdbd" stroke="#666" stroke-width="1"/>
+  <text x="410" y="220" text-anchor="middle" fill="#333" font-size="9" font-weight="bold">A5</text>
+  <text x="410" y="230" text-anchor="middle" fill="#555" font-size="7">3.99 Ft</text>
+  <rect x="450" y="208" width="65" height="28" rx="4" fill="#bdbdbd" stroke="#666" stroke-width="1"/>
+  <text x="483" y="220" text-anchor="middle" fill="#333" font-size="9" font-weight="bold">A6</text>
+  <text x="483" y="230" text-anchor="middle" fill="#555" font-size="7">3.99 Ft</text>
+  <text x="540" y="226" fill="#888" font-size="9">← scrolls →</text>
+
+  <!-- Row B -->
+  <rect x="55" y="252" width="730" height="65" rx="6" fill="#f5f5f5" stroke="#ddd" stroke-width="1"/>
+  <text x="65" y="270" fill="#555" font-weight="bold" font-size="10">TableViewCell (row 1) — tag=1 → filter seatRow=="2"</text>
+  <rect x="70" y="276" width="700" height="36" rx="4" fill="#e3f2fd" stroke="#1976d2" stroke-width="1"/>
+  <rect x="85" y="280" width="65" height="28" rx="4" fill="#bdbdbd" stroke="#666" stroke-width="1"/>
+  <text x="118" y="296" text-anchor="middle" fill="#333" font-size="9" font-weight="bold">B1</text>
+  <rect x="158" y="280" width="65" height="28" rx="4" fill="#bdbdbd" stroke="#666" stroke-width="1"/>
+  <text x="191" y="296" text-anchor="middle" fill="#333" font-size="9" font-weight="bold">B2</text>
+  <rect x="231" y="280" width="65" height="28" rx="4" fill="#bdbdbd" stroke="#666" stroke-width="1"/>
+  <text x="264" y="296" text-anchor="middle" fill="#333" font-size="9" font-weight="bold">B3</text>
+  <rect x="304" y="280" width="65" height="28" rx="4" fill="#bdbdbd" stroke="#666" stroke-width="1"/>
+  <text x="337" y="296" text-anchor="middle" fill="#333" font-size="9" font-weight="bold">B4</text>
+  <rect x="377" y="280" width="65" height="28" rx="4" fill="#bdbdbd" stroke="#666" stroke-width="1"/>
+  <text x="410" y="296" text-anchor="middle" fill="#333" font-size="9" font-weight="bold">B5</text>
+  <rect x="450" y="280" width="65" height="28" rx="4" fill="#bdbdbd" stroke="#666" stroke-width="1"/>
+  <text x="483" y="296" text-anchor="middle" fill="#333" font-size="9" font-weight="bold">B6</text>
+
+  <!-- Row C (abbreviated) -->
+  <rect x="55" y="324" width="730" height="45" rx="6" fill="#f5f5f5" stroke="#ddd" stroke-width="1"/>
+  <text x="420" y="352" text-anchor="middle" fill="#999" font-size="11">⋮  (rows C, D, E, F …) ⋮</text>
+
+  <!-- Legend -->
+  <rect x="55" y="380" width="730" height="95" rx="8" fill="#fff" stroke="#ccc" stroke-width="1"/>
+  <text x="75" y="400" fill="#333" font-weight="bold" font-size="11">Legend</text>
+  <rect x="75" y="410" width="50" height="18" rx="3" fill="#bdbdbd" stroke="#666" stroke-width="1"/>
+  <text x="138" y="424" fill="#555" font-size="10">Available (lightGray) — isReserved == "0"</text>
+  <rect x="75" y="434" width="50" height="18" rx="3" fill="#616161" stroke="#333" stroke-width="1"/>
+  <text x="138" y="448" fill="#555" font-size="10">Reserved (darkGray) — isReserved == "1", not tappable</text>
+  <rect x="400" y="410" width="50" height="18" rx="3" fill="#bdbdbd" stroke="#000" stroke-width="4"/>
+  <text x="463" y="424" fill="#555" font-size="10">Selected by user — border 4px, added to seatsToBeReserved</text>
+  <rect x="400" y="434" width="50" height="18" rx="3" fill="#bdbdbd" stroke="#666" stroke-width="1"/>
+  <text x="463" y="448" fill="#555" font-size="10">Unselected — border 1px</text>
+</svg>
+</div>
+
+<h4>Component Breakdown</h4>
+<table>
+  <tr><th>File</th><th>Class</th><th>Role</th></tr>
+  <tr><td><code>PopOver.swift</code></td><td><code>PopOver</code></td><td>Main view controller. Owns the <code>UITableView</code>, acts as <code>UICollectionViewDataSource</code> + <code>UICollectionViewDelegate</code> for all collection views. Contains all seat selection/deselection logic.</td></tr>
+  <tr><td><code>TableViewCell.swift</code></td><td><code>TableViewCell</code></td><td>Custom <code>UITableViewCell</code> with an embedded horizontal <code>UICollectionView</code>. Layout: <code>UICollectionViewFlowLayout</code> with <code>.horizontal</code> scroll, item size <code>75×65pt</code>, insets <code>(5,5,5,5)</code>.</td></tr>
+  <tr><td><code>TableViewCellExt.swift</code></td><td>extension</td><td>Adds <code>setCollectionViewDataSourceDelegate(forRow:)</code> — sets the <code>collectionView.tag</code> to the table row index (used to filter seats by row).</td></tr>
+  <tr><td><code>SeatCells.swift</code></td><td><code>SeatCells</code></td><td>Custom <code>UICollectionViewCell</code> with two labels: <code>textLabel</code> (seat number, e.g. "A3") and <code>priceLabel</code> (total price, e.g. "3.99 Ft").</td></tr>
+  <tr><td><code>SeatsData.swift</code></td><td><code>SeatsData</code></td><td>Data model parsed from the <code>/seats/{screeningDateId}</code> API response. Also contains the static <code>addData()</code> method that fetches seats and builds the <code>numberOfRows</code> array.</td></tr>
+</table>
+
+<h4>Rendering Pipeline</h4>
+<div class="flow-step"><div class="flow-num">1</div><div class="flow-body"><strong>Data source:</strong> The global <code>SeatsData_: [SeatsData]</code> array contains all seats for the screening (populated in Step 6 via <code>SeatsData.addData(screeningDateId)</code>). The global <code>numberOfRows: [String]</code> is built by iterating <code>SeatsData_</code> and collecting distinct <code>seatRow</code> values.</div></div>
+<div class="flow-step"><div class="flow-num">2</div><div class="flow-body"><strong>Table row count:</strong> <code>numberOfSections → 1</code>, <code>numberOfRowsInSection → numberOfRows.count</code>. Each table row represents one physical seat row (A, B, C, …).</div></div>
+<div class="flow-step"><div class="flow-num">3</div><div class="flow-body"><strong>Collection delegation:</strong> In <code>willDisplay(cell:forRowAt:)</code>, the <code>TableViewCell</code> calls <code>setCollectionViewDataSourceDelegate(forRow: indexPath.row)</code>, which sets <code>collectionView.tag = row</code> and reloads data. The <code>PopOver</code> extension handles <code>UICollectionViewDataSource</code>.</div></div>
+<div class="flow-step"><div class="flow-num">4</div><div class="flow-body"><strong>Seat count per row:</strong> <code>collectionView(_:numberOfItemsInSection:)</code> filters <code>SeatsData_</code> by <code>seatRow == String(collectionView.tag + 1)</code> and returns the count. <strong>This already supports variable seat counts per row</strong> — each row independently reports how many seats it contains.</div></div>
+<div class="flow-step"><div class="flow-num">5</div><div class="flow-body"><strong>Cell rendering:</strong> <code>cellForItemAt</code> filters seats for the row, finds the item at the index path, computes <code>total = price × tax</code>, renders the seat number and price on the <code>SeatCells</code> labels. Background is <code>darkGray</code> if reserved, <code>lightGray</code> if available.</div></div>
+
+<h4>Selection / Deselection Logic</h4>
+<p>The collection view has <code>allowsMultipleSelection = true</code>. Three delegate methods coordinate the visual feedback and data tracking:</p>
+
+<div class="diagram-container svg-diagram">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 360" font-family="Arial,sans-serif" font-size="12">
+  <rect width="860" height="360" fill="#f8f9fa" rx="8"/>
+  <defs><marker id="sp2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#666"/></marker></defs>
+
+  <text x="430" y="24" text-anchor="middle" fill="#333" font-weight="bold" font-size="14">Seat Selection State Machine</text>
+
+  <!-- Available state -->
+  <rect x="50" y="60" width="170" height="70" rx="10" fill="#e0e0e0" stroke="#757575" stroke-width="2"/>
+  <text x="135" y="85" text-anchor="middle" fill="#333" font-weight="bold">Available</text>
+  <text x="135" y="102" text-anchor="middle" fill="#555" font-size="10">lightGray, border 1px</text>
+  <text x="135" y="118" text-anchor="middle" fill="#555" font-size="10">isReserved == "0"</text>
+
+  <!-- Selected state -->
+  <rect x="340" y="60" width="170" height="70" rx="10" fill="#e3f2fd" stroke="#1976d2" stroke-width="3"/>
+  <text x="425" y="85" text-anchor="middle" fill="#1976d2" font-weight="bold">Selected</text>
+  <text x="425" y="102" text-anchor="middle" fill="#555" font-size="10">lightGray, border 4px</text>
+  <text x="425" y="118" text-anchor="middle" fill="#555" font-size="10">in seatsToBeReserved</text>
+
+  <!-- Reserved state -->
+  <rect x="640" y="60" width="170" height="70" rx="10" fill="#616161" stroke="#333" stroke-width="2"/>
+  <text x="725" y="85" text-anchor="middle" fill="#fff" font-weight="bold">Reserved</text>
+  <text x="725" y="102" text-anchor="middle" fill="#ccc" font-size="10">darkGray, border 1px</text>
+  <text x="725" y="118" text-anchor="middle" fill="#ccc" font-size="10">isReserved == "1"</text>
+
+  <!-- Transitions -->
+  <line x1="220" y1="85" x2="338" y2="85" stroke="#2e7d32" stroke-width="2" marker-end="url(#sp2)"/>
+  <text x="280" y="78" text-anchor="middle" fill="#2e7d32" font-size="10" font-weight="bold">tap (select)</text>
+
+  <line x1="338" y1="105" x2="222" y2="105" stroke="#c62828" stroke-width="2" marker-end="url(#sp2)"/>
+  <text x="280" y="122" text-anchor="middle" fill="#c62828" font-size="10" font-weight="bold">tap again (deselect)</text>
+
+  <text x="580" y="95" text-anchor="middle" fill="#999" font-size="10">not tappable</text>
+  <line x1="510" y1="95" x2="560" y2="95" stroke="#999" stroke-dasharray="3 2"/>
+  <text x="560" y="85" fill="#999" font-size="14">✖</text>
+
+  <!-- Data flow on select -->
+  <rect x="50" y="170" width="760" height="170" rx="8" fill="#fff" stroke="#ccc" stroke-width="1"/>
+  <text x="430" y="192" text-anchor="middle" fill="#333" font-weight="bold" font-size="13">On Seat Selection (didSelectItemAt)</text>
+
+  <rect x="70" y="205" width="350" height="55" rx="6" fill="#e8f5e9" stroke="#2e7d32" stroke-width="1.5"/>
+  <text x="245" y="222" text-anchor="middle" fill="#2e7d32" font-weight="bold" font-size="11">1. Add to seatsToBeReserved</text>
+  <text x="245" y="240" text-anchor="middle" fill="#555" font-size="10">seatsToBeReserved[seatId] = seatNumber</text>
+  <text x="245" y="252" text-anchor="middle" fill="#888" font-size="9">[Int: String] dict — used in checkout POST</text>
+
+  <rect x="440" y="205" width="350" height="55" rx="6" fill="#e3f2fd" stroke="#1976d2" stroke-width="1.5"/>
+  <text x="615" y="222" text-anchor="middle" fill="#1976d2" font-weight="bold" font-size="11">2. Add to BasketData_</text>
+  <text x="615" y="240" text-anchor="middle" fill="#555" font-size="10">BasketData_[seatId] = BasketData(add: NSDictionary)</text>
+  <text x="615" y="252" text-anchor="middle" fill="#888" font-size="9">[Int: BasketData] dict — used in BasketVC display</text>
+
+  <rect x="70" y="268" width="720" height="55" rx="6" fill="#fff3e0" stroke="#e65100" stroke-width="1.5"/>
+  <text x="430" y="286" text-anchor="middle" fill="#e65100" font-weight="bold" font-size="11">3. Update Seats global</text>
+  <text x="430" y="302" text-anchor="middle" fill="#555" font-size="10">Seats[screeningDateId] = ["screeningDateId": id, "seat": "A4-B2-C1-"]</text>
+  <text x="430" y="316" text-anchor="middle" fill="#888" font-size="9">Concatenated seat numbers separated by "-" — used as the checkout identifier per screening</text>
+</svg>
+</div>
+
+<pre><code>// On selection (didSelectItemAt) — simplified
+if !seatIds.contains(seatId) &amp;&amp; seat.isReserved == "0" {
+    seatsToBeReserved[seatId] = seatNumber           // track for checkout
+    BasketData_[seatId] = BasketData(add: basketItem) // track for display
+    Seats[screeningDateId] = [                         // aggregate per screening
+        "screeningDateId": screeningDateId,
+        "seat": seatNumbers.joined(separator: "-")
+    ]
+}
+// On re-tap of already-selected seat:
+else {
+    seatsToBeReserved.removeValue(forKey: seatId)
+    BasketData_.removeValue(forKey: seatId)
+    cell.layer.borderWidth = 1  // visual deselect
+}</code></pre>
+
+<p>The <strong>Clear</strong> button (<code>clearSeatsToBeReserved()</code>) iterates all <code>SeatsData_</code> entries and removes them from both <code>BasketData_</code> and <code>seatsToBeReserved</code>, then reloads the table.</p>
+
+<p>The <strong>Basket</strong> button checks <code>BasketData_.count &lt; 1</code> — if no seats are selected it shows a "No free seat(s)" alert. Otherwise it presents <code>BasketVC</code> as a custom modal transition.</p>
+
+<h4>BasketData Assembly — Three-Step Aggregation</h4>
+<p>Each <code>BasketData</code> entry aggregates fields from <strong>three different steps</strong>:</p>
 <ul>
   <li><strong>Movie info</strong> (<code>SelectMovieName</code>, <code>SelectMoviePicture</code>) — set in <code>VenuesDetailsVC.book()</code> from segue props</li>
   <li><strong>Venue info</strong> (<code>SelectVenueName</code>, <code>SelectVenueForMovie</code>) — set in <code>VenuesDetailsVC.book()</code> from segue props</li>
   <li><strong>Seat + Date info</strong> (<code>seatId</code>, <code>price</code>, <code>screeningDateId</code>) — from <code>SeatsData_</code> (Step 6) and <code>PopOverDates</code> globals (Step 5)</li>
 </ul>
+
+<h4>Current Seat Grid Assumption — Uniform Rows</h4>
+<p>Currently the backend generates seats with a <strong>uniform grid</strong>: every row has the same number of seats (<code>nrOfSeatsInRow</code>). Row labels are alphabetical (A–P, max 16 rows), seat numbers within a row are sequential (e.g. A1, A2, …, A8). This is baked into <code>DAO.insertNewScreen()</code>:</p>
+<pre><code>// DAO.insertNewScreen() — seat generation loop
+String[] alphabet = {"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P"};
+for (int i = 0; i &lt; nrOfRows; i++) {
+    for (int j = 1; j &lt;= nrOfSeatsInRow; j++) {
+        Seats seat = new Seats();
+        seat.setSeatNumber(alphabet[i] + j);  // e.g. "A1", "B3"
+        seat.setSeatRow(String.valueOf(i + 1)); // "1", "2", ...
+        seat.setPrice(3);
+        seat.setTax(1.33);
+        // ...
+    }
+}</code></pre>
+
+<h4>Future: Variable Seats Per Row</h4>
+<div class="card priority-medium">
+<h4>🟡 MEDIUM — Support rows with different seat counts</h4>
+<p><strong>Goal:</strong> Allow the admin to specify different numbers of seats per row (e.g. front row has 4 seats, middle rows have 8, back row has 10) — typical of real cinema layouts where rows curve around the screen.</p>
+<p><strong>Good news — the iOS PopOver already handles this correctly.</strong> The collection view counts seats per row dynamically:</p>
+<pre><code>// PopOver.swift — already variable-ready
+func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection _: Int) -&gt; Int {
+    for j in 0 ..&lt; numberOfRows.count {
+        if collectionView.tag == j {
+            return SeatsData_.filter { $0.seatRow == String(j + 1) }.count
+            //     ^^^^^^^^ each row independently counts its seats
+        }
+    }
+    return 6  // fallback
+}</code></pre>
+<p>The changes required are <strong>backend-only</strong>:</p>
+<ol>
+  <li><strong>Admin API change:</strong> Replace the single <code>nrOfSeatsInRow</code> parameter with a per-row specification. Options:
+    <ul>
+      <li><strong>Simple:</strong> Comma-separated string: <code>"seatsPerRow": "4,8,8,8,8,10"</code> (one value per row)</li>
+      <li><strong>Structured:</strong> JSON array: <code>"seatsPerRow": [{"row":"A","seats":4},{"row":"B","seats":8},...]</code></li>
+    </ul>
+  </li>
+  <li><strong>DAO.insertNewScreen() change:</strong> Replace the nested <code>for</code> loop with a per-row iteration:
+<pre><code>// Proposed change
+int[] seatsPerRow = parseSeatsPerRow(seatsPerRowSpec);
+for (int i = 0; i &lt; nrOfRows; i++) {
+    int seatsInThisRow = seatsPerRow[i];
+    for (int j = 1; j &lt;= seatsInThisRow; j++) {
+        Seats seat = new Seats();
+        seat.setSeatNumber(alphabet[i] + j);
+        seat.setSeatRow(String.valueOf(i + 1));
+        // ... price/tax could also vary by row (premium, standard, economy)
+    }
+}</code></pre>
+  </li>
+  <li><strong>iOS AdminVC change:</strong> Replace the single <code>nrOfSeatsInRow</code> text field with a dynamic form (one row per seat-row, or a textarea for comma-separated input). The <code>PopOver</code> rendering code needs <strong>no changes</strong>.</li>
+  <li><strong>Optional — row-based pricing:</strong> Different rows could have different <code>price</code>/<code>tax</code> values (e.g. premium front rows, discounted back rows). The <code>SeatCells</code> already displays per-seat pricing, and <code>BasketData</code> tracks per-seat prices. Only the backend generation loop needs to accept price tiers.</li>
+</ol>
+</div>
+
+<div class="card priority-low">
+<h4>🟢 LOW — Collection view performance for large venues</h4>
+<p><strong>Problem:</strong> The <code>cellForItemAt</code> implementation runs a filter + nested loop on every cell render: <code>SeatsData_.filter { $0.seatRow == String(j + 1) }</code> is O(N) per cell where N = total seats. For a 16×20 venue (320 seats), this means 320 × 320 = 102,400 filter iterations during initial render.</p>
+<p><strong>Fix:</strong> Pre-compute a <code>[String: [SeatsData]]</code> dictionary (grouped by <code>seatRow</code>) once when <code>SeatsData_</code> is loaded. Use direct dictionary lookup in <code>cellForItemAt</code> instead of filtering.</p>
+</div>
 
 <!-- ── Step 8: Checkout ── -->
 <h3>Step 8 — Checkout (<code>BasketVC</code>)</h3>
@@ -1652,6 +1893,750 @@ Header:
 </div>
 </section>
 
+<!-- ══════════ ADMIN VENUE / SCREEN MANAGEMENT ══════════ -->
+
+<!-- ──────── ADMIN OVERVIEW ──────── -->
+<section id="admin-overview">
+<h2>Admin — Venue &amp; Screen Management</h2>
+<p>The admin module lets authorised users <strong>create</strong>, <strong>update</strong>, and <strong>delete</strong> venue-screening combinations. Each "screen" in this context is the composite entity graph: <code>Location → Venues → Screen → ScreeningDates → Seats</code>. All three operations originate from the iOS admin UI and hit the <code>mbooks-quarkus</code> backend directly at <code>/mbooks-1/rest/book/admin/*</code>.</p>
+
+<div class="grid-3">
+  <div class="card">
+    <h4><span class="badge badge-green">Add</span></h4>
+    <p>Insert a brand-new screening: creates Venues, Screen, ScreeningDates, and batch-generates Seats (row × column).</p>
+  </div>
+  <div class="card">
+    <h4><span class="badge badge-orange">Update</span></h4>
+    <p>Change the movie, venue/location, date, or category of an existing screening. Seats and screen layout are preserved.</p>
+  </div>
+  <div class="card">
+    <h4><span class="badge badge-red">Delete</span></h4>
+    <p>Remove a screening by its <code>ScreeningDatesId</code>. Cascade deletes the associated Venues, Screen, and Seats.</p>
+  </div>
+</div>
+
+<h3>iOS Navigation — Admin Flow</h3>
+<p>Two view controllers drive the admin UI: <code>AdminVC</code> (create new screenings) and <code>AdminUpdateVC</code> (update/delete existing ones). Both reuse <code>MoviesVC</code> and <code>VenuesVC</code> as popovers for entity selection, controlled by the global flags <code>adminPage</code> and <code>adminUpdatePage</code>.</p>
+
+<div class="diagram-container svg-diagram">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 420" font-family="Arial,sans-serif" font-size="12">
+  <rect width="900" height="420" fill="#f8f9fa" rx="8"/>
+  <defs><marker id="adm1" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#666"/></marker></defs>
+
+  <!-- Title -->
+  <text x="450" y="28" text-anchor="middle" fill="#333" font-weight="bold" font-size="16">Admin Navigation Flow — iOS</text>
+
+  <!-- MenuVC -->
+  <rect x="20" y="55" width="130" height="50" rx="8" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="85" y="75" text-anchor="middle" fill="#1976d2" font-weight="bold">MenuVC</text>
+  <text x="85" y="92" text-anchor="middle" fill="#555" font-size="10">Admin button</text>
+
+  <!-- AdminVC -->
+  <rect x="195" y="55" width="155" height="50" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="273" y="75" text-anchor="middle" fill="#2e7d32" font-weight="bold">AdminVC</text>
+  <text x="273" y="92" text-anchor="middle" fill="#555" font-size="10">Create new screening</text>
+  <line x1="150" y1="80" x2="193" y2="80" stroke="#666" marker-end="url(#adm1)"/>
+  <text x="170" y="72" fill="#888" font-size="9">goto_admin</text>
+
+  <!-- AdminUpdateVC -->
+  <rect x="395" y="55" width="175" height="50" rx="8" fill="#fff3e0" stroke="#e65100" stroke-width="2"/>
+  <text x="483" y="75" text-anchor="middle" fill="#e65100" font-weight="bold">AdminUpdateVC</text>
+  <text x="483" y="92" text-anchor="middle" fill="#555" font-size="10">Update / Delete screening</text>
+  <line x1="350" y1="80" x2="393" y2="80" stroke="#666" marker-end="url(#adm1)"/>
+  <text x="370" y="72" fill="#888" font-size="9">goto_adminUpdate</text>
+
+  <!-- MoviesVC popover from AdminVC -->
+  <rect x="100" y="155" width="150" height="50" rx="8" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2"/>
+  <text x="175" y="175" text-anchor="middle" fill="#7b1fa2" font-weight="bold">MoviesVC</text>
+  <text x="175" y="192" text-anchor="middle" fill="#555" font-size="10">Popover — select movie</text>
+  <line x1="230" y1="105" x2="195" y2="153" stroke="#7b1fa2" stroke-dasharray="4 2" marker-end="url(#adm1)"/>
+
+  <!-- VenuesVC popover from AdminVC -->
+  <rect x="100" y="225" width="150" height="50" rx="8" fill="#fce4ec" stroke="#c62828" stroke-width="2"/>
+  <text x="175" y="245" text-anchor="middle" fill="#c62828" font-weight="bold">VenuesVC</text>
+  <text x="175" y="262" text-anchor="middle" fill="#555" font-size="10">Popover — select venue</text>
+  <line x1="230" y1="105" x2="195" y2="223" stroke="#c62828" stroke-dasharray="4 2" marker-end="url(#adm1)"/>
+
+  <!-- MoviesVC popover from AdminUpdateVC -->
+  <rect x="400" y="155" width="165" height="50" rx="8" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2"/>
+  <text x="483" y="175" text-anchor="middle" fill="#7b1fa2" font-weight="bold">MoviesVC</text>
+  <text x="483" y="192" text-anchor="middle" fill="#555" font-size="10">adminUpdatePage=true</text>
+  <line x1="483" y1="105" x2="483" y2="153" stroke="#7b1fa2" stroke-dasharray="4 2" marker-end="url(#adm1)"/>
+
+  <!-- VenuesVC popover from AdminUpdateVC -->
+  <rect x="400" y="225" width="165" height="50" rx="8" fill="#fce4ec" stroke="#c62828" stroke-width="2"/>
+  <text x="483" y="245" text-anchor="middle" fill="#c62828" font-weight="bold">VenuesVC</text>
+  <text x="483" y="262" text-anchor="middle" fill="#555" font-size="10">Popover — change venue</text>
+  <line x1="483" y1="105" x2="483" y2="223" stroke="#c62828" stroke-dasharray="4 2" marker-end="url(#adm1)"/>
+
+  <!-- API listing for AdminUpdateVC -->
+  <rect x="620" y="140" width="250" height="80" rx="8" fill="#e0f2f1" stroke="#00695c" stroke-width="2"/>
+  <text x="745" y="162" text-anchor="middle" fill="#00695c" font-weight="bold" font-size="11">Admin List APIs</text>
+  <text x="745" y="178" text-anchor="middle" fill="#555" font-size="10">GET /admin/moviesonvenues</text>
+  <text x="745" y="192" text-anchor="middle" fill="#555" font-size="10">GET /admin/moviesonvenuescategorized</text>
+  <text x="745" y="206" text-anchor="middle" fill="#555" font-size="10">GET /admin/moviesonvenuessearch</text>
+  <line x1="565" y1="180" x2="618" y2="180" stroke="#00695c" marker-end="url(#adm1)"/>
+
+  <!-- Notification flow -->
+  <rect x="80" y="310" width="210" height="40" rx="6" fill="#fff8e1" stroke="#f57f17" stroke-width="1.5"/>
+  <text x="185" y="335" text-anchor="middle" fill="#f57f17" font-size="11">NotificationCenter.post</text>
+  <text x="185" y="320" text-anchor="middle" fill="#555" font-size="9">"newScreenMovieSelected" / "newScreenVenueSelected"</text>
+  <line x1="175" y1="205" x2="185" y2="308" stroke="#f57f17" stroke-dasharray="3 2" marker-end="url(#adm1)"/>
+  <line x1="175" y1="275" x2="185" y2="308" stroke="#f57f17" stroke-dasharray="3 2" marker-end="url(#adm1)"/>
+
+  <rect x="360" y="310" width="240" height="40" rx="6" fill="#fff8e1" stroke="#f57f17" stroke-width="1.5"/>
+  <text x="480" y="335" text-anchor="middle" fill="#f57f17" font-size="11">NotificationCenter.post</text>
+  <text x="480" y="320" text-anchor="middle" fill="#555" font-size="9">"movieSelected" / "newScreenVenueSelected"</text>
+  <line x1="483" y1="205" x2="480" y2="308" stroke="#f57f17" stroke-dasharray="3 2" marker-end="url(#adm1)"/>
+  <line x1="483" y1="275" x2="480" y2="308" stroke="#f57f17" stroke-dasharray="3 2" marker-end="url(#adm1)"/>
+
+  <!-- Global vars -->
+  <rect x="120" y="370" width="530" height="40" rx="6" fill="#ede7f6" stroke="#4a148c" stroke-width="1.5"/>
+  <text x="385" y="395" text-anchor="middle" fill="#4a148c" font-size="11">Global vars: addMovie, addMovieId, addVenue, addVenueId, addScreeningID, addScreeningDate, addScreeningDateId, addCategory</text>
+</svg>
+</div>
+
+<p>When <code>adminUpdatePage == true</code>, <code>MoviesVC</code> switches from its normal movie-browse mode to calling <code>/admin/moviesonvenues</code>, which returns a flat list of <code>Admin_ScreenData</code> objects (movie + venue + screeningId + date + IDs). Selecting a row populates the global variables, and <code>NotificationCenter</code> posts <code>"movieSelected"</code> to refresh <code>AdminUpdateVC</code> fields.</p>
+</section>
+
+<!-- ──────── ADD VENUE / SCREEN ──────── -->
+<section id="admin-add-venue">
+<h2>Add Venue / Screen (Insert New Screening)</h2>
+
+<h3>iOS Client — AdminVC</h3>
+<p>The user fills in 7 fields on <code>AdminVC</code>: movie name (via <code>MoviesVC</code> popover), venue name (via <code>VenuesVC</code> popover), screening date (date picker), number of rows, number of seats per row, screening ID, and category. Tapping <strong>Save</strong> calls <code>addNewScreen()</code>.</p>
+
+<h3>Request</h3>
+<pre><code>POST /mbooks-1/rest/book/admin/addscreen
+Content-Type: application/json
+
+{
+  "movie":          "A Beautiful Mind",
+  "venue":          "Uránia Filmszínház",
+  "date":           "2026-04-15 20:00:00",
+  "nrOfRows":       "6",
+  "nrOfSeatsInRow": "8",
+  "ScreeningId":    "T99",
+  "category":       "Drama"
+}</code></pre>
+
+<h3>Backend Processing</h3>
+
+<div class="diagram-container svg-diagram">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 680" font-family="Arial,sans-serif" font-size="12">
+  <rect width="920" height="680" fill="#f8f9fa" rx="8"/>
+  <defs><marker id="adn" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#666"/></marker></defs>
+
+  <text x="460" y="28" text-anchor="middle" fill="#333" font-weight="bold" font-size="16">Add Screen — Entity Creation Flow</text>
+
+  <!-- Step 1: BookController -->
+  <rect x="20" y="50" width="200" height="55" rx="8" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="120" y="72" text-anchor="middle" fill="#1976d2" font-weight="bold">BookController</text>
+  <text x="120" y="89" text-anchor="middle" fill="#555" font-size="10">addScreen() — parse JSON</text>
+
+  <!-- Step 2: BookingHandlerImpl -->
+  <rect x="250" y="50" width="200" height="55" rx="8" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="350" y="72" text-anchor="middle" fill="#1976d2" font-weight="bold">BookingHandlerImpl</text>
+  <text x="350" y="89" text-anchor="middle" fill="#555" font-size="10">addScreen() → delegates to DAO</text>
+  <line x1="220" y1="78" x2="248" y2="78" stroke="#666" marker-end="url(#adn)"/>
+
+  <!-- Step 3: DAO.insertNewScreen -->
+  <rect x="480" y="50" width="210" height="55" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="585" y="72" text-anchor="middle" fill="#2e7d32" font-weight="bold">DAO.insertNewScreen()</text>
+  <text x="585" y="89" text-anchor="middle" fill="#555" font-size="10">factory.openSession() ← separate session!</text>
+  <line x1="450" y1="78" x2="478" y2="78" stroke="#666" marker-end="url(#adn)"/>
+
+  <!-- Step 3a: getScreenForAvailability -->
+  <rect x="720" y="50" width="180" height="55" rx="8" fill="#fff3e0" stroke="#e65100" stroke-width="2"/>
+  <text x="810" y="72" text-anchor="middle" fill="#e65100" font-weight="bold">getScreenForAvailability</text>
+  <text x="810" y="89" text-anchor="middle" fill="#555" font-size="10">Creates entity graph</text>
+  <line x1="690" y1="78" x2="718" y2="78" stroke="#666" marker-end="url(#adn)"/>
+
+  <!-- Entity creation steps -->
+  <rect x="40" y="140" width="170" height="55" rx="8" fill="#e0f2f1" stroke="#00695c" stroke-width="2"/>
+  <text x="125" y="160" text-anchor="middle" fill="#00695c" font-weight="bold" font-size="11">1. Fetch Location</text>
+  <text x="125" y="178" text-anchor="middle" fill="#555" font-size="10">HQL: FROM Location WHERE name=?</text>
+
+  <rect x="230" y="140" width="170" height="55" rx="8" fill="#e0f2f1" stroke="#00695c" stroke-width="2"/>
+  <text x="315" y="160" text-anchor="middle" fill="#00695c" font-weight="bold" font-size="11">2. Fetch/Update Movie</text>
+  <text x="315" y="178" text-anchor="middle" fill="#555" font-size="10">Set category, saveOrUpdate</text>
+
+  <rect x="420" y="140" width="170" height="55" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="505" y="160" text-anchor="middle" fill="#2e7d32" font-weight="bold" font-size="11">3. Create Venues</text>
+  <text x="505" y="178" text-anchor="middle" fill="#555" font-size="10">MAX(venuesId) + 1</text>
+
+  <rect x="610" y="140" width="170" height="55" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="695" y="160" text-anchor="middle" fill="#2e7d32" font-weight="bold" font-size="11">4. Create ScreeningDates</text>
+  <text x="695" y="178" text-anchor="middle" fill="#555" font-size="10">MAX(screeningDatesId) + 1</text>
+
+  <line x1="210" y1="167" x2="228" y2="167" stroke="#666" marker-end="url(#adn)"/>
+  <line x1="400" y1="167" x2="418" y2="167" stroke="#666" marker-end="url(#adn)"/>
+  <line x1="590" y1="167" x2="608" y2="167" stroke="#666" marker-end="url(#adn)"/>
+
+  <!-- Row 2 creation -->
+  <rect x="40" y="225" width="170" height="55" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="125" y="245" text-anchor="middle" fill="#2e7d32" font-weight="bold" font-size="11">5. Create Screen</text>
+  <text x="125" y="263" text-anchor="middle" fill="#555" font-size="10">screenId = ScreeningId param</text>
+
+  <rect x="230" y="225" width="200" height="55" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="330" y="245" text-anchor="middle" fill="#2e7d32" font-weight="bold" font-size="11">6. Link Entities</text>
+  <text x="330" y="263" text-anchor="middle" fill="#555" font-size="10">Venue↔Screen, Screen↔Dates</text>
+
+  <rect x="450" y="225" width="200" height="55" rx="8" fill="#fff8e1" stroke="#f57f17" stroke-width="2"/>
+  <text x="550" y="245" text-anchor="middle" fill="#f57f17" font-weight="bold" font-size="11">7. Batch Generate Seats</text>
+  <text x="550" y="263" text-anchor="middle" fill="#555" font-size="10">rows × cols loop, MAX(seatId)+1</text>
+
+  <rect x="670" y="225" width="170" height="55" rx="8" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2"/>
+  <text x="755" y="245" text-anchor="middle" fill="#7b1fa2" font-weight="bold" font-size="11">8. Commit</text>
+  <text x="755" y="263" text-anchor="middle" fill="#555" font-size="10">tx.commit() both sessions</text>
+
+  <line x1="210" y1="252" x2="228" y2="252" stroke="#666" marker-end="url(#adn)"/>
+  <line x1="430" y1="252" x2="448" y2="252" stroke="#666" marker-end="url(#adn)"/>
+  <line x1="650" y1="252" x2="668" y2="252" stroke="#666" marker-end="url(#adn)"/>
+
+  <!-- Entity relationship diagram -->
+  <text x="460" y="318" text-anchor="middle" fill="#333" font-weight="bold" font-size="14">Entity Graph Created</text>
+
+  <rect x="80" y="340" width="140" height="45" rx="8" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="150" y="368" text-anchor="middle" fill="#1976d2" font-weight="bold">Location</text>
+
+  <rect x="270" y="340" width="140" height="45" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="340" y="368" text-anchor="middle" fill="#2e7d32" font-weight="bold">Venues</text>
+  <line x1="220" y1="362" x2="268" y2="362" stroke="#666" stroke-width="2" marker-end="url(#adn)"/>
+  <text x="244" y="355" fill="#888" font-size="9">M:1</text>
+
+  <rect x="460" y="340" width="140" height="45" rx="8" fill="#fff3e0" stroke="#e65100" stroke-width="2"/>
+  <text x="530" y="368" text-anchor="middle" fill="#e65100" font-weight="bold">Screen</text>
+  <line x1="410" y1="362" x2="458" y2="362" stroke="#666" stroke-width="2" marker-end="url(#adn)"/>
+  <text x="434" y="355" fill="#888" font-size="9">1:1</text>
+
+  <rect x="650" y="340" width="140" height="45" rx="8" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2"/>
+  <text x="720" y="368" text-anchor="middle" fill="#7b1fa2" font-weight="bold">Movie</text>
+  <line x1="600" y1="362" x2="648" y2="362" stroke="#666" stroke-width="2" marker-end="url(#adn)"/>
+  <text x="624" y="355" fill="#888" font-size="9">M:1</text>
+
+  <rect x="270" y="420" width="140" height="45" rx="8" fill="#fce4ec" stroke="#c62828" stroke-width="2"/>
+  <text x="340" y="448" text-anchor="middle" fill="#c62828" font-weight="bold">ScreeningDates</text>
+  <line x1="340" y1="385" x2="340" y2="418" stroke="#666" stroke-width="2" marker-end="url(#adn)"/>
+  <text x="355" y="406" fill="#888" font-size="9">1:1</text>
+
+  <rect x="460" y="420" width="140" height="45" rx="8" fill="#fff8e1" stroke="#f57f17" stroke-width="2"/>
+  <text x="530" y="448" text-anchor="middle" fill="#f57f17" font-weight="bold">Seats × N</text>
+  <line x1="530" y1="385" x2="530" y2="418" stroke="#666" stroke-width="2" marker-end="url(#adn)"/>
+  <text x="545" y="406" fill="#888" font-size="9">1:N</text>
+
+  <!-- Cascade annotation -->
+  <rect x="80" y="500" width="760" height="60" rx="8" fill="#ede7f6" stroke="#4a148c" stroke-width="1.5"/>
+  <text x="460" y="520" text-anchor="middle" fill="#4a148c" font-weight="bold" font-size="12">Cascade Behaviour (CascadeType.ALL on Venues.screen and ScreeningDates.venues)</text>
+  <text x="460" y="540" text-anchor="middle" fill="#555" font-size="11">Saving Venues cascades → Screen → Seats. Saving ScreeningDates cascades → Venues. Both sessions commit independently.</text>
+
+  <!-- Kafka event -->
+  <rect x="80" y="590" width="760" height="55" rx="8" fill="#e0f2f1" stroke="#00695c" stroke-width="2"/>
+  <text x="460" y="612" text-anchor="middle" fill="#00695c" font-weight="bold" font-size="12">Post-Commit: Kafka Event → WebSocket Broadcast</text>
+  <text x="460" y="630" text-anchor="middle" fill="#555" font-size="11">AddMovie { movie, date, venue, screeningId, screeningDatesId } → KafkaMessageProducer → topic: ios-movies-notifications2</text>
+</svg>
+</div>
+
+<h3>Processing Steps (Detail)</h3>
+<div class="flow-step"><div class="flow-num">1</div><div class="flow-body"><strong>BookController.addScreen()</strong> — Parses the JSON body, extracts 7 fields: <code>movie</code>, <code>date</code>, <code>venue</code>, <code>nrOfRows</code>, <code>nrOfSeatsInRow</code>, <code>ScreeningId</code>, <code>category</code>.</div></div>
+<div class="flow-step"><div class="flow-num">2</div><div class="flow-body"><strong>DAO.insertNewScreen()</strong> — Opens a <strong>separate Hibernate session</strong> (<code>factory.openSession()</code>) to avoid deadlocking the singleton shared session. Calls <code>getScreenForAvailability()</code> using the current session for the entity graph creation.</div></div>
+<div class="flow-step"><div class="flow-num">3</div><div class="flow-body"><strong>getScreenForAvailability()</strong> — Fetches <code>Location</code> by venue name. Fetches/updates <code>Movie</code> (sets category). Calculates new IDs via <code>SELECT MAX(...)</code>. Creates <code>Venues</code>, <code>ScreeningDates</code>, <code>Screen</code>. Links all entities. Commits.</div></div>
+<div class="flow-step"><div class="flow-num">4</div><div class="flow-body"><strong>Seat generation</strong> — Back in <code>insertNewScreen()</code>, generates <code>nrOfRows × nrOfSeatsInRow</code> Seats. Row labels are A–P (max 16 rows). Each seat gets <code>price=3</code>, <code>tax=1.33</code>, <code>isReserved="0"</code>. Batch <code>session.save()</code> per seat.</div></div>
+<div class="flow-step"><div class="flow-num">5</div><div class="flow-body"><strong>Kafka broadcast</strong> — On success, an <code>AddMovie</code> event is serialised and sent to Kafka topic <code>ios-movies-notifications2</code> on a background executor thread. All connected WebSocket clients receive the update.</div></div>
+
+<h3>Response</h3>
+<div class="grid-2">
+  <div class="card priority-low">
+    <h4>✅ 200 OK — Success</h4>
+<pre><code>{
+  "movie":           "A Beautiful Mind",
+  "date":            "2026-04-15 20:00:00",
+  "venue":           "Uránia Filmszínház",
+  "ScreeningId":     "T99",
+  "ScreeningDateId": "42"
+}</code></pre>
+  </div>
+  <div class="card priority-high">
+    <h4>❌ 409 CONFLICT — Duplicate / Error</h4>
+<pre><code>{
+  "movie":       "A Beautiful Mind",
+  "date":        "2026-04-15 20:00:00",
+  "venue":       "Uránia Filmszínház",
+  "ScreeningId": "Error: &lt;message&gt;"
+}</code></pre>
+    <p>The error string is embedded in the <code>ScreeningId</code> field. iOS checks <code>if ScreeningId.contains("Error")</code>.</p>
+  </div>
+</div>
+
+<h3>Known Issues &amp; Concurrency Risks</h3>
+<div class="card priority-high">
+<h4>⚠️ Race condition on MAX(id) ID generation</h4>
+<p><code>SELECT MAX(venuesId) FROM Venues</code>, <code>SELECT MAX(screeningDatesId) FROM ScreeningDates</code>, and <code>SELECT MAX(seatId) FROM Seats</code> are all used to compute the next ID. Under concurrent admin inserts, two requests may compute the same next ID → <strong>primary key collision</strong>. The entities use <code>@GeneratedValue(strategy=GenerationType.IDENTITY)</code> on some columns, but the manual MAX+1 overrides it.</p>
+</div>
+<div class="card priority-medium">
+<h4>⚠️ Dual session commit</h4>
+<p><code>insertNewScreen()</code> uses <code>factory.openSession()</code> (session B) while <code>getScreenForAvailability()</code> uses <code>factory.getCurrentSession()</code> (session A). If session A commits but session B fails during seat generation, the Venues/Screen/ScreeningDates exist in the database <strong>without any seats</strong>.</p>
+</div>
+</section>
+
+<!-- ──────── UPDATE VENUE / SCREEN ──────── -->
+<section id="admin-update-venue">
+<h2>Update Venue / Screen</h2>
+
+<h3>iOS Client — AdminUpdateVC</h3>
+<p>The user first selects an existing screening from the movie list (which calls <code>/admin/moviesonvenues</code> and displays <code>Admin_ScreenData</code> rows). The global variables (<code>addMovieId</code>, <code>addVenueId</code>, <code>addScreeningDateId</code>, etc.) are populated. The user can then change venue (via <code>VenuesVC</code> popover), date (date picker), or category (text field), and tap <strong>Save</strong>.</p>
+
+<h3>Request</h3>
+<pre><code>POST /mbooks-1/rest/book/admin/updatescreen
+Content-Type: application/json
+
+{
+  "movieId":          "5",
+  "venueId":          "12",
+  "venue":            "Corvin Mozi",
+  "date":             "2026-05-01 19:30:00",
+  "ScreeningDatesId": "42",
+  "screenId":         "T99",
+  "category":         "Drama"
+}</code></pre>
+
+<h3>Backend Processing</h3>
+
+<div class="diagram-container svg-diagram">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 440" font-family="Arial,sans-serif" font-size="12">
+  <rect width="880" height="440" fill="#f8f9fa" rx="8"/>
+  <defs><marker id="upd1" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#666"/></marker></defs>
+
+  <text x="440" y="28" text-anchor="middle" fill="#333" font-weight="bold" font-size="16">Update Screen — Data Flow</text>
+
+  <!-- Controller -->
+  <rect x="20" y="55" width="200" height="50" rx="8" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="120" y="75" text-anchor="middle" fill="#1976d2" font-weight="bold">BookController</text>
+  <text x="120" y="90" text-anchor="middle" fill="#555" font-size="10">updateScreen() — parse JSON</text>
+
+  <rect x="250" y="55" width="200" height="50" rx="8" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="350" y="75" text-anchor="middle" fill="#1976d2" font-weight="bold">BookingHandlerImpl</text>
+  <text x="350" y="90" text-anchor="middle" fill="#555" font-size="10">updateScreen()</text>
+  <line x1="220" y1="80" x2="248" y2="80" stroke="#666" marker-end="url(#upd1)"/>
+
+  <rect x="480" y="55" width="200" height="50" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="580" y="75" text-anchor="middle" fill="#2e7d32" font-weight="bold">DAO.updateScreen()</text>
+  <text x="580" y="90" text-anchor="middle" fill="#555" font-size="10">Shared session — getCurrentSession()</text>
+  <line x1="450" y1="80" x2="478" y2="80" stroke="#666" marker-end="url(#upd1)"/>
+
+  <!-- Update steps -->
+  <rect x="40" y="140" width="195" height="65" rx="8" fill="#fff3e0" stroke="#e65100" stroke-width="2"/>
+  <text x="138" y="162" text-anchor="middle" fill="#e65100" font-weight="bold" font-size="11">1. Update Location</text>
+  <text x="138" y="178" text-anchor="middle" fill="#555" font-size="10">Fetch new Location by name</text>
+  <text x="138" y="192" text-anchor="middle" fill="#555" font-size="10">Update Venues: name, address, picture</text>
+
+  <rect x="255" y="140" width="195" height="65" rx="8" fill="#fff3e0" stroke="#e65100" stroke-width="2"/>
+  <text x="353" y="162" text-anchor="middle" fill="#e65100" font-weight="bold" font-size="11">2. Update Date</text>
+  <text x="353" y="178" text-anchor="middle" fill="#555" font-size="10">Fetch ScreeningDates by ID</text>
+  <text x="353" y="192" text-anchor="middle" fill="#555" font-size="10">Parse &amp; set new date</text>
+
+  <rect x="470" y="140" width="195" height="65" rx="8" fill="#fff3e0" stroke="#e65100" stroke-width="2"/>
+  <text x="568" y="162" text-anchor="middle" fill="#e65100" font-weight="bold" font-size="11">3. Update Movie</text>
+  <text x="568" y="178" text-anchor="middle" fill="#555" font-size="10">Fetch Movie by moviesId</text>
+  <text x="568" y="192" text-anchor="middle" fill="#555" font-size="10">Set category, link to Screen</text>
+
+  <rect x="685" y="140" width="155" height="65" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="763" y="162" text-anchor="middle" fill="#2e7d32" font-weight="bold" font-size="11">4. Commit</text>
+  <text x="763" y="178" text-anchor="middle" fill="#555" font-size="10">tx.commit()</text>
+  <text x="763" y="192" text-anchor="middle" fill="#555" font-size="10">Return updated Screen</text>
+
+  <line x1="235" y1="172" x2="253" y2="172" stroke="#666" marker-end="url(#upd1)"/>
+  <line x1="450" y1="172" x2="468" y2="172" stroke="#666" marker-end="url(#upd1)"/>
+  <line x1="665" y1="172" x2="683" y2="172" stroke="#666" marker-end="url(#upd1)"/>
+
+  <!-- What changes / what doesn't -->
+  <text x="440" y="240" text-anchor="middle" fill="#333" font-weight="bold" font-size="14">What Changes vs. What Stays</text>
+
+  <rect x="40" y="260" width="380" height="140" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="230" y="282" text-anchor="middle" fill="#2e7d32" font-weight="bold">🔄 Modified Entities</text>
+  <text x="60" y="302" fill="#555" font-size="11">• Venues — location reference, name, address, picture, contact</text>
+  <text x="60" y="320" fill="#555" font-size="11">• ScreeningDates — screeningDate (timestamp)</text>
+  <text x="60" y="338" fill="#555" font-size="11">• Movie — category field only</text>
+  <text x="60" y="356" fill="#555" font-size="11">• Screen — movie reference (can change to different movie)</text>
+  <text x="60" y="380" fill="#555" font-size="10" font-style="italic">Note: contact is hardcoded to "Quentin Tarantino"</text>
+
+  <rect x="460" y="260" width="380" height="140" rx="8" fill="#ede7f6" stroke="#4a148c" stroke-width="2"/>
+  <text x="650" y="282" text-anchor="middle" fill="#4a148c" font-weight="bold">🔒 Preserved Entities</text>
+  <text x="480" y="302" fill="#555" font-size="11">• venuesId — kept (looked up by original ID)</text>
+  <text x="480" y="320" fill="#555" font-size="11">• screeningDatesId — kept (looked up by original ID)</text>
+  <text x="480" y="338" fill="#555" font-size="11">• screenId — kept (same Screen PK)</text>
+  <text x="480" y="356" fill="#555" font-size="11">• All Seats — untouched (no seat re-generation)</text>
+  <text x="480" y="374" fill="#555" font-size="11">• Ticket/Purchase history — preserved</text>
+</svg>
+</div>
+
+<h3>Processing Steps (Detail)</h3>
+<div class="flow-step"><div class="flow-num">1</div><div class="flow-body"><strong>Fetch new Location</strong> — HQL: <code>FROM Location WHERE name = :venue</code>. The <code>venue</code> parameter is the location name string (e.g. "Corvin Mozi"). The existing <code>Venues</code> entity (looked up by <code>venuesId</code>) has its location, name, address, and picture updated from the new Location entity.</div></div>
+<div class="flow-step"><div class="flow-num">2</div><div class="flow-body"><strong>Update ScreeningDates</strong> — Fetched by <code>screeningDatesId</code>. The date is parsed from <code>"yyyy-MM-dd HH:mm:ss"</code> format and set via <code>setScreeningDate()</code>. <code>saveOrUpdate()</code> persists the change.</div></div>
+<div class="flow-step"><div class="flow-num">3</div><div class="flow-body"><strong>Update Movie &amp; Screen</strong> — <code>Movie</code> fetched by <code>moviesId</code>. Category updated. <code>Screen</code> fetched by <code>screenId</code> and relinked to the (possibly new) Movie. Both saved via <code>saveOrUpdate()</code>.</div></div>
+<div class="flow-step"><div class="flow-num">4</div><div class="flow-body"><strong>Commit</strong> — Uses the shared singleton session (<code>getCurrentSession()</code>). Transaction committed. Returns the updated <code>Screen</code> entity.</div></div>
+
+<h3>Response</h3>
+<div class="grid-2">
+  <div class="card priority-low">
+    <h4>✅ 200 OK</h4>
+<pre><code>{
+  "movie":       "5",
+  "date":        "2026-05-01 19:30:00",
+  "venue":       "Corvin Mozi",
+  "ScreeningId": "T99"
+}</code></pre>
+    <p>Note: <code>movie</code> field contains <code>moviesId</code> (the integer ID as string), not the movie name.</p>
+  </div>
+  <div class="card priority-high">
+    <h4>❌ 409 CONFLICT</h4>
+<pre><code>{
+  "movie":       "5",
+  "date":        "2026-05-01 19:30:00",
+  "venue":       "Corvin Mozi",
+  "ScreeningId": "Error: &lt;message&gt;"
+}</code></pre>
+  </div>
+</div>
+
+<h3>Key Behaviour Notes</h3>
+<ul>
+  <li><strong>No seat regeneration</strong> — updating a screen does NOT recreate or resize the seat grid. If you need to change the number of rows/seats, you must delete and re-add the screening.</li>
+  <li><strong>No Kafka broadcast</strong> — unlike the add operation, updates do <strong>not</strong> publish a Kafka event. Connected clients will not be notified of the change in real time.</li>
+  <li><strong>Shared singleton session</strong> — unlike the add flow (which uses a separate session), the update flow uses the DAO's shared <code>getCurrentSession()</code>. This means it is serialized by the <code>synchronized</code> DAO singleton.</li>
+  <li><strong>Contact hardcoded</strong> — the contact field is always overwritten to <code>"Quentin Tarantino"</code> on update, regardless of the previous value.</li>
+</ul>
+</section>
+
+<!-- ──────── DELETE VENUE / SCREEN ──────── -->
+<section id="admin-delete-venue">
+<h2>Delete Venue / Screen</h2>
+
+<h3>iOS Client — AdminUpdateVC</h3>
+<p>The user selects an existing screening from the movie list (same flow as update), then taps the <strong>Delete</strong> button. The only parameter needed is <code>ScreeningDatesId</code>.</p>
+
+<h3>Request</h3>
+<pre><code>DELETE /mbooks-1/rest/book/admin/deletescreen
+Content-Type: application/json
+
+{
+  "ScreeningDatesId": "42"
+}</code></pre>
+
+<h3>Backend Processing</h3>
+
+<div class="diagram-container svg-diagram">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 380" font-family="Arial,sans-serif" font-size="12">
+  <rect width="880" height="380" fill="#f8f9fa" rx="8"/>
+  <defs><marker id="del1" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#666"/></marker></defs>
+
+  <text x="440" y="28" text-anchor="middle" fill="#333" font-weight="bold" font-size="16">Delete Screen — Cascade Deletion Flow</text>
+
+  <!-- Controller chain -->
+  <rect x="20" y="55" width="200" height="50" rx="8" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="120" y="75" text-anchor="middle" fill="#1976d2" font-weight="bold">BookController</text>
+  <text x="120" y="90" text-anchor="middle" fill="#555" font-size="10">deleteScreen() — parse JSON</text>
+
+  <rect x="250" y="55" width="200" height="50" rx="8" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="350" y="75" text-anchor="middle" fill="#1976d2" font-weight="bold">BookingHandlerImpl</text>
+  <text x="350" y="90" text-anchor="middle" fill="#555" font-size="10">deleteScreen(screeningDatesId)</text>
+  <line x1="220" y1="80" x2="248" y2="80" stroke="#666" marker-end="url(#del1)"/>
+
+  <rect x="480" y="55" width="200" height="50" rx="8" fill="#fce4ec" stroke="#c62828" stroke-width="2"/>
+  <text x="580" y="75" text-anchor="middle" fill="#c62828" font-weight="bold">DAO.deleteScreen()</text>
+  <text x="580" y="90" text-anchor="middle" fill="#555" font-size="10">session.delete(screeningDates)</text>
+  <line x1="450" y1="80" x2="478" y2="80" stroke="#666" marker-end="url(#del1)"/>
+
+  <!-- Delete cascade steps -->
+  <text x="440" y="138" text-anchor="middle" fill="#333" font-weight="bold" font-size="14">Cascade Deletion Chain (CascadeType.ALL)</text>
+
+  <rect x="40" y="155" width="170" height="55" rx="8" fill="#fce4ec" stroke="#c62828" stroke-width="2"/>
+  <text x="125" y="178" text-anchor="middle" fill="#c62828" font-weight="bold">ScreeningDates</text>
+  <text x="125" y="195" text-anchor="middle" fill="#555" font-size="10">Deleted directly by ID</text>
+
+  <rect x="245" y="155" width="170" height="55" rx="8" fill="#fce4ec" stroke="#c62828" stroke-width="2"/>
+  <text x="330" y="178" text-anchor="middle" fill="#c62828" font-weight="bold">Venues</text>
+  <text x="330" y="195" text-anchor="middle" fill="#555" font-size="10">Cascade from ScreeningDates</text>
+  <line x1="210" y1="182" x2="243" y2="182" stroke="#c62828" stroke-width="2" marker-end="url(#del1)"/>
+
+  <rect x="450" y="155" width="170" height="55" rx="8" fill="#fce4ec" stroke="#c62828" stroke-width="2"/>
+  <text x="535" y="178" text-anchor="middle" fill="#c62828" font-weight="bold">Screen</text>
+  <text x="535" y="195" text-anchor="middle" fill="#555" font-size="10">Cascade from Venues</text>
+  <line x1="415" y1="182" x2="448" y2="182" stroke="#c62828" stroke-width="2" marker-end="url(#del1)"/>
+
+  <rect x="655" y="155" width="170" height="55" rx="8" fill="#fce4ec" stroke="#c62828" stroke-width="2"/>
+  <text x="740" y="178" text-anchor="middle" fill="#c62828" font-weight="bold">Seats × N</text>
+  <text x="740" y="195" text-anchor="middle" fill="#555" font-size="10">Cascade from Screen</text>
+  <line x1="620" y1="182" x2="653" y2="182" stroke="#c62828" stroke-width="2" marker-end="url(#del1)"/>
+
+  <!-- What is NOT deleted -->
+  <rect x="40" y="240" width="380" height="100" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="230" y="262" text-anchor="middle" fill="#2e7d32" font-weight="bold">✅ NOT Deleted (Preserved)</text>
+  <text x="60" y="282" fill="#555" font-size="11">• Movie — only the screen-movie link is severed</text>
+  <text x="60" y="300" fill="#555" font-size="11">• Location — Venues.location is M:1 with no cascade</text>
+  <text x="60" y="318" fill="#555" font-size="11">• Other screenings of the same movie at other venues</text>
+
+  <!-- Warnings -->
+  <rect x="460" y="240" width="380" height="100" rx="8" fill="#fff8e1" stroke="#f57f17" stroke-width="2"/>
+  <text x="650" y="262" text-anchor="middle" fill="#f57f17" font-weight="bold">⚠️ Potential Data Loss</text>
+  <text x="480" y="282" fill="#555" font-size="11">• Tickets referencing deleted Screen/Seats</text>
+  <text x="480" y="300" fill="#555" font-size="11">  → orphaned FK references possible</text>
+  <text x="480" y="318" fill="#555" font-size="11">• No check for active reservations before delete</text>
+</svg>
+</div>
+
+<h3>Processing Steps (Detail)</h3>
+<div class="flow-step"><div class="flow-num">1</div><div class="flow-body"><strong>BookController.deleteScreen()</strong> — Parses the JSON body to extract <code>ScreeningDatesId</code> (a single integer).</div></div>
+<div class="flow-step"><div class="flow-num">2</div><div class="flow-body"><strong>DAO.deleteScreen()</strong> — Uses the shared singleton session. Fetches the <code>ScreeningDates</code> entity by ID. Calls <code>session.delete(date)</code>.</div></div>
+<div class="flow-step"><div class="flow-num">3</div><div class="flow-body"><strong>Hibernate cascade</strong> — Because <code>ScreeningDates.venues</code> has <code>CascadeType.ALL</code>, the associated <code>Venues</code> entity is deleted. <code>Venues.screen</code> also has <code>CascadeType.ALL</code>, so the <code>Screen</code> is deleted. <code>Screen.seat</code> has <code>CascadeType.ALL</code>, so all <code>Seats</code> are deleted.</div></div>
+<div class="flow-step"><div class="flow-num">4</div><div class="flow-body"><strong>Commit or rollback</strong> — If <code>tx.commit()</code> succeeds, returns <code>true</code>. On any exception, rolls back and returns <code>false</code>.</div></div>
+
+<h3>Response</h3>
+<div class="grid-2">
+  <div class="card priority-low">
+    <h4>✅ 200 OK</h4>
+<pre><code>{ "screeningDatesId": "42" }</code></pre>
+  </div>
+  <div class="card priority-high">
+    <h4>❌ 409 CONFLICT</h4>
+<pre><code>{ "screeningDatesId": "42" }</code></pre>
+    <p>Same response body — iOS distinguishes success/failure by HTTP status code and the presence of an error in the <code>NSError</code> callback parameter.</p>
+  </div>
+</div>
+
+<h3>Key Behaviour Notes</h3>
+<ul>
+  <li><strong>No confirmation dialog</strong> — the iOS client currently shows no "Are you sure?" prompt before sending the DELETE request.</li>
+  <li><strong>No orphan check</strong> — if <code>Ticket</code> entities reference the deleted <code>Screen</code> or <code>Seats</code>, the delete may fail with a FK constraint error, or (if no FK constraint is enforced) leave orphaned tickets in the <code>Purchase</code> history.</li>
+  <li><strong>No Kafka broadcast</strong> — deletion does not notify other clients. Their cached data may show a screening that no longer exists.</li>
+  <li><strong>Post-delete UI cleanup</strong> — on success, iOS clears all global admin variables and text fields, returning <code>AdminUpdateVC</code> to a blank state.</li>
+</ul>
+</section>
+
+<!-- ──────── ENTITY CASCADE EFFECTS ──────── -->
+<section id="admin-entity-cascade">
+<h2>Entity Cascade Effects — Admin Operations</h2>
+<p>Understanding the cascade annotations is critical for predicting what happens when you create, update, or delete through the admin API. This table summarises the cascading effects per operation.</p>
+
+<table>
+  <tr>
+    <th>Operation</th>
+    <th>Entry Point Entity</th>
+    <th>Cascade Chain</th>
+    <th>Session Type</th>
+    <th>Kafka?</th>
+  </tr>
+  <tr>
+    <td><span class="badge badge-green">Add</span></td>
+    <td><code>ScreeningDates</code> + <code>Venues</code></td>
+    <td>Venues → <strong>Screen</strong> (ALL) → <strong>Seats</strong> (ALL); ScreeningDates → <strong>Venues</strong> (ALL)</td>
+    <td>Separate session (<code>openSession</code>)</td>
+    <td>✅ Yes</td>
+  </tr>
+  <tr>
+    <td><span class="badge badge-orange">Update</span></td>
+    <td><code>Venues</code> + <code>ScreeningDates</code> + <code>Screen</code></td>
+    <td>No cascade — each entity is fetched and updated individually via <code>saveOrUpdate()</code></td>
+    <td>Shared session (<code>getCurrentSession</code>)</td>
+    <td>❌ No</td>
+  </tr>
+  <tr>
+    <td><span class="badge badge-red">Delete</span></td>
+    <td><code>ScreeningDates</code></td>
+    <td>ScreeningDates → <strong>Venues</strong> (ALL) → <strong>Screen</strong> (ALL) → <strong>Seats</strong> (ALL)</td>
+    <td>Shared session (<code>getCurrentSession</code>)</td>
+    <td>❌ No</td>
+  </tr>
+</table>
+
+<h3>Full Entity Cascade Map</h3>
+
+<div class="diagram-container svg-diagram">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 500" font-family="Arial,sans-serif" font-size="12">
+  <rect width="880" height="500" fill="#f8f9fa" rx="8"/>
+  <defs>
+    <marker id="cas1" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#c62828"/></marker>
+    <marker id="cas2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#2e7d32"/></marker>
+    <marker id="cas3" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#1976d2"/></marker>
+  </defs>
+
+  <text x="440" y="28" text-anchor="middle" fill="#333" font-weight="bold" font-size="16">Entity Cascade &amp; Fetch Strategy Map</text>
+
+  <!-- Movie -->
+  <rect x="360" y="50" width="160" height="60" rx="10" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2"/>
+  <text x="440" y="75" text-anchor="middle" fill="#7b1fa2" font-weight="bold" font-size="13">Movie</text>
+  <text x="440" y="92" text-anchor="middle" fill="#555" font-size="10">@Cacheable (movies)</text>
+
+  <!-- Screen -->
+  <rect x="360" y="155" width="160" height="60" rx="10" fill="#fff3e0" stroke="#e65100" stroke-width="2"/>
+  <text x="440" y="180" text-anchor="middle" fill="#e65100" font-weight="bold" font-size="13">Screen</text>
+  <text x="440" y="197" text-anchor="middle" fill="#555" font-size="10">PK: screenId (String)</text>
+
+  <!-- Movie → Screen relationship -->
+  <line x1="440" y1="110" x2="440" y2="153" stroke="#1976d2" stroke-width="2" marker-end="url(#cas3)"/>
+  <text x="480" y="128" fill="#1976d2" font-size="9">LAZY (1:N)</text>
+  <line x1="440" y1="153" x2="440" y2="112" stroke="#2e7d32" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <text x="380" y="138" fill="#2e7d32" font-size="9">EAGER M:1</text>
+  <text x="380" y="148" fill="#2e7d32" font-size="8">PERSIST,REFRESH</text>
+
+  <!-- ScreeningDates -->
+  <rect x="100" y="155" width="180" height="60" rx="10" fill="#fce4ec" stroke="#c62828" stroke-width="2"/>
+  <text x="190" y="180" text-anchor="middle" fill="#c62828" font-weight="bold" font-size="13">ScreeningDates</text>
+  <text x="190" y="197" text-anchor="middle" fill="#555" font-size="10">PK: screeningDatesId (int)</text>
+
+  <!-- Screen ↔ ScreeningDates -->
+  <line x1="358" y1="185" x2="282" y2="185" stroke="#c62828" stroke-width="2" marker-end="url(#cas1)"/>
+  <text x="315" y="175" fill="#c62828" font-size="9">EAGER 1:1</text>
+  <text x="315" y="165" fill="#c62828" font-size="8">ALL</text>
+
+  <!-- Venues -->
+  <rect x="100" y="270" width="180" height="60" rx="10" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="190" y="295" text-anchor="middle" fill="#2e7d32" font-weight="bold" font-size="13">Venues</text>
+  <text x="190" y="312" text-anchor="middle" fill="#555" font-size="10">@Cacheable (venues)</text>
+
+  <!-- ScreeningDates → Venues -->
+  <line x1="190" y1="215" x2="190" y2="268" stroke="#c62828" stroke-width="2" marker-end="url(#cas1)"/>
+  <text x="210" y="242" fill="#c62828" font-size="9">EAGER 1:1 ALL</text>
+
+  <!-- Venues → Screen -->
+  <line x1="282" y1="288" x2="358" y2="210" stroke="#c62828" stroke-width="2" marker-end="url(#cas1)"/>
+  <text x="335" y="250" fill="#c62828" font-size="9">EAGER 1:1</text>
+  <text x="335" y="260" fill="#c62828" font-size="8">ALL</text>
+
+  <!-- Location -->
+  <rect x="100" y="385" width="180" height="60" rx="10" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="190" y="410" text-anchor="middle" fill="#1976d2" font-weight="bold" font-size="13">Location</text>
+  <text x="190" y="427" text-anchor="middle" fill="#555" font-size="10">@Cacheable (location)</text>
+
+  <!-- Venues → Location -->
+  <line x1="190" y1="330" x2="190" y2="383" stroke="#2e7d32" stroke-width="2" marker-end="url(#cas2)"/>
+  <text x="210" y="358" fill="#2e7d32" font-size="9">EAGER M:1</text>
+  <text x="210" y="368" fill="#2e7d32" font-size="8">PERSIST,REFRESH</text>
+
+  <!-- Seats -->
+  <rect x="360" y="270" width="160" height="60" rx="10" fill="#fff8e1" stroke="#f57f17" stroke-width="2"/>
+  <text x="440" y="295" text-anchor="middle" fill="#f57f17" font-weight="bold" font-size="13">Seats × N</text>
+  <text x="440" y="312" text-anchor="middle" fill="#555" font-size="10">NOT cached (fresh reads)</text>
+
+  <!-- Screen → Seats -->
+  <line x1="440" y1="215" x2="440" y2="268" stroke="#c62828" stroke-width="2" marker-end="url(#cas1)"/>
+  <text x="460" y="242" fill="#c62828" font-size="9">EAGER 1:N ALL</text>
+
+  <!-- Ticket -->
+  <rect x="600" y="270" width="160" height="60" rx="10" fill="#ede7f6" stroke="#4a148c" stroke-width="2"/>
+  <text x="680" y="295" text-anchor="middle" fill="#4a148c" font-weight="bold" font-size="13">Ticket</text>
+  <text x="680" y="312" text-anchor="middle" fill="#555" font-size="10">@Cacheable (ticket)</text>
+
+  <!-- Ticket → Screen -->
+  <line x1="598" y1="288" x2="522" y2="200" stroke="#1976d2" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#cas3)"/>
+  <text x="575" y="235" fill="#1976d2" font-size="9">EAGER 1:1</text>
+  <text x="575" y="245" fill="#1976d2" font-size="8">no cascade</text>
+
+  <!-- Ticket → Seats -->
+  <line x1="598" y1="300" x2="522" y2="300" stroke="#1976d2" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#cas3)"/>
+  <text x="558" y="292" fill="#1976d2" font-size="9">EAGER M:1</text>
+
+  <!-- Purchase -->
+  <rect x="600" y="385" width="160" height="60" rx="10" fill="#e0f2f1" stroke="#00695c" stroke-width="2"/>
+  <text x="680" y="410" text-anchor="middle" fill="#00695c" font-weight="bold" font-size="13">Purchase</text>
+  <text x="680" y="427" text-anchor="middle" fill="#555" font-size="10">@BatchSize(10)</text>
+
+  <!-- Purchase → Ticket -->
+  <line x1="680" y1="383" x2="680" y2="332" stroke="#2e7d32" stroke-width="2" marker-end="url(#cas2)"/>
+  <text x="700" y="358" fill="#2e7d32" font-size="9">EAGER 1:N</text>
+  <text x="700" y="368" fill="#2e7d32" font-size="8">PERSIST,REFRESH</text>
+
+  <!-- Legend -->
+  <rect x="590" y="50" width="270" height="90" rx="8" fill="#fff" stroke="#ccc" stroke-width="1"/>
+  <text x="725" y="68" text-anchor="middle" fill="#333" font-weight="bold" font-size="11">Legend</text>
+  <line x1="610" y1="82" x2="650" y2="82" stroke="#c62828" stroke-width="2" marker-end="url(#cas1)"/>
+  <text x="660" y="86" fill="#c62828" font-size="10">CascadeType.ALL (delete propagates)</text>
+  <line x1="610" y1="100" x2="650" y2="100" stroke="#2e7d32" stroke-width="2" marker-end="url(#cas2)"/>
+  <text x="660" y="104" fill="#2e7d32" font-size="10">PERSIST + REFRESH only</text>
+  <line x1="610" y1="118" x2="650" y2="118" stroke="#1976d2" stroke-width="1.5" stroke-dasharray="4 2" marker-end="url(#cas3)"/>
+  <text x="660" y="122" fill="#1976d2" font-size="10">No cascade (reference only)</text>
+</svg>
+</div>
+
+<h3>Admin API Endpoint Summary</h3>
+<table>
+  <tr><th>Method</th><th>Path</th><th>Description</th><th>Body Parameters</th></tr>
+  <tr>
+    <td><span class="badge badge-blue">GET</span></td>
+    <td><code>/book/admin/moviesonvenues</code></td>
+    <td>List all screenings (movie + venue + date)</td>
+    <td>—</td>
+  </tr>
+  <tr>
+    <td><span class="badge badge-blue">GET</span></td>
+    <td><code>/book/admin/moviesonvenuescategorized</code></td>
+    <td>Filter screenings by category</td>
+    <td><code>?category=Drama</code></td>
+  </tr>
+  <tr>
+    <td><span class="badge badge-blue">GET</span></td>
+    <td><code>/book/admin/moviesonvenuessearch</code></td>
+    <td>Search screenings by movie name</td>
+    <td><code>?match=beautiful</code></td>
+  </tr>
+  <tr>
+    <td><span class="badge badge-green">POST</span></td>
+    <td><code>/book/admin/addscreen</code></td>
+    <td>Create new screening + venue + seats</td>
+    <td><code>movie, venue, date, nrOfRows, nrOfSeatsInRow, ScreeningId, category</code></td>
+  </tr>
+  <tr>
+    <td><span class="badge badge-green">POST</span></td>
+    <td><code>/book/admin/updatescreen</code></td>
+    <td>Update screening venue/date/movie/category</td>
+    <td><code>movieId, venueId, venue, date, ScreeningDatesId, screenId, category</code></td>
+  </tr>
+  <tr>
+    <td><span class="badge badge-red">DELETE</span></td>
+    <td><code>/book/admin/deletescreen</code></td>
+    <td>Delete screening + cascade delete venue/screen/seats</td>
+    <td><code>ScreeningDatesId</code></td>
+  </tr>
+</table>
+
+<h3>Refactoring Considerations</h3>
+
+<div class="card priority-high">
+<h4>🔴 HIGH — ID generation race condition</h4>
+<p><strong>Where:</strong> <code>DAO.getScreenForAvailability()</code>, <code>DAO.insertNewScreen()</code></p>
+<p><strong>Problem:</strong> <code>SELECT MAX(id) + 1</code> for Venues, ScreeningDates, and Seats IDs is not atomic. Concurrent admin inserts will collide.</p>
+<p><strong>Fix:</strong> Remove manual ID computation. The entities already have <code>@GeneratedValue(strategy=GenerationType.IDENTITY)</code> — let Hibernate use the DB-generated auto-increment values. Remove the <code>setVenuesId()</code>, <code>setScreeningDatesId()</code>, and <code>setSeatId()</code> calls in the insert path.</p>
+</div>
+
+<div class="card priority-high">
+<h4>🔴 HIGH — No orphan protection on delete</h4>
+<p><strong>Where:</strong> <code>DAO.deleteScreen()</code></p>
+<p><strong>Problem:</strong> Deleting a ScreeningDates cascades to Venues → Screen → Seats, but <code>Ticket</code> entities reference <code>Screen</code> (EAGER, no cascade) and <code>Seats</code> (EAGER, no cascade). If tickets exist for the deleted screening, the delete either fails with a FK constraint error or leaves orphaned ticket references.</p>
+<p><strong>Fix:</strong> Before deleting, check for active tickets: <code>SELECT COUNT(*) FROM Ticket WHERE screen.screenId = :screenId</code>. Reject deletion if tickets exist, or cascade-delete tickets too (with appropriate purchase cleanup).</p>
+</div>
+
+<div class="card priority-medium">
+<h4>🟡 MEDIUM — Dual session in add flow</h4>
+<p><strong>Where:</strong> <code>DAO.insertNewScreen()</code> calls <code>getScreenForAvailability()</code></p>
+<p><strong>Problem:</strong> <code>insertNewScreen</code> opens session B (<code>factory.openSession()</code>), while <code>getScreenForAvailability</code> uses session A (<code>factory.getCurrentSession()</code>). Session A commits the entity graph, then session B generates seats. If session B fails, entities exist without seats.</p>
+<p><strong>Fix:</strong> Merge everything into a single session/transaction. Create all entities (Venues, ScreeningDates, Screen, Seats) within one <code>openSession()</code> block with one commit at the end.</p>
+</div>
+
+<div class="card priority-medium">
+<h4>🟡 MEDIUM — No Kafka event on update/delete</h4>
+<p><strong>Where:</strong> <code>BookController.updateScreen()</code>, <code>BookController.deleteScreen()</code></p>
+<p><strong>Problem:</strong> Only the add operation publishes a Kafka event. Clients with cached screening data won't know about updates or deletions until they refresh manually.</p>
+<p><strong>Fix:</strong> Add Kafka events for update and delete operations (e.g. <code>UpdateMovie</code>, <code>RemoveMovie</code> event types). Update <code>KafkaListener</code> and WebSocket broadcast to handle all three event types.</p>
+</div>
+
+<div class="card priority-low">
+<h4>🟢 LOW — Admin authentication</h4>
+<p><strong>Where:</strong> All <code>/book/admin/*</code> endpoints</p>
+<p><strong>Problem:</strong> The admin endpoints have no server-side authorisation check. Any authenticated user can call them. The iOS client simply shows/hides the Admin menu button, but there's no role-based access control.</p>
+<p><strong>Fix:</strong> Add an admin role check (e.g. user type flag in the <code>login_</code> database) and a filter/interceptor on <code>/book/admin/*</code> paths. The <code>DAO</code> TODO comment <code>//TODO: add controller and admin user in iOS</code> confirms this is a known gap.</p>
+</div>
+</section>
+
 <!-- ──────── API ENDPOINTS ──────── -->
 <section id="api-endpoints">
 <h2>API Endpoints Reference</h2>
@@ -1678,6 +2663,11 @@ Header:
   <tr><td><span class="badge badge-blue">GET</span></td><td><code>/seats/{screeningDateId}</code></td><td>Seat map</td><td>same</td></tr>
   <tr><td><span class="badge badge-blue">GET</span></td><td><code>/locations</code></td><td>All venue locations</td><td>same</td></tr>
   <tr><td><span class="badge badge-green">POST</span></td><td><code>/admin/addscreen</code></td><td>Add new screening (admin)</td><td>same</td></tr>
+  <tr><td><span class="badge badge-green">POST</span></td><td><code>/admin/updatescreen</code></td><td>Update screening (admin)</td><td>same</td></tr>
+  <tr><td><span class="badge badge-red">DELETE</span></td><td><code>/admin/deletescreen</code></td><td>Delete screening (admin)</td><td>same</td></tr>
+  <tr><td><span class="badge badge-blue">GET</span></td><td><code>/admin/moviesonvenues</code></td><td>List all screenings (admin)</td><td>same</td></tr>
+  <tr><td><span class="badge badge-blue">GET</span></td><td><code>/admin/moviesonvenuescategorized?category=X</code></td><td>Screenings by category (admin)</td><td>same</td></tr>
+  <tr><td><span class="badge badge-blue">GET</span></td><td><code>/admin/moviesonvenuessearch?match=X</code></td><td>Search screenings (admin)</td><td>same</td></tr>
 </table>
 
 <h4>Purchases — proxied through <code>/login</code> <span class="badge badge-orange">dalogin → mbooks</span></h4>
@@ -1744,7 +2734,11 @@ Header:
   <tr><td><code>WebViewController.swift</code></td><td>116</td><td>WKWebView for AngularJS web UI</td></tr>
   <tr><td><code>iOSCalenderVC.swift</code></td><td>167</td><td>iOS calendar integration</td></tr>
   <tr><td><code>AttendeesVC.swift</code></td><td>—</td><td>Attendee selection from contacts</td></tr>
-  <tr><td><code>PopOver.swift</code></td><td>—</td><td>Generic popover</td></tr>
+  <tr><td><code>PopOver.swift</code></td><td>351</td><td>Seat selection grid — UITableView+UICollectionView composite ("Crown Jewel"). Handles seat rendering, selection/deselection, basket aggregation.</td></tr>
+  <tr><td><code>TableViewCell.swift</code></td><td>47</td><td>Custom UITableViewCell embedding a horizontal UICollectionView (one per seat row).</td></tr>
+  <tr><td><code>TableViewCellExt.swift</code></td><td>32</td><td>Extension — sets collectionView.tag to row index and offset persistence.</td></tr>
+  <tr><td><code>SeatCells.swift</code></td><td>39</td><td>Custom UICollectionViewCell — seat number label + price label.</td></tr>
+  <tr><td><code>SeatsData.swift</code></td><td>60</td><td>Seat data model + static <code>addData()</code> fetcher (calls <code>/seats/{id}</code>, builds numberOfRows array).</td></tr>
   <tr><td><code>PopOverDates.swift</code></td><td>—</td><td>Screening date picker popover</td></tr>
   <tr><td><code>ViewController.swift</code></td><td>—</td><td>Base/initial view controller</td></tr>
 </table>
