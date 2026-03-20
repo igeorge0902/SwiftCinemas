@@ -34,7 +34,7 @@ class SeatsData: NSObject {
 
         var errorOnLogin: GeneralRequestManager?
 
-        errorOnLogin = GeneralRequestManager(url: serverURL + "/mbooks-1/rest/book/seats/" + myString, errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: "", bodyToPost: nil)
+        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/seats/" + myString), errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: "", bodyToPost: nil)
 
         errorOnLogin?.getResponse {
             (json: JSON, _: NSError?) in

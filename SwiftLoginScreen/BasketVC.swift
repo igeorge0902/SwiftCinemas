@@ -223,7 +223,7 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
 
     func getClientToken() {
         var errorOnLogin: GeneralRequestManager?
-        errorOnLogin = GeneralRequestManager(url: serverURL + "/login/CheckOut", errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: contentType_.urlEncoded.rawValue, bodyToPost: nil)
+        errorOnLogin = GeneralRequestManager(url: URLManager.login("/CheckOut"), errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: contentType_.urlEncoded.rawValue, bodyToPost: nil)
 
         errorOnLogin?.getResponse {
             (json: JSON, error: NSError?) in
@@ -276,7 +276,7 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
         let postData: Data = post.data(using: String.Encoding.ascii.rawValue)!
 
         var errorOnLogin: GeneralRequestManager?
-        errorOnLogin = GeneralRequestManager(url: serverURL + "/login/CheckOut", errors: "", method: "POST", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: contentType_.urlEncoded.rawValue, bodyToPost: postData)
+        errorOnLogin = GeneralRequestManager(url: URLManager.login("/CheckOut"), errors: "", method: "POST", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: contentType_.urlEncoded.rawValue, bodyToPost: postData)
 
         errorOnLogin?.getResponse {
             (json: JSON, error: NSError?) in

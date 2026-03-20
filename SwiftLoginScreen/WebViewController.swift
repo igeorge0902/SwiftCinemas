@@ -41,7 +41,7 @@ class WebViewController: UIViewController, WKUIDelegate, WKNavigationDelegate {
         webView.scrollView.bounces = true
         view.addSubview(webView)
 
-        let requestURL = URL(string: serverURL + "/login/index.html")
+        let requestURL = URL(string: URLManager.login("/index.html"))
         let urlrequest = URLRequest(url: requestURL!)
 
         let cookieStorage = HTTPCookieStorage.shared

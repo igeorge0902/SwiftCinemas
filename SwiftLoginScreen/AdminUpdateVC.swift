@@ -279,7 +279,7 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
 
         var errorOnLogin: GeneralRequestManager?
 
-        errorOnLogin = GeneralRequestManager(url: serverURL + "/mbooks-1/rest/book/admin/updatescreen", errors: "", method: "POST", headers: nil, queryParameters: nil, bodyParameters: testdata, isCacheable: nil, contentType: contentType_.json.rawValue, bodyToPost: nil)
+        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/admin/updatescreen"), errors: "", method: "POST", headers: nil, queryParameters: nil, bodyParameters: testdata, isCacheable: nil, contentType: contentType_.json.rawValue, bodyToPost: nil)
 
         errorOnLogin?.getResponse {
             (json: JSON, _: NSError?) in
@@ -313,7 +313,7 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
 
         var errorOnLogin: GeneralRequestManager?
 
-        errorOnLogin = GeneralRequestManager(url: serverURL + "/mbooks-1/rest/book/admin/deletescreen", errors: "", method: "DELETE", headers: nil, queryParameters: nil, bodyParameters: testdata, isCacheable: nil, contentType: contentType_.json.rawValue, bodyToPost: nil)
+        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/admin/deletescreen"), errors: "", method: "DELETE", headers: nil, queryParameters: nil, bodyParameters: testdata, isCacheable: nil, contentType: contentType_.json.rawValue, bodyToPost: nil)
 
         errorOnLogin?.getResponse { [self]
             (json: JSON, error: NSError?) in

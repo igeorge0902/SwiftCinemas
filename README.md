@@ -31,7 +31,7 @@ SwiftCinemas is the iOS front-end for the Cinemas platform — a full-stack cine
 | `mbooks-quarkus` | 8080 | `/mbooks-1` | Movie/booking/payment API |
 | `simple-service-webapp-quarkus` | 8085 | `/simple-service-webapp` | Image serving |
 
-The app connects to `https://milo.crabdance.com` by default (configured in `GeneralRequestManager.swift`).
+The app connects to `https://milo.crabdance.com` by default (configured in `URLManager.swift`).
 
 ### Request Flow
 
@@ -73,7 +73,8 @@ All managers share a singleton `URLSession` (`URLSession.sharedCustomSession`) c
 
 ### Realtime
 
-- **WebSocket** connection to `wss://milo.crabdance.com/mbook-1/ws` via native `URLSessionWebSocketTask`
+- **WebSocket** connection to `wss://milo.crabdance.com/mbook-1/ws` (via `URLManager.webSocketURL`) using native `URLSessionWebSocketTask`
+- Sends ping every 30 seconds to keep the connection alive through NGINX/Apache proxies
 - Auto-reconnects after 3 seconds on disconnection
 - Receives movie notification broadcasts from Kafka consumers on the backend
 - **Firebase Cloud Messaging** for push notifications (remote + local)
@@ -153,8 +154,8 @@ open SwiftCinemas.xcworkspace
 > ⚠️ Always open the `.xcworkspace` file (not `.xcodeproj`) after installing pods.
 
 ### Configuration
-- **Server URL**: Edit `serverURL` in `GeneralRequestManager.swift`
-- **Self-signed hosts**: Edit `Constants.selfSignedHosts` in `CustomURLSessionDelegate.swift`
+- **Server URL**: Edit `baseHost` in `URLManager.swift` (single place for base host, all service paths, WebSocket URL, and image URL)
+- **Self-signed hosts**: Automatically derived from `URLManager.baseHost` in `CustomURLSessionDelegate.swift`
 - **Firebase**: Replace `FireBaseGoogleService-Info.plist` with your Firebase project config
 - **Braintree**: Update the sandbox token in `BasketVC.swift`
 

@@ -12,7 +12,6 @@ import SwiftyJSON
 
 // import Kanna
 
-let serverURL = "https://milo.crabdance.com"
 enum contentType_: String {
     case json = "application/json"
     case urlEncoded = "application/x-www-form-urlencoded"
@@ -254,7 +253,7 @@ class GeneralRequestManager: NSObject, AlertProtocol, AlertViewProtocol {
         if xtoken == nil {
             xtoken = ""
         }
-        if url.absoluteString.contains(serverURL) {
+        if url.absoluteString.contains(URLManager.baseURL) {
             headers = ["Ciphertext": xtoken as! String, "X-Token": "client-secret", "X-Device": deviceId as String]
         }
 
@@ -369,7 +368,7 @@ class GeneralRequestManager: NSObject, AlertProtocol, AlertViewProtocol {
             let user = prefs.value(forKey: "USERNAME")
 
             var errorOnLogin: GeneralRequestManager?
-            errorOnLogin = GeneralRequestManager(url: serverURL + "/login/activation", errors: "", method: "POST", headers: nil, queryParameters: nil, bodyParameters: ["deviceId": deviceId as String, "user": user as! String], isCacheable: nil, contentType: "", bodyToPost: nil)
+            errorOnLogin = GeneralRequestManager(url: URLManager.login("/activation"), errors: "", method: "POST", headers: nil, queryParameters: nil, bodyParameters: ["deviceId": deviceId as String, "user": user as! String], isCacheable: nil, contentType: "", bodyToPost: nil)
 
             errorOnLogin?.getResponse {
                 resultString, error in

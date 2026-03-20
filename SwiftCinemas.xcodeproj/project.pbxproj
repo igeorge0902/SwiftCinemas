@@ -55,6 +55,7 @@
 		A493B5802D6B580800404BC0 /* MovieCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A493B57F2D6B580800404BC0 /* MovieCollectionViewCell.swift */; };
 		A49A51F61BF6829C00E197D7 /* WebViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A49A51F51BF6829C00E197D7 /* WebViewController.swift */; };
 		A4A24B682D7CCCE400F3B65A /* Websocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4A24B672D7CCCDC00F3B65A /* Websocket.swift */; };
+		A4A24B6A2D8C000000F3B65A /* URLManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4A24B692D8C000000F3B65A /* URLManager.swift */; };
 		A4A96AA81D1FEB9A00421193 /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A4A96AA71D1FEB9A00421193 /* MapKit.framework */; };
 		A4AA7BB41C1F508A007FE726 /* AesUtil.js in Resources */ = {isa = PBXBuildFile; fileRef = A4AA7BB31C1F5089007FE726 /* AesUtil.js */; };
 		A4AA7BB61C1F50A6007FE726 /* pbkdf2.js in Resources */ = {isa = PBXBuildFile; fileRef = A4AA7BB51C1F50A6007FE726 /* pbkdf2.js */; };
@@ -129,15 +130,12 @@
 		A424835D1D1FDD2800F83E6C /* MapView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MapView.swift; sourceTree = "<group>"; };
 		A424835F1D1FDDB300F83E6C /* MapViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MapViewController.swift; sourceTree = "<group>"; };
 		A4272E0923A9841500304A2A /* garnier1.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = garnier1.mov; sourceTree = "<group>"; };
-		A42BF87523B0233200F069E0 /* MyPlayground8UIViewController.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = MyPlayground8UIViewController.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
-		A42DF01B1D95718A00775A93 /* MyPlayground2.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = MyPlayground2.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		A4333016238F018E00A44212 /* AttendeesVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendeesVC.swift; sourceTree = "<group>"; };
 		A433301A238F044700A44212 /* iOSCalenderVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSCalenderVC.swift; sourceTree = "<group>"; };
 		A433837F2380670E0028B0B7 /* UIViewExt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIViewExt.swift; sourceTree = "<group>"; };
 		A433A5A91D15734A0051F428 /* MoviesData.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MoviesData.swift; sourceTree = "<group>"; };
 		A4382E9B2458F35A007E3A7D /* CustomListTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomListTableViewCell.swift; sourceTree = "<group>"; };
 		A43AAD7E23B2D3F2004B0B0A /* MovieDetailVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieDetailVC.swift; sourceTree = "<group>"; };
-		A43AAD8023B4B4F6004B0B0A /* MyPlayground9.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = MyPlayground9.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		A44380691D40167600380273 /* SeatsData.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SeatsData.swift; sourceTree = "<group>"; };
 		A44399C525C09B8600AB3154 /* ListViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListViewCell.swift; sourceTree = "<group>"; };
 		A4471C201D46F4170081A4E5 /* TableViewCellExt.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TableViewCellExt.swift; sourceTree = "<group>"; };
@@ -160,7 +158,6 @@
 		A47B67D41F6D188F00F8F8E6 /* PurchaseData.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PurchaseData.swift; sourceTree = "<group>"; };
 		A47D31731C309B8C00429EB8 /* enc.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = enc.js; sourceTree = "<group>"; };
 		A47D8D141E9FB18900CE8426 /* AllTicketsData.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AllTicketsData.swift; sourceTree = "<group>"; };
-		A48055721BFB807E007E9E34 /* MyPlayground3.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = MyPlayground3.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		A48301CB25FD25C6008F230C /* AdminUpdateVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminUpdateVC.swift; sourceTree = "<group>"; };
 		A48D62C31CD3F5C1002A5E0A /* GeneralRequestManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GeneralRequestManager.swift; sourceTree = "<group>"; };
 		A493B57D2D6A31DA00404BC0 /* GeoFence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeoFence.swift; sourceTree = "<group>"; };
@@ -169,7 +166,7 @@
 		A496B5FE2D56CCE7000626A2 /* BraintreeDropIn.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = BraintreeDropIn.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A49A51F51BF6829C00E197D7 /* WebViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebViewController.swift; sourceTree = "<group>"; };
 		A4A24B672D7CCCDC00F3B65A /* Websocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Websocket.swift; sourceTree = "<group>"; };
-		A4A43C1C1EB29302006C08D8 /* MyPlayground6.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = MyPlayground6.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
+		A4A24B692D8C000000F3B65A /* URLManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLManager.swift; sourceTree = "<group>"; };
 		A4A5A7822D57C8F000AD78AF /* Braintree.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Braintree.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4A96AA71D1FEB9A00421193 /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
 		A4AA7BB31C1F5089007FE726 /* AesUtil.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = AesUtil.js; sourceTree = "<group>"; };
@@ -203,8 +200,6 @@
 		A4CA8DA41C07328F00EA59A4 /* Launch Screen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = "Launch Screen.storyboard"; sourceTree = "<group>"; };
 		A4CAC1B326C26C3000B808C3 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		A4CC2C441C33E07A0015546C /* ciphertext.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ciphertext.swift; sourceTree = "<group>"; };
-		A4CD12011D9818700013014C /* MyPlayground4Closures.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = MyPlayground4Closures.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
-		A4CD12021D981D0D0013014C /* MyPlayground5.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = MyPlayground5.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		A4D58A431BFA40AB00D379F8 /* AFNetworkReachabilityManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFNetworkReachabilityManager.h; sourceTree = "<group>"; };
 		A4D58A441BFA40AB00D379F8 /* AFNetworkReachabilityManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AFNetworkReachabilityManager.m; sourceTree = "<group>"; };
 		A4D58A471BFA40D000D379F8 /* SwiftLoginScreen-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SwiftLoginScreen-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -213,7 +208,6 @@
 		A4E795C72379F63500CA2C4C /* CustomTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTableViewCell.swift; sourceTree = "<group>"; };
 		A4E795C9237A111D00CA2C4C /* TicketsVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TicketsVC.swift; sourceTree = "<group>"; };
 		A4E795CB237CDE9400CA2C4C /* TicketsData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TicketsData.swift; sourceTree = "<group>"; };
-		A4E795CD237DD06C00CA2C4C /* MyPlayground7.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = MyPlayground7.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		A4ED18DA2524A4DC005820BC /* AdminVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminVC.swift; sourceTree = "<group>"; };
 		A4ED18DC2526221E005820BC /* ScreenData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenData.swift; sourceTree = "<group>"; };
 		A4EDDCFB1CFCEA760013CE72 /* MoviesVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MoviesVC.swift; sourceTree = "<group>"; };
@@ -222,7 +216,6 @@
 		A4EEC5031D35A1B5001C376B /* PopOver.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PopOver.swift; sourceTree = "<group>"; };
 		A4EEC5051D3A884B001C376B /* SeatCells.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SeatCells.swift; sourceTree = "<group>"; };
 		A4EEC5091D3A8AF9001C376B /* TableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TableViewCell.swift; sourceTree = "<group>"; };
-		A4F34F6C1CB03E940034CFE8 /* MyPlayground.playground */ = {isa = PBXFileReference; lastKnownFileType = file.playground; path = MyPlayground.playground; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.swift; };
 		A4F5D5B61BF88548002850B2 /* CachedURLResponse+CoreDataProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "CachedURLResponse+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		A4F5D5B71BF88548002850B2 /* CachedURLResponse.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CachedURLResponse.swift; sourceTree = "<group>"; };
 		A4F9CBDB1E64DFEE00BE67E4 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -259,6 +252,7 @@
 		A42483531D1EB68000F83E6C /* RequestUtils */ = {
 			isa = PBXGroup;
 			children = (
+				A4A24B692D8C000000F3B65A /* URLManager.swift */,
 				A48D62C31CD3F5C1002A5E0A /* GeneralRequestManager.swift */,
 				A4BBC52E1BF14AE200CDD365 /* RestApiManager.swift */,
 				A41942021BF264B7003EFC0E /* RequestManager.swift */,
@@ -456,17 +450,8 @@
 		EA62FD471989F6AC00469896 = {
 			isa = PBXGroup;
 			children = (
-				A43AAD8023B4B4F6004B0B0A /* MyPlayground9.playground */,
 				A4272E0923A9841500304A2A /* garnier1.mov */,
 				A4F9CBDB1E64DFEE00BE67E4 /* README.md */,
-				A4F34F6C1CB03E940034CFE8 /* MyPlayground.playground */,
-				A42DF01B1D95718A00775A93 /* MyPlayground2.playground */,
-				A48055721BFB807E007E9E34 /* MyPlayground3.playground */,
-				A4CD12011D9818700013014C /* MyPlayground4Closures.playground */,
-				A4CD12021D981D0D0013014C /* MyPlayground5.playground */,
-				A4A43C1C1EB29302006C08D8 /* MyPlayground6.playground */,
-				A4E795CD237DD06C00CA2C4C /* MyPlayground7.playground */,
-				A42BF87523B0233200F069E0 /* MyPlayground8UIViewController.playground */,
 				EA62FD521989F6AC00469896 /* SwiftLoginScreen */,
 				EA62FD511989F6AC00469896 /* Products */,
 				EAC4BD05C622F79975547B48 /* Frameworks */,
@@ -838,6 +823,7 @@
 				A4EDDCFC1CFCEA760013CE72 /* MoviesVC.swift in Sources */,
 				A449DA3F1BFD185A004A9402 /* AFSecurityPolicy.m in Sources */,
 				A48D62C41CD3F5C1002A5E0A /* GeneralRequestManager.swift in Sources */,
+				A4A24B6A2D8C000000F3B65A /* URLManager.swift in Sources */,
 				A433A5AA1D15734A0051F428 /* MoviesData.swift in Sources */,
 				A424835C1D1FDC6300F83E6C /* PlacesData.swift in Sources */,
 				A433301B238F044700A44212 /* iOSCalenderVC.swift in Sources */,

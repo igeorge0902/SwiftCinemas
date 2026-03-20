@@ -17,7 +17,7 @@ class RestApiManager: NSObject, UIAlertViewDelegate, AlertViewProtocol {
     var alertViewPresentingVC: UIViewController?
 
     static let sharedInstance = RestApiManager()
-    let baseURL = serverURL + "/login/admin?JSESSIONID="
+    let baseURL = URLManager.login("/admin?JSESSIONID=")
 
     func alertView(_: UIAlertView, clickedButtonAt buttonIndex: Int) {
         switch buttonIndex {
@@ -27,7 +27,7 @@ class RestApiManager: NSObject, UIAlertViewDelegate, AlertViewProtocol {
             let user = prefs.value(forKey: "USERNAME")
 
             var errorOnLogin: GeneralRequestManager?
-            errorOnLogin = GeneralRequestManager(url: serverURL + "/login/activation", errors: "", method: "POST", headers: nil, queryParameters: nil, bodyParameters: ["deviceId": deviceId as String, "user": user as! String], isCacheable: nil, contentType: "", bodyToPost: nil)
+            errorOnLogin = GeneralRequestManager(url: URLManager.login("/activation"), errors: "", method: "POST", headers: nil, queryParameters: nil, bodyParameters: ["deviceId": deviceId as String, "user": user as! String], isCacheable: nil, contentType: "", bodyToPost: nil)
 
             errorOnLogin?.getResponse {
                 resultString, error in

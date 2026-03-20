@@ -175,7 +175,7 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate 
 
         cell!.textLabel?.attributedText = detailText
 
-        let urlMovie = serverURL + "/simple-service-webapp/webapi" + TableData[indexPath.section].movie_picture
+        let urlMovie = URLManager.image(TableData[indexPath.section].movie_picture)
 
         var loadPictures: GeneralRequestManager?
         loadPictures = GeneralRequestManager(url: urlMovie, errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
@@ -220,7 +220,7 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate 
             let postData: Data = post.data(using: String.Encoding.ascii.rawValue)!
 
             var errorOnLogin: GeneralRequestManager?
-            errorOnLogin = GeneralRequestManager(url: serverURL + "/login/ManagePurchases", errors: "", method: "POST", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: contentType_.urlEncoded.rawValue, bodyToPost: postData)
+            errorOnLogin = GeneralRequestManager(url: URLManager.login("/ManagePurchases"), errors: "", method: "POST", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: contentType_.urlEncoded.rawValue, bodyToPost: postData)
 
             errorOnLogin?.getResponse {
                 (json: JSON, _: NSError?) in
@@ -253,7 +253,7 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate 
     func addPurchasesData() {
         var errorOnLogin: GeneralRequestManager?
 
-        errorOnLogin = GeneralRequestManager(url: serverURL + "/login/GetAllPurchases",
+        errorOnLogin = GeneralRequestManager(url: URLManager.login("/GetAllPurchases"),
                                              errors: "",
                                              method: "GET",
                                              headers: nil,

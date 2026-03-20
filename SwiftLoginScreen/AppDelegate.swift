@@ -144,11 +144,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
     }
 
     func loadLocations() {
-        let pathString = "locations"
         var errorOnLogin: GeneralRequestManager?
         let geofenceManager = GeofenceManager()
 
-        errorOnLogin = GeneralRequestManager(url: serverURL + "/mbooks-1/rest/book/" + pathString, errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "", contentType: "", bodyToPost: nil)
+        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/locations"), errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "", contentType: "", bodyToPost: nil)
 
         errorOnLogin?.getResponse {
             (json: JSON, _: NSError?) in
@@ -168,7 +167,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
     }
 
     func checkRealm() {
-        let p = NSPredicate(format: "url == %@", argumentArray: ["https://" + serverURL + "/mbooks-1/rest/book/movies/paging"])
+        let p = NSPredicate(format: "url == %@", argumentArray: [URLManager.mbooks("/movies/paging")])
 
         // Query
         if let results = CachedResponse.objects(with: p) as AnyObject? {

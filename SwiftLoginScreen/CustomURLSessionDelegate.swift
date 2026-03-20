@@ -37,7 +37,7 @@ class CustomURLSessionDelegate: URLSessionDownloadTask, URLSessionDelegate {
         // You'd likely have your dev/test servers here.
         // Please don't put your production server here!
 
-        static let selfSignedHosts: Set<String> = ["milo.crabdance.com", "localhost", "igeorge1982.local"]
+        static let selfSignedHosts: Set<String> = [URLManager.baseHost, "localhost", "igeorge1982.local"]
     }
 
     func URLSession(_: Foundation.URLSession, task _: URLSessionTask, willPerformHTTPRedirection _: HTTPURLResponse,

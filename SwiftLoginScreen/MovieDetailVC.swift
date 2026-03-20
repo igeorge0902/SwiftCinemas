@@ -35,7 +35,7 @@ class MovieDetailVC: UIViewController, UIViewControllerTransitioningDelegate, UI
 
     lazy var titles = NSMutableArray()
     lazy var session = URLSession.sharedCustomSession
-    lazy var url = URL(string: serverURL + "/login/logout")
+    lazy var url = URL(string: URLManager.login("/logout"))
 
     var running = false
 

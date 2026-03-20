@@ -30,7 +30,7 @@ class MoviesData: NSObject {
     class func addData() {
         var OnLogin: GeneralRequestManager?
 
-        OnLogin = GeneralRequestManager(url: serverURL + "/mbooks-1/rest/book/movies/paging", errors: "", method: "GET", headers: nil, queryParameters: ["setFirstResult": String(0)], bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
+        OnLogin = GeneralRequestManager(url: URLManager.mbooks("/movies/paging"), errors: "", method: "GET", headers: nil, queryParameters: ["setFirstResult": String(0)], bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
 
         OnLogin?.getResponse {
             (json: JSON, _: NSError?) in
@@ -38,7 +38,7 @@ class MoviesData: NSObject {
             if let list = json["movies"].object as? NSArray {
                 for i in 0 ..< list.count {
                     if let dataBlock = list[i] as? NSDictionary {
-                        Data.imageFromUrl(urlString: serverURL + "/simple-service-webapp/webapi" + MoviesData(add: dataBlock).large_picture!)
+                        Data.imageFromUrl(urlString: URLManager.image(MoviesData(add: dataBlock).large_picture!))
                     }
                 }
             }

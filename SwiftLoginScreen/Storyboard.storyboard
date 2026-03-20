@@ -901,7 +901,7 @@
                         <viewControllerLayoutGuide type="top" id="qIe-qI-BZ5"/>
                         <viewControllerLayoutGuide type="bottom" id="cM7-hd-YJe"/>
                     </layoutGuides>
-                    <view key="view" contentMode="scaleToFill" id="c1L-vf-Gv3" customClass="Venue">
+                    <view key="view" contentMode="scaleToFill" id="c1L-vf-Gv3">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="802"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>

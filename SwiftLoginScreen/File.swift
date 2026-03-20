@@ -51,7 +51,7 @@ class WV2: UIViewController, WKNavigationDelegate {
 
         if let theWebView = webView {
             /* Load a web page into our web view */
-            let url = NSURL(string: "https://milo.crabdance.com/javascript/mainpage.html")
+            let url = NSURL(string: URLManager.baseURL + "/javascript/mainpage.html")
             let urlRequest = NSURLRequest(URL: url!)
             theWebView.loadRequest(urlRequest)
             theWebView.navigationDelegate = self

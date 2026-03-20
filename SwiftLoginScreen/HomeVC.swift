@@ -68,7 +68,7 @@ class HomeVC: UIViewController, UIViewControllerTransitioningDelegate {
     typealias ServiceResponse = (JSON, NSError?) -> Void
 
     func dataTask(_: ServiceResponse) {
-        url = URL(string: serverURL + "/login/logout")!
+        url = URL(string: URLManager.login("/logout"))!
 
         var request = URLRequest(url: url!)
 
@@ -243,7 +243,7 @@ extension UIViewController {
                 let user = prefs.value(forKey: "USERNAME")
 
                 var errorOnLogin: GeneralRequestManager?
-                errorOnLogin = GeneralRequestManager(url: serverURL + "/login/activation", errors: "", method: "POST", headers: nil, queryParameters: nil, bodyParameters: ["deviceId": deviceId as String, "user": user as! String], isCacheable: nil, contentType: "", bodyToPost: nil)
+                errorOnLogin = GeneralRequestManager(url: URLManager.login("/activation"), errors: "", method: "POST", headers: nil, queryParameters: nil, bodyParameters: ["deviceId": deviceId as String, "user": user as! String], isCacheable: nil, contentType: "", bodyToPost: nil)
 
                 errorOnLogin?.getResponse {
                     resultString, error in

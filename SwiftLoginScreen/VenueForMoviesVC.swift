@@ -129,7 +129,7 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
 
         var errorOnLogin: GeneralRequestManager?
 
-        errorOnLogin = GeneralRequestManager(url: serverURL + "/mbooks-1/rest/book/venue/movies", errors: "", method: "GET", headers: nil, queryParameters: ["locationId": String(locationId)], bodyParameters: nil, isCacheable: nil, contentType: "", bodyToPost: nil)
+        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/venue/movies"), errors: "", method: "GET", headers: nil, queryParameters: ["locationId": String(locationId)], bodyParameters: nil, isCacheable: nil, contentType: "", bodyToPost: nil)
 
         errorOnLogin?.getResponse {
             (json: JSON, _: NSError?) in
@@ -159,7 +159,7 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
     func addDatesData() {
         var errorOnLogin: GeneralRequestManager?
 
-        errorOnLogin = GeneralRequestManager(url: "https://milo.crabdance.com/mbooks-1/rest/book/dates/" + String(2) + "/" + String(1002), errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: "", bodyToPost: nil)
+        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/dates/" + String(2) + "/" + String(1002)), errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: "", bodyToPost: nil)
 
         errorOnLogin?.getResponse {
             (json: JSON, _: NSError?) in
@@ -211,7 +211,7 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
         // Add text into the cell
         cell.textLabel.text = data.name
 
-        let urlString = serverURL + "/simple-service-webapp/webapi" + (data.large_picture ?? "")
+        let urlString = URLManager.image(data.large_picture ?? "")
 
         if let url = URL(string: urlString) {
             var loadPictures: GeneralRequestManager?

@@ -25,7 +25,7 @@ class DatesData: NSObject {
 
         var errorOnLogin: GeneralRequestManager?
 
-        errorOnLogin = GeneralRequestManager(url: serverURL + "/mbooks-1/rest/book/dates/" + screen_screenId, errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: "", bodyToPost: nil)
+        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/dates/" + screen_screenId), errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: "", bodyToPost: nil)
 
         errorOnLogin?.getResponse {
             (json: JSON, _: NSError?) in

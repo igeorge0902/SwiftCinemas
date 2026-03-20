@@ -111,7 +111,7 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
 
     private func loadMovieImage() {
         guard let selectLargePicture = selectLarge_picture else { return }
-        let urlString = serverURL + "/simple-service-webapp/webapi" + selectLargePicture
+        let urlString = URLManager.image(selectLargePicture)
 
         var loadPictures: GeneralRequestManager?
         loadPictures = GeneralRequestManager(url: urlString, errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
@@ -126,7 +126,7 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
 
     private func loadVenueImage() {
         if let selectVenuesPicture = selectVenues_picture, !selectVenuesPicture.isEmpty {
-            let urlString = serverURL + "/simple-service-webapp/webapi" + selectVenuesPicture
+            let urlString = URLManager.image(selectVenuesPicture)
 
             var loadPictures: GeneralRequestManager?
             loadPictures = GeneralRequestManager(url: urlString, errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
@@ -338,7 +338,7 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
             SelectMovieName = movieName
             SelectVenueForMovie = selectAddress
             SelectVenueName = venueName
-            SelectMoviePicture = serverURL + "/simple-service-webapp/webapi" + selectLarge_picture!
+            SelectMoviePicture = URLManager.image(selectLarge_picture!)
 
             SeatsData.addData(Int(screeningDateId!)!)
 
@@ -472,7 +472,7 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
         var errorOnLogin: GeneralRequestManager?
 
         // TODO: check it on the server side
-        errorOnLogin = GeneralRequestManager(url: serverURL + "/mbooks-1/rest/book/dates/" + String(locationId) + "/" + String(movieId), errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: "", bodyToPost: nil)
+        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/dates/" + String(locationId) + "/" + String(movieId)), errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: "", bodyToPost: nil)
 
         errorOnLogin?.getResponse {
             (json: JSON, _: NSError?) in

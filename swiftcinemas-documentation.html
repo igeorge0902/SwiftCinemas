@@ -187,7 +187,7 @@
   <tr><td><code>mbooks-quarkus</code></td><td><span class="badge badge-purple">8080</span></td><td><code>/mbooks-1</code></td><td>Movie catalogue, booking engine, payment processing.</td></tr>
   <tr><td><code>simple-service-webapp</code></td><td><span class="badge badge-orange">8085</span></td><td><code>/simple-service-webapp</code></td><td>Serves movie posters, venue photos, and profile pictures.</td></tr>
 </table>
-<p>The default server URL is <code>https://milo.crabdance.com</code>, configured as the global constant <code>serverURL</code> in <code>GeneralRequestManager.swift</code>.</p>
+<p>The default server URL is <code>https://milo.crabdance.com</code>, centralised in <code>URLManager.swift</code> (<code>baseHost</code>, <code>baseURL</code>, <code>webSocketURL</code>, and path builders <code>login()</code>, <code>mbooks()</code>, <code>image()</code>). The former global <code>serverURL</code> in <code>GeneralRequestManager.swift</code> has been removed; all call sites now use <code>URLManager</code> directly.</p>
 
 <h3 id="request-flow">Request Flow</h3>
 <div class="diagram-container svg-diagram">
@@ -1714,7 +1714,7 @@ Header:
 </table>
 
 <h4>Request header injection (in <code>dataTask()</code>)</h4>
-<pre><code>if url contains serverURL:
+<pre><code>if url contains URLManager.baseURL:
     headers["Ciphertext"] = UserDefaults["X-Token"]  // AES-encrypted token
     headers["X-Token"]    = "client-secret"
     headers["X-Device"]   = deviceId</code></pre>
@@ -1761,13 +1761,16 @@ Header:
 <div class="grid-3">
   <div class="card" id="websocket">
     <h4><span class="badge badge-green">WebSocket</span></h4>
-    <p><code>BroadCasting/Websocket.swift</code> · 57 lines</p>
+    <p><code>BroadCasting/Websocket.swift</code> · 95 lines</p>
     <ul>
-      <li>Connects to <code>wss://milo.crabdance.com/mbook-1/ws</code></li>
+      <li>Connects to <code>URLManager.webSocketURL</code> (<code>wss://milo.crabdance.com/mbook-1/ws</code>)</li>
       <li>Native <code>URLSessionWebSocketTask</code></li>
       <li>Uses shared <code>URLSession.sharedCustomSession</code></li>
+      <li>Sends a <strong>ping every 30 seconds</strong> to keep the connection alive through NGINX/Apache proxies</li>
+      <li><code>disconnect()</code> method for clean shutdown (stops ping timer, cancels task)</li>
       <li>Receives string + binary messages from Kafka consumers</li>
       <li>Auto-reconnects after 3 seconds on disconnect</li>
+      <li>Uses <code>[weak self]</code> in all callbacks to prevent retain cycles</li>
       <li>Initialised in <code>AppDelegate</code></li>
     </ul>
   </div>
@@ -2813,7 +2816,7 @@ Content-Type: application/json
 <h4>Broadcasting</h4>
 <table>
   <tr><th>File</th><th>Description</th></tr>
-  <tr><td><code>BroadCasting/Websocket.swift</code></td><td>WebSocket manager — native URLSessionWebSocketTask</td></tr>
+  <tr><td><code>BroadCasting/Websocket.swift</code></td><td>WebSocket manager — native URLSessionWebSocketTask with 30s keepalive ping</td></tr>
 </table>
 
 <h4>Configuration / Resources</h4>
@@ -2856,11 +2859,11 @@ open SwiftCinemas.xcworkspace</code></pre>
 <h4>Configuration</h4>
 <table>
   <tr><th>Setting</th><th>File</th><th>What to Change</th></tr>
-  <tr><td>Server URL</td><td><code>GeneralRequestManager.swift</code></td><td><code>let serverURL = "https://..."</code></td></tr>
-  <tr><td>Self-signed hosts</td><td><code>CustomURLSessionDelegate.swift</code></td><td><code>Constants.selfSignedHosts</code></td></tr>
+  <tr><td>Server URL</td><td><code>URLManager.swift</code></td><td>Change <code>baseHost</code> — all service paths, WebSocket URL, and image URL derive from it</td></tr>
+  <tr><td>Self-signed hosts</td><td><code>CustomURLSessionDelegate.swift</code></td><td>Automatically derived from <code>URLManager.baseHost</code></td></tr>
   <tr><td>Firebase</td><td><code>FireBaseGoogleService-Info.plist</code></td><td>Replace with your Firebase project config</td></tr>
   <tr><td>Braintree sandbox</td><td><code>BasketVC.swift</code></td><td><code>lazy var token = "sandbox_..."</code></td></tr>
-  <tr><td>WebSocket URL</td><td><code>BroadCasting/Websocket.swift</code></td><td><code>let url = URL(string: "wss://...")!</code></td></tr>
+  <tr><td>WebSocket URL</td><td><code>URLManager.swift</code></td><td>Derived from <code>baseHost</code>: <code>wss://\(baseHost)/mbook-1/ws</code></td></tr>
 </table>
 
 <h4>xcconfig Files</h4>
@@ -2882,7 +2885,7 @@ open SwiftCinemas.xcworkspace</code></pre>
   <tr><td><span class="badge badge-orange">2019</span></td><td>Updated to Swift 4.2, Xcode 11.1.</td></tr>
   <tr><td><span class="badge badge-pink">2020</span></td><td>Admin panel for screen management.</td></tr>
   <tr><td><span class="badge badge-green">2025</span></td><td>Renamed to <code>SwiftCinemas</code>. Native WebSocket, Firebase Cloud Messaging, geofencing, WKWebView migration.</td></tr>
-  <tr><td><span class="badge badge-blue">2026</span></td><td>Backend migrated from WildFly to Quarkus microservices on Kubernetes. Documentation.</td></tr>
+  <tr><td><span class="badge badge-blue">2026</span></td><td>Backend migrated from WildFly to Quarkus microservices on Kubernetes. Centralised URLs in <code>URLManager.swift</code> (removed <code>serverURL</code> global). WebSocket keepalive pings (30s). Fixed VenuesVC storyboard (removed non-existent <code>Venue</code> custom class, restored navigation to VenuesDetailsVC). Documentation.</td></tr>
 </table>
 </section>
 
@@ -2983,8 +2986,9 @@ class BookingStore {
 
 <div class="card priority-high">
 <h4>🔴 HIGH — Externalise Hardcoded Secrets</h4>
-<p><strong>Where:</strong> <code>ciphertext.swift</code> (AES Salt, IV, Passphrase), <code>BasketVC.swift</code> (Braintree sandbox token), <code>GeneralRequestManager.swift</code> (<code>serverURL</code>), <code>Websocket.swift</code> (WebSocket URL)</p>
-<p><strong>Problem:</strong> AES encryption constants (<code>Salt</code>, <code>IV</code>, <code>Passphrase</code>), Braintree sandbox token, and server URLs are committed in source code. The AES constants must match the server — any drift causes auth failures. Sandbox token should never appear in release builds.</p>
+<p><strong>Where:</strong> <code>ciphertext.swift</code> (AES Salt, IV, Passphrase), <code>BasketVC.swift</code> (Braintree sandbox token)</p>
+<p><strong>Problem:</strong> AES encryption constants (<code>Salt</code>, <code>IV</code>, <code>Passphrase</code>) and the Braintree sandbox token are committed in source code. The AES constants must match the server — any drift causes auth failures. Sandbox token should never appear in release builds.</p>
+<p><strong>Progress:</strong> Server URLs and WebSocket URL have been centralised into <code>URLManager.swift</code> (single <code>baseHost</code>). The old <code>serverURL</code> global has been removed. Self-signed hosts in <code>CustomURLSessionDelegate</code> now derive from <code>URLManager.baseHost</code>. Remaining: AES secrets and Braintree token should move to <code>xcconfig</code> files excluded from Git.</p>
 <p><strong>Fix:</strong> Move secrets to <code>xcconfig</code> files excluded from Git, or use Xcode build configuration + <code>Info.plist</code> variables. Use <code>#if DEBUG</code> for sandbox vs production tokens. Server URL should come from environment-specific config.</p>
 <pre><code>// In Project-Debug.xcconfig (gitignored)
 SERVER_URL = https:$()/$()/localhost

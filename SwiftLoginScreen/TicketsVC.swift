@@ -192,7 +192,7 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
     func addData() {
         var errorOnLogin: GeneralRequestManager?
 
-        errorOnLogin = GeneralRequestManager(url: serverURL + "/login/ManagePurchases", errors: "", method: "GET", headers: nil, queryParameters: ["purchaseId": purchaseId], bodyParameters: nil, isCacheable: "0", contentType: "", bodyToPost: nil)
+        errorOnLogin = GeneralRequestManager(url: URLManager.login("/ManagePurchases"), errors: "", method: "GET", headers: nil, queryParameters: ["purchaseId": purchaseId], bodyParameters: nil, isCacheable: "0", contentType: "", bodyToPost: nil)
 
         errorOnLogin?.getResponse {
             (json: JSON, _: NSError?) in
@@ -228,7 +228,7 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
 
         var errorOnLogin: GeneralRequestManager?
 
-        errorOnLogin = GeneralRequestManager(url: serverURL + "/login/ManagePurchases", errors: "", method: "POST", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "0", contentType: contentType_.urlEncoded.rawValue, bodyToPost: postData)
+        errorOnLogin = GeneralRequestManager(url: URLManager.login("/ManagePurchases"), errors: "", method: "POST", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "0", contentType: contentType_.urlEncoded.rawValue, bodyToPost: postData)
 
         errorOnLogin?.getResponse {
             (json: JSON, _: NSError?) in
@@ -285,7 +285,7 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
         title.addAttribute(NSAttributedString.Key.paragraphStyle, value: paragrapStyle, range: NSMakeRange(0, title.string.count))
         cell.textLabel?.attributedText = title
 
-        let urlMovie = serverURL + "/simple-service-webapp/webapi" + TableData[indexPath.section].movie_picture
+        let urlMovie = URLManager.image(CollectionData[indexPath.row].movie_picture)
 
         var loadPictures: GeneralRequestManager?
         loadPictures = GeneralRequestManager(url: urlMovie, errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)

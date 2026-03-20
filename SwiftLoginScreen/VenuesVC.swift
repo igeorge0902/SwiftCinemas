@@ -154,7 +154,7 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate {
         let myString = String(movieId)
         var errorOnLogin: GeneralRequestManager?
 
-        errorOnLogin = GeneralRequestManager(url: serverURL + "/mbooks-1/rest/book/venue/" + myString, errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
+        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/venue/" + myString), errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
 
         errorOnLogin?.getResponse {
             (json: JSON, _: NSError?) in
@@ -177,7 +177,7 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate {
         let myString = String(movieId)
         var errorOnLogin: GeneralRequestManager?
 
-        errorOnLogin = GeneralRequestManager(url: serverURL + "/mbooks-1/rest/book/venue/" + myString, errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
+        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/venue/" + myString), errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
 
         errorOnLogin?.getResponse { [self]
             (json: JSON, _: NSError?) in
@@ -199,11 +199,10 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate {
 
     func addLocation() {
         PlacesData_.removeAll()
-        let pathString = "locations"
 
         var errorOnLogin: GeneralRequestManager?
 
-        errorOnLogin = GeneralRequestManager(url: serverURL + "/mbooks-1/rest/book/" + pathString, errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "", contentType: "", bodyToPost: nil)
+        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/locations"), errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "", contentType: "", bodyToPost: nil)
 
         errorOnLogin?.getResponse {
             (json: JSON, _: NSError?) in
@@ -283,7 +282,7 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate {
             cell!.textLabel?.attributedText = detailText
             // cell!.detailTextLabel?.text = data.address!
 
-            let urlString = serverURL + "/simple-service-webapp/webapi" + (data.venues_picture!)
+            let urlString = URLManager.image(data.venues_picture!)
 
             var loadPictures: GeneralRequestManager?
             loadPictures = GeneralRequestManager(url: urlString, errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
@@ -342,15 +341,7 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate {
             // Update detailsView with the selected venue information
             detailsLabel.text = "📍 Venue: \(data.name ?? "Unknown")\n🏠 Address: \(data.address ?? "N/A")"
 
-            // Animate background color change to highlight selection
-            UIView.animate(withDuration: 0.3) {
-                self.detailsView.backgroundColor = UIColor.white
-            } completion: { _ in
-                UIView.animate(withDuration: 0.3) {
-                    self.detailsView.backgroundColor = UIColor.lightGray
-                }
-            }
-            // performSegue(withIdentifier: "goto_venues_details", sender: self)
+            performSegue(withIdentifier: "goto_venues_details", sender: self)
         }
     }
 }

@@ -154,7 +154,7 @@ class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerD
 
         var errorOnLogin: GeneralRequestManager?
 
-        errorOnLogin = GeneralRequestManager(url: serverURL + "/mbooks-1/rest/book/" + pathString, errors: "", method: "GET", headers: nil, queryParameters: queryString, bodyParameters: nil, isCacheable: "", contentType: "", bodyToPost: nil)
+        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/" + pathString), errors: "", method: "GET", headers: nil, queryParameters: queryString, bodyParameters: nil, isCacheable: "", contentType: "", bodyToPost: nil)
 
         errorOnLogin?.getResponse {
             (json: JSON, _: NSError?) in

@@ -167,7 +167,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
             query = ["setFirstResult": String(setFirstResult!)]
         }
 
-        errorOnLogin = GeneralRequestManager(url: serverURL + "/mbooks-1/rest/book/movies/paging", errors: "", method: "GET", headers: nil, queryParameters: query, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
+        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/movies/paging"), errors: "", method: "GET", headers: nil, queryParameters: query, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
 
         errorOnLogin?.getResponse {
             (json: JSON, _: NSError?) in
@@ -199,7 +199,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
             query = ["category": category]
         }
 
-        errorOnLogin = GeneralRequestManager(url: serverURL + "/mbooks-1/rest/book/admin/moviesonvenuescategorized", errors: "", method: "GET", headers: nil, queryParameters: query, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
+        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/admin/moviesonvenuescategorized"), errors: "", method: "GET", headers: nil, queryParameters: query, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
 
         errorOnLogin?.getResponse {
             (json: JSON, _: NSError?) in
@@ -224,7 +224,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         var query: [String: String]?
         query = ["match": search]
 
-        errorOnLogin = GeneralRequestManager(url: serverURL + "/mbooks-1/rest/book/admin/moviesonvenuessearch", errors: "", method: "GET", headers: nil, queryParameters: query, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
+        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/admin/moviesonvenuessearch"), errors: "", method: "GET", headers: nil, queryParameters: query, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
 
         errorOnLogin?.getResponse {
             (json: JSON, _: NSError?) in
@@ -262,7 +262,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
             query = ["match": match, "setFirstResult": String(setFirstResult!)]
         }
 
-        errorOnLogin = GeneralRequestManager(url: serverURL + "/mbooks-1/rest/book/movies/search", errors: "", method: "GET", headers: nil, queryParameters: query, bodyParameters: nil, isCacheable: nil, contentType: "", bodyToPost: nil)
+        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/movies/search"), errors: "", method: "GET", headers: nil, queryParameters: query, bodyParameters: nil, isCacheable: nil, contentType: "", bodyToPost: nil)
 
         errorOnLogin?.getResponse {
             (json: JSON, _: NSError?) in
@@ -291,7 +291,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         ScreenData_2.removeAll()
         var errorOnLogin: GeneralRequestManager?
 
-        errorOnLogin = GeneralRequestManager(url: serverURL + "/mbooks-1/rest/book/admin/moviesonvenues", errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: contentType_.json.rawValue, bodyToPost: nil)
+        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/admin/moviesonvenues"), errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: contentType_.json.rawValue, bodyToPost: nil)
 
         errorOnLogin?.getResponse {
             (json: JSON, _: NSError?) in
@@ -493,7 +493,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
 
             // Load image only if shouldLoadImage is true
             if shouldLoadImage {
-                let urlString = serverURL + "/simple-service-webapp/webapi" + data.large_picture
+                let urlString = URLManager.image(data.large_picture)
                 if let url = URL(string: urlString) {
                     loadImage(from: url, for: cell)
                 }

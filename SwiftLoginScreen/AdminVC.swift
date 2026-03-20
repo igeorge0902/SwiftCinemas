@@ -130,7 +130,7 @@ class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIVi
 
         var errorOnLogin: GeneralRequestManager?
 
-        errorOnLogin = GeneralRequestManager(url: serverURL + "/mbooks-1/rest/book/admin/addscreen", errors: "", method: "POST", headers: nil, queryParameters: nil, bodyParameters: testdata, isCacheable: nil, contentType: contentType_.json.rawValue, bodyToPost: nil)
+        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/admin/addscreen"), errors: "", method: "POST", headers: nil, queryParameters: nil, bodyParameters: testdata, isCacheable: nil, contentType: contentType_.json.rawValue, bodyToPost: nil)
 
         errorOnLogin?.getResponse {
             (json: JSON, _: NSError?) in

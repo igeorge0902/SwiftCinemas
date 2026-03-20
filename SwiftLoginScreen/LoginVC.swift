@@ -33,7 +33,7 @@ class LoginVC: UIViewController, UITextFieldDelegate {
     // lazy var session: URLSession = URLSession(configuration: self.config, delegate: self, delegateQueue:OperationQueue.mainQueue())
 
     lazy var session = Foundation.URLSession.sharedCustomSession
-    lazy var url = URL(string: serverURL + "/login/HelloWorld")
+    lazy var url = URL(string: URLManager.login("/HelloWorld"))
 
     var running = false
 
@@ -75,7 +75,6 @@ class LoginVC: UIViewController, UITextFieldDelegate {
         // Dispose of any resources that can be recreated.
     }
 
-    // let url:URL = URL(string: serverURL + "/login/HelloWorld")!
 
     typealias ServiceResponse = (JSON, NSError?) -> Void
 

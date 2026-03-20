@@ -12,7 +12,7 @@ class MenuVC: UIViewController {
     private lazy var imageView = createImageView()
 
     lazy var session: URLSession = .sharedCustomSession
-    private let url = URL(string: serverURL + "/login/logout")
+    private let url = URL(string: URLManager.login("/logout"))
 
     private var items = [JSON]()
 
@@ -125,7 +125,7 @@ class MenuVC: UIViewController {
                     self.nameTextView.text = user.isEmpty ? "No logged-in user" : user
                     self.xsrfCookieTextView.text = email.isEmpty ? "No email" : email
 
-                    let urlString = serverURL + "/simple-service-webapp/webapi" + profilePicture
+                    let urlString = URLManager.image(profilePicture)
 
                     var loadPictures: GeneralRequestManager?
                     loadPictures = GeneralRequestManager(url: urlString, errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
