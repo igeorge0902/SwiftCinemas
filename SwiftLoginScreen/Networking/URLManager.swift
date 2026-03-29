@@ -11,6 +11,12 @@ import Foundation
 /// Centralised URL configuration for all backend services.
 /// Change `baseHost` to point the app at a different environment.
 enum URLManager {
+    
+    static let allowedHosts: Set<String> = [
+        URLManager.baseHost,
+        "localhost",
+        "igeorge1982.local"
+    ]
 
     // MARK: - Base host (single place to change)
 

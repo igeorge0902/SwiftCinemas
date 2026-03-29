@@ -242,14 +242,18 @@ extension UIViewController {
                 let prefs = UserDefaults.standard
                 let user = prefs.value(forKey: "USERNAME")
 
-                var errorOnLogin: GeneralRequestManager?
-                errorOnLogin = GeneralRequestManager(url: URLManager.login("/activation"), errors: "", method: "POST", headers: nil, queryParameters: nil, bodyParameters: ["deviceId": deviceId as String, "user": user as! String], isCacheable: nil, contentType: "", bodyToPost: nil)
-
-                errorOnLogin?.getResponse {
-                    resultString, error in
-
-                    print(resultString)
-                    print(error as Any)
+                Task { @MainActor in
+                    guard let app = UIApplication.shared.delegate as? AppDelegate,
+                          let userStr = user as? String
+                    else {
+                        return
+                    }
+                    do {
+                        let data = try await app.services.loginGateway.postActivation(deviceId: deviceId, user: userStr)
+                        print(String(data: data, encoding: .utf8) ?? "")
+                    } catch {
+                        print(error)
+                    }
                 }
             })
         }

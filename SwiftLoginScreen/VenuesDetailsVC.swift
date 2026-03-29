@@ -19,7 +19,8 @@ import UIKit
 import WebKit
 
 var selectedCalendar: String?
-class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresentationControllerDelegate, UIViewControllerTransitioningDelegate {
+class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresentationControllerDelegate, UIViewControllerTransitioningDelegate, HasAppServices {
+    var appServices: AppServices!
     deinit {
         screeningDateId = nil
         ScreeningDates.removeAll()
@@ -79,6 +80,7 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        injectAppServicesIfNeeded()
         setupScrollView()
         addDatesData()
     }
@@ -113,14 +115,16 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
         guard let selectLargePicture = selectLarge_picture else { return }
         let urlString = URLManager.image(selectLargePicture)
 
-        var loadPictures: GeneralRequestManager?
-        loadPictures = GeneralRequestManager(url: urlString, errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
-
-        loadPictures?.getData_ {
-            (data: Data, _: NSError?) in
-            let image = UIImage(data: data)
-            self.moviePicture = image!
-            self.setupMovieImageView()
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let data = try await self.appServices.images.getData(urlString: urlString, realmCache: true)
+                guard let image = UIImage(data: data) else { return }
+                self.moviePicture = image
+                self.setupMovieImageView()
+            } catch {
+                NSLog("loadMovieImage: %@", error.localizedDescription)
+            }
         }
     }
 
@@ -128,14 +132,16 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
         if let selectVenuesPicture = selectVenues_picture, !selectVenuesPicture.isEmpty {
             let urlString = URLManager.image(selectVenuesPicture)
 
-            var loadPictures: GeneralRequestManager?
-            loadPictures = GeneralRequestManager(url: urlString, errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
-
-            loadPictures?.getData_ {
-                (data: Data, _: NSError?) in
-                let image = UIImage(data: data)
-                self.venuePicture = image!
-                self.setupVenueImageView()
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                do {
+                    let data = try await self.appServices.images.getData(urlString: urlString, realmCache: true)
+                    guard let image = UIImage(data: data) else { return }
+                    self.venuePicture = image
+                    self.setupVenueImageView()
+                } catch {
+                    NSLog("loadVenueImage: %@", error.localizedDescription)
+                }
             }
         } else {
             noPicture = ["NoPicture": "cat2"]
@@ -469,20 +475,20 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
     }
 
     func addDatesData() {
-        var errorOnLogin: GeneralRequestManager?
-
-        // TODO: check it on the server side
-        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/dates/" + String(locationId) + "/" + String(movieId)), errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: "", bodyToPost: nil)
-
-        errorOnLogin?.getResponse {
-            (json: JSON, _: NSError?) in
-
-            if let list = json["dates"].object as? NSArray {
-                for i in 0 ..< list.count {
-                    if let dataBlock = list[i] as? NSDictionary {
-                        ScreeningDates.append(DatesData(add: dataBlock))
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let data = try await self.appServices.mbooks.dates(locationId: String(self.locationId), movieId: String(self.movieId))
+                let json = try JSON(data: data)
+                if let list = json["dates"].object as? NSArray {
+                    for i in 0 ..< list.count {
+                        if let dataBlock = list[i] as? NSDictionary {
+                            ScreeningDates.append(DatesData(add: dataBlock))
+                        }
                     }
                 }
+            } catch {
+                NSLog("addDatesData: %@", error.localizedDescription)
             }
         }
     }

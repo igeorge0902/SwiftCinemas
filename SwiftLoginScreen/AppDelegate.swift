@@ -22,6 +22,24 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
     var locationManager: CLLocationManager?
     var contactStore: CNContactStore?
     var socketManager: WebSocketManager?
+
+    /// Shared networking stack: ``RealmResponseCache`` + ``SessionHeaderProvider`` + typed services (``MbooksService``, ``LoginGatewayService``, ``ImageResourceService``, ``RapidMovieDatabaseService``).
+    lazy var services: AppServices = {
+        let cache = RealmResponseCache()
+        let client = APIClient(
+            baseURL: URL(string: URLManager.baseURL)!,
+            session: .sharedCustomSession,
+            cache: cache,
+            headers: SessionHeaderProvider()
+        )
+        return AppServices(
+            apiClient: client,
+            mbooks: MbooksService(apiClient: client),
+            loginGateway: LoginGatewayService(apiClient: client),
+            images: ImageResourceService(apiClient: client),
+            rapidMovieDatabase: RapidMovieDatabaseService(apiClient: client)
+        )
+    }()
     
     func application(_: UIApplication, willFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         setenv("CFNETWORK_DIAGNOSTICS", "3", 1)
@@ -144,24 +162,25 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
     }
 
     func loadLocations() {
-        var errorOnLogin: GeneralRequestManager?
         let geofenceManager = GeofenceManager()
 
-        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/locations"), errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "", contentType: "", bodyToPost: nil)
+        Task { @MainActor in
+            do {
+                let data = try await self.services.mbooks.locations()
+                let json = try JSON(data: data)
+                if let list = json["locations"].object as? NSArray {
+                    for i in 0 ..< list.count {
+                        if let dataBlock = list[i] as? NSDictionary {
+                            let name = dataBlock["name"] as? String
+                            let latitude = dataBlock["latitude"] as! Double
+                            let longitude = dataBlock["longitude"] as! Double
 
-        errorOnLogin?.getResponse {
-            (json: JSON, _: NSError?) in
-
-            if let list = json["locations"].object as? NSArray {
-                for i in 0 ..< list.count {
-                    if let dataBlock = list[i] as? NSDictionary {
-                        let name = dataBlock["name"] as? String
-                        let latitude = dataBlock["latitude"] as! Double
-                        let longitude = dataBlock["longitude"] as! Double
-
-                        geofenceManager.addGeofence(latitude: latitude, longitude: longitude, radius: 500, identifier: name!)
+                            geofenceManager.addGeofence(latitude: latitude, longitude: longitude, radius: 500, identifier: name!)
+                        }
                     }
                 }
+            } catch {
+                NSLog("loadLocations: %@", error.localizedDescription)
             }
         }
     }

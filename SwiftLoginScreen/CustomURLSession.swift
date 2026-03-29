@@ -14,7 +14,7 @@ extension URLSession {
             /// The singleton URL session, configured to use our custom config and delegate.
             static let session = URLSession(
                 configuration: URLSessionConfiguration.CustomSessionConfiguration(),
-                delegate: CustomURLSessionDelegate(),
+                delegate: CustomURLSessionDelegate(allowedHosts: URLManager.allowedHosts),
                 delegateQueue: OperationQueue.main
             )
         }

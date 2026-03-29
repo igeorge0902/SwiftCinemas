@@ -17,7 +17,8 @@ var TableData_: [MoviesData] = .init()
 var endOfFile = false
 var veil = true
 var shouldShowSearchResults = false
-class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UISearchResultsUpdating, UISearchBarDelegate {
+class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UISearchResultsUpdating, UISearchBarDelegate, HasAppServices {
+    var appServices: AppServices!
     deinit {
         endOfFile = false
         TableData.removeAll()
@@ -97,6 +98,8 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        injectAppServicesIfNeeded()
+
         veil = true
         searchController = UISearchController(searchResultsController: nil)
         searchController?.searchResultsUpdater = self
@@ -153,7 +156,6 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
     ///   - category: Name of the category.
     /// - Returns: list of ``MoviesData`` objects.
     func addData(category: String) {
-        var errorOnLogin: GeneralRequestManager?
         var setFirstResult: Int?
         var query: [String: String]?
 
@@ -167,84 +169,78 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
             query = ["setFirstResult": String(setFirstResult!)]
         }
 
-        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/movies/paging"), errors: "", method: "GET", headers: nil, queryParameters: query, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
-
-        errorOnLogin?.getResponse {
-            (json: JSON, _: NSError?) in
-
-            if let list = json["movies"].object as? NSArray {
-                for i in 0 ..< list.count {
-                    if let dataBlock = list[i] as? NSDictionary {
-                        self.TableData.append(MoviesData(add: dataBlock))
+        Task { @MainActor [weak self] in
+            guard let self, let query else { return }
+            do {
+                let data = try await self.appServices.mbooks.moviesPaging(query: query)
+                let json = try JSON(data: data)
+                if let list = json["movies"].object as? NSArray {
+                    for i in 0 ..< list.count {
+                        if let dataBlock = list[i] as? NSDictionary {
+                            self.TableData.append(MoviesData(add: dataBlock))
+                        }
                     }
                 }
-            }
-
-            if let _ = json["NotFoundMovies"].string as NSString? {
-                endOfFile = true
-            }
-            DispatchQueue.main.async {
+                if let _ = json["NotFoundMovies"].string as NSString? {
+                    endOfFile = true
+                }
                 self.tableView?.reloadData()
+            } catch {
+                NSLog("addData: %@", error.localizedDescription)
             }
         }
     }
 
     func addLoadMoviesonVenue(category: String) {
-        // TableData.removeAll()
-
-        var errorOnLogin: GeneralRequestManager?
         var query: [String: String]?
 
         if category != "nil" {
             query = ["category": category]
         }
 
-        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/admin/moviesonvenuescategorized"), errors: "", method: "GET", headers: nil, queryParameters: query, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
-
-        errorOnLogin?.getResponse {
-            (json: JSON, _: NSError?) in
-
-            if let list = json["venues"].object as? NSArray {
-                for i in 0 ..< list.count {
-                    if let dataBlock = list[i] as? NSDictionary {
-                        ScreenData_2.append(Admin_ScreenData(add: dataBlock))
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let data = try await self.appServices.mbooks.adminMoviesOnVenuesCategorized(query: query)
+                let json = try JSON(data: data)
+                if let list = json["venues"].object as? NSArray {
+                    for i in 0 ..< list.count {
+                        if let dataBlock = list[i] as? NSDictionary {
+                            ScreenData_2.append(Admin_ScreenData(add: dataBlock))
+                        }
                     }
                 }
-            }
-            DispatchQueue.main.async {
                 self.tableView?.reloadData()
+            } catch {
+                NSLog("addLoadMoviesonVenue(category): %@", error.localizedDescription)
             }
         }
     }
 
     func addLoadMoviesonVenue(search: String) {
-        // TableData.removeAll()
+        let query = ["match": search]
 
-        var errorOnLogin: GeneralRequestManager?
-        var query: [String: String]?
-        query = ["match": search]
-
-        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/admin/moviesonvenuessearch"), errors: "", method: "GET", headers: nil, queryParameters: query, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
-
-        errorOnLogin?.getResponse {
-            (json: JSON, _: NSError?) in
-
-            if let list = json["venues"].object as? NSArray {
-                for i in 0 ..< list.count {
-                    if let dataBlock = list[i] as? NSDictionary {
-                        ScreenData_2.append(Admin_ScreenData(add: dataBlock))
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let data = try await self.appServices.mbooks.adminMoviesOnVenuesSearch(query: query)
+                let json = try JSON(data: data)
+                if let list = json["venues"].object as? NSArray {
+                    for i in 0 ..< list.count {
+                        if let dataBlock = list[i] as? NSDictionary {
+                            ScreenData_2.append(Admin_ScreenData(add: dataBlock))
+                        }
                     }
                 }
-            }
-            DispatchQueue.main.async {
                 self.tableView?.reloadData()
+            } catch {
+                NSLog("addLoadMoviesonVenue(search): %@", error.localizedDescription)
             }
         }
     }
 
     func addData_(_ match: String, category: String) {
         SearchData.removeAll()
-        var errorOnLogin: GeneralRequestManager?
         var setFirstResult: Int?
         var query: [String: String]?
 
@@ -262,50 +258,48 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
             query = ["match": match, "setFirstResult": String(setFirstResult!)]
         }
 
-        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/movies/search"), errors: "", method: "GET", headers: nil, queryParameters: query, bodyParameters: nil, isCacheable: nil, contentType: "", bodyToPost: nil)
-
-        errorOnLogin?.getResponse {
-            (json: JSON, _: NSError?) in
-
-            if let list = json["searchedMovies"].object as? NSArray {
-                for i in 0 ..< list.count {
-                    if let dataBlock = list[i] as? NSDictionary {
-                        self.SearchData.append(MoviesData(add: dataBlock))
-                        shouldShowSearchResults = true
+        Task { @MainActor [weak self] in
+            guard let self, let query else { return }
+            do {
+                let data = try await self.appServices.mbooks.moviesSearch(query: query)
+                let json = try JSON(data: data)
+                if let list = json["searchedMovies"].object as? NSArray {
+                    for i in 0 ..< list.count {
+                        if let dataBlock = list[i] as? NSDictionary {
+                            self.SearchData.append(MoviesData(add: dataBlock))
+                            shouldShowSearchResults = true
+                        }
                     }
                 }
-            }
-
-            if let _ = json["NotFoundMovies"].string as NSString? {
-                // TODO: present empty list
-                endOfFile = true
-            }
-
-            DispatchQueue.main.async {
+                if let _ = json["NotFoundMovies"].string as NSString? {
+                    endOfFile = true
+                }
                 self.tableView?.reloadData()
+            } catch {
+                NSLog("addData_: %@", error.localizedDescription)
             }
         }
     }
 
     @objc func addLoadMoviesonVenue() {
         ScreenData_2.removeAll()
-        var errorOnLogin: GeneralRequestManager?
 
-        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/admin/moviesonvenues"), errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: contentType_.json.rawValue, bodyToPost: nil)
-
-        errorOnLogin?.getResponse {
-            (json: JSON, _: NSError?) in
-
-            if let list = json["venues"].object as? NSArray {
-                for i in 0 ..< list.count {
-                    if let dataBlock = list[i] as? NSDictionary {
-                        ScreenData_2.append(Admin_ScreenData(add: dataBlock))
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let data = try await self.appServices.mbooks.adminMoviesOnVenues()
+                let json = try JSON(data: data)
+                if let list = json["venues"].object as? NSArray {
+                    for i in 0 ..< list.count {
+                        if let dataBlock = list[i] as? NSDictionary {
+                            ScreenData_2.append(Admin_ScreenData(add: dataBlock))
+                        }
                     }
+                    NotificationCenter.default.post(name: NSNotification.Name(rawValue: "venueSelected"), object: nil)
                 }
-                NotificationCenter.default.post(name: NSNotification.Name(rawValue: "venueSelected"), object: nil)
-            }
-            DispatchQueue.main.async {
                 self.tableView?.reloadData()
+            } catch {
+                NSLog("addLoadMoviesonVenue: %@", error.localizedDescription)
             }
         }
     }
@@ -505,17 +499,16 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
     }
 
     private func loadImage(from url: URL, for cell: ListViewCell) {
-        var loadPictures: GeneralRequestManager?
-        loadPictures = GeneralRequestManager(url: url.absoluteString, errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
-
-        loadPictures?.getData_ { (data: Data, _: NSError?) in
-            if let image = UIImage(data: data) {
-                 let resizedImage = image.resize(140, 140)
-
-                DispatchQueue.main.async {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let data = try await self.appServices.images.getData(urlString: url.absoluteString, realmCache: true)
+                if let image = UIImage(data: data) {
                     cell.movieImageView.image = image
                     cell.setNeedsLayout()
                 }
+            } catch {
+                NSLog("loadImage: %@", error.localizedDescription)
             }
         }
     }

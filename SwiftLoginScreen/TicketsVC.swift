@@ -15,7 +15,8 @@ import UIKit
  Stores BasketData objects representing basket items.
  */
 @available(iOS 15.0, *)
-class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
+class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, HasAppServices {
+    var appServices: AppServices!
     deinit {
         purchaseId = nil
         CollectionData.removeAll()
@@ -43,6 +44,8 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        injectAppServicesIfNeeded()
 
         let btnNav = UIButton(frame: CGRect(x: 0, y: 25, width: view.frame.width / 2, height: 20))
         btnNav.backgroundColor = UIColor.black
@@ -190,24 +193,22 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
     }
 
     func addData() {
-        var errorOnLogin: GeneralRequestManager?
-
-        errorOnLogin = GeneralRequestManager(url: URLManager.login("/ManagePurchases"), errors: "", method: "GET", headers: nil, queryParameters: ["purchaseId": purchaseId], bodyParameters: nil, isCacheable: "0", contentType: "", bodyToPost: nil)
-
-        errorOnLogin?.getResponse {
-            (json: JSON, _: NSError?) in
-
-            if let list = json["tickets"].object as? NSArray {
-                for i in 0 ..< list.count {
-                    if let dataBlock = list[i] as? NSDictionary {
-                        self.CollectionData.append(AllTicketsData(add: dataBlock))
-                        self.CollectionData.sort { ($0.seats_seatNumber ?? "") < ($1.seats_seatNumber ?? "") }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let data = try await self.appServices.loginGateway.getManagePurchases(purchaseId: self.purchaseId)
+                let json = try JSON(data: data)
+                if let list = json["tickets"].object as? NSArray {
+                    for i in 0 ..< list.count {
+                        if let dataBlock = list[i] as? NSDictionary {
+                            self.CollectionData.append(AllTicketsData(add: dataBlock))
+                            self.CollectionData.sort { ($0.seats_seatNumber ?? "") < ($1.seats_seatNumber ?? "") }
+                        }
                     }
                 }
-            }
-
-            DispatchQueue.main.async {
                 self.collectionView?.reloadData()
+            } catch {
+                NSLog("TicketsVC addData: %@", error.localizedDescription)
             }
         }
     }
@@ -226,15 +227,16 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
         let post: NSString = "purchaseId=\(purchaseId!)&ticketsToBeCancelled=\(prepareDataToPost)" as NSString
         let postData: Data = post.data(using: String.Encoding.ascii.rawValue)!
 
-        var errorOnLogin: GeneralRequestManager?
-
-        errorOnLogin = GeneralRequestManager(url: URLManager.login("/ManagePurchases"), errors: "", method: "POST", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "0", contentType: contentType_.urlEncoded.rawValue, bodyToPost: postData)
-
-        errorOnLogin?.getResponse {
-            (json: JSON, _: NSError?) in
-
-            if json["Success"].string == "true" {
-                NotificationCenter.default.post(name: NSNotification.Name(rawValue: "newDataNotif"), object: nil)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let data = try await self.appServices.loginGateway.postManagePurchases(body: postData)
+                let json = try JSON(data: data)
+                if json["Success"].string == "true" {
+                    NotificationCenter.default.post(name: NSNotification.Name(rawValue: "newDataNotif"), object: nil)
+                }
+            } catch {
+                NSLog("cancelTicket: %@", error.localizedDescription)
             }
         }
 
@@ -287,14 +289,16 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
 
         let urlMovie = URLManager.image(CollectionData[indexPath.row].movie_picture)
 
-        var loadPictures: GeneralRequestManager?
-        loadPictures = GeneralRequestManager(url: urlMovie, errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
-
-        loadPictures?.getData_ {
-            (data: Data, _: NSError?) in
-            let image = UIImage(data: data)
-            cell.profileImage?.image = image
-            cell.setNeedsLayout() // Force the cell to update
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let imgData = try await self.appServices.images.getData(urlString: urlMovie, realmCache: true)
+                let image = UIImage(data: imgData)
+                cell.profileImage?.image = image
+                cell.setNeedsLayout()
+            } catch {
+                NSLog("TicketsVC image: %@", error.localizedDescription)
+            }
         }
 
         let text = NSMutableAttributedString(string: "Ticket details: \n Seat Row: \(CollectionData[indexPath.row].seats_seatRow!), \n Seat Nr: \(CollectionData[indexPath.row].seats_seatNumber!), \nDate of Screening: \n\(CollectionData[indexPath.row].screening_date!), \n Venue: \(CollectionData[indexPath.row].venue_name!)", attributes: convertToOptionalNSAttributedStringKeyDictionary([convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 14.0)!]))

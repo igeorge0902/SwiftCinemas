@@ -12,7 +12,8 @@ import UIKit
 
 var originalVenueName: NSAttributedString!
 @available(iOS 9.0, *)
-class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIViewControllerTransitioningDelegate, UIPopoverPresentationControllerDelegate {
+class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIViewControllerTransitioningDelegate, UIPopoverPresentationControllerDelegate, HasAppServices {
+    var appServices: AppServices!
     deinit {
         print(#function, "\(self)")
         adminUpdatePage = false
@@ -37,6 +38,7 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        injectAppServicesIfNeeded()
         adminUpdatePage = true
         adminPage = false
 
@@ -259,7 +261,7 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
         let ScreeningID_: NSString = ScreeningID.text! as NSString
         let category_: NSString = category.text! as NSString
 
-        let testdata: [String: String] = [
+        let testdata: [String: Any] = [
             "venue": venue as String,
             "venueId": addVenueId as String,
             "movieId": addMovieId as String,
@@ -269,77 +271,58 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
             "category": category_ as String,
         ]
 
-        let test: Data = try! JSONSerialization.data(withJSONObject: testdata, options: [])
+        ScreenData_.removeAll()
 
-        let data = NSString(data: test, encoding: String.Encoding.utf8.rawValue)! as String
-        let post: NSString = "updateScreen=\(data)" as NSString
-        // let postData: Data = post.data(using: String.Encoding.utf8.rawValue)!
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let responseData = try await self.appServices.mbooks.adminUpdateScreen(body: testdata)
+                let json = try JSON(data: responseData)
+                if let dataBlock = json.object as? NSDictionary {
+                    ScreenData_.append(ScreenData(add: dataBlock))
+                }
+                if ScreenData_[0].ScreeningId.contains("Error") {
+                    self.presentAlert(withTitle: "Error:", message: "Duplicate ScreeningId: \(ScreeningID_)")
 
-        let postData: Data = post.data(using: String.Encoding.utf8.rawValue, allowLossyConversion: true)!
-
-        var errorOnLogin: GeneralRequestManager?
-
-        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/admin/updatescreen"), errors: "", method: "POST", headers: nil, queryParameters: nil, bodyParameters: testdata, isCacheable: nil, contentType: contentType_.json.rawValue, bodyToPost: nil)
-
-        errorOnLogin?.getResponse {
-            (json: JSON, _: NSError?) in
-
-            if let dataBlock = json.object as? NSDictionary {
-                ScreenData_.append(ScreenData(add: dataBlock))
-            }
-            if ScreenData_[0].ScreeningId.contains("Error") {
-                self.presentAlert(withTitle: "Error:", message: "Duplicate ScreeningId: \(ScreeningID_)")
-
-            } else {
-                self.presentAlert(withTitle: "Info:", message: "Screen updated:, ScreeningId: \(ScreenData_[0].ScreeningId!)")
+                } else {
+                    self.presentAlert(withTitle: "Info:", message: "Screen updated:, ScreeningId: \(ScreenData_[0].ScreeningId!)")
+                }
+            } catch {
+                NSLog("updateScreen: %@", error.localizedDescription)
             }
         }
-
-        ScreenData_.removeAll()
     }
 
     @objc func deleteScreen() {
-        let testdata: [String: String] = [
+        let testdata: [String: Any] = [
             "ScreeningDatesId": addScreeningDateId as String,
         ]
 
-        let test: Data = try! JSONSerialization.data(withJSONObject: testdata, options: [])
-
-        let data = NSString(data: test, encoding: String.Encoding.utf8.rawValue)! as String
-        let post: NSString = "deleteScreen=\(data)" as NSString
-        // let postData: Data = post.data(using: String.Encoding.utf8.rawValue)!
-
-        let postData: Data = post.data(using: String.Encoding.utf8.rawValue, allowLossyConversion: true)!
-
-        var errorOnLogin: GeneralRequestManager?
-
-        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/admin/deletescreen"), errors: "", method: "DELETE", headers: nil, queryParameters: nil, bodyParameters: testdata, isCacheable: nil, contentType: contentType_.json.rawValue, bodyToPost: nil)
-
-        errorOnLogin?.getResponse { [self]
-            (json: JSON, error: NSError?) in
-
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let responseData = try await self.appServices.mbooks.adminDeleteScreen(body: testdata)
+                let json = try JSON(data: responseData)
                 if json["screeningDatesId"].string != nil {
-                    if error != nil {
-                        presentAlert(withTitle: "Error:", message: "Duplicate ScreeningDatesId: \(addScreeningDateId)")
+                    self.presentAlert(withTitle: "Info:", message: "Screen deleted:, ScreeningDatesId: \(addScreeningDateId)")
 
-                    } else {
-                        // TODO: add more info about the screen
-                        presentAlert(withTitle: "Info:", message: "Screen deleted:, ScreeningDatesId: \(addScreeningDateId)")
+                    addMovie = ""
+                    addVenue = ""
+                    addScreeningID = ""
+                    addScreeningDate = ""
+                    addCategory = ""
+                    addScreeningDateId = ""
 
-                        addMovie = ""
-                        addVenue = ""
-                        addScreeningID = ""
-                        addScreeningDate = ""
-                        addCategory = ""
-                        addScreeningDateId = ""
-
-                        movieName.text = ""
-                        venueName.text = ""
-                        ScreeningID.text = ""
-                        screeningDate.text = ""
-                        category.text = ""
-                    }
+                    self.movieName.text = ""
+                    self.venueName.text = ""
+                    self.ScreeningID.text = ""
+                    self.screeningDate.text = ""
+                    self.category.text = ""
                 }
+            } catch {
+                NSLog("deleteScreen: %@", error.localizedDescription)
+                self.presentAlert(withTitle: "Error:", message: "Duplicate ScreeningDatesId: \(addScreeningDateId)")
+            }
         }
     }
 

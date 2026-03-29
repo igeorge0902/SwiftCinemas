@@ -8,6 +8,7 @@
 
 import Foundation
 import SwiftyJSON
+import UIKit
 
 class DatesData: NSObject {
     var screeningDatesId: Int!
@@ -23,19 +24,20 @@ class DatesData: NSObject {
     class func addDatesData(_ screen_screenId: String) {
         ScreeningDates.removeAll()
 
-        var errorOnLogin: GeneralRequestManager?
-
-        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/dates/" + screen_screenId), errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: "", bodyToPost: nil)
-
-        errorOnLogin?.getResponse {
-            (json: JSON, _: NSError?) in
-
-            if let list = json["dates"].object as? NSArray {
-                for i in 0 ..< list.count {
-                    if let dataBlock = list[i] as? NSDictionary {
-                        ScreeningDates.append(DatesData(add: dataBlock))
+        Task { @MainActor in
+            guard let app = UIApplication.shared.delegate as? AppDelegate else { return }
+            do {
+                let data = try await app.services.mbooks.dates(screenId: screen_screenId)
+                let json = try JSON(data: data)
+                if let list = json["dates"].object as? NSArray {
+                    for i in 0 ..< list.count {
+                        if let dataBlock = list[i] as? NSDictionary {
+                            ScreeningDates.append(DatesData(add: dataBlock))
+                        }
                     }
                 }
+            } catch {
+                NSLog("DatesData.addDatesData: %@", error.localizedDescription)
             }
         }
     }

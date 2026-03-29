@@ -10,7 +10,8 @@ import SwiftyJSON
 import UIKit
 
 var ScreeningDates: [DatesData] = .init()
-class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UISearchResultsUpdating, UISearchBarDelegate {
+class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UISearchResultsUpdating, UISearchBarDelegate, HasAppServices {
+    var appServices: AppServices!
     deinit {
         print(#function, "\(self)")
     }
@@ -72,6 +73,8 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        injectAppServicesIfNeeded()
+
         let btnNav = UIButton(frame: CGRect(x: 0, y: 25, width: view.frame.width / 2, height: 20))
         btnNav.backgroundColor = UIColor.black
         btnNav.setTitle("Back", for: UIControl.State())
@@ -127,49 +130,50 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
         TableData.removeAll()
         VenueData.removeAll()
 
-        var errorOnLogin: GeneralRequestManager?
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let data = try await self.appServices.mbooks.venueMovies(locationId: String(self.locationId))
+                let json = try JSON(data: data)
 
-        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/venue/movies"), errors: "", method: "GET", headers: nil, queryParameters: ["locationId": String(locationId)], bodyParameters: nil, isCacheable: nil, contentType: "", bodyToPost: nil)
-
-        errorOnLogin?.getResponse {
-            (json: JSON, _: NSError?) in
-
-            if let list = json["movies"].object as? NSArray {
-                for i in 0 ..< list.count {
-                    if let dataBlock = list[i] as? NSDictionary {
-                        self.TableData.append(MoviesData(add: dataBlock))
+                if let list = json["movies"].object as? NSArray {
+                    for i in 0 ..< list.count {
+                        if let dataBlock = list[i] as? NSDictionary {
+                            self.TableData.append(MoviesData(add: dataBlock))
+                        }
                     }
                 }
-            }
 
-            if let list = json["venue"].object as? NSArray {
-                for i in 0 ..< list.count {
-                    if let dataBlock = list[i] as? NSDictionary {
-                        self.VenueData.append(datastruct(add: dataBlock))
+                if let list = json["venue"].object as? NSArray {
+                    for i in 0 ..< list.count {
+                        if let dataBlock = list[i] as? NSDictionary {
+                            self.VenueData.append(datastruct(add: dataBlock))
+                        }
                     }
                 }
-            }
 
-            DispatchQueue.main.async {
                 self.collectionView.reloadData()
+            } catch {
+                NSLog("VenueForMoviesVC addData: %@", error.localizedDescription)
             }
         }
     }
 
     func addDatesData() {
-        var errorOnLogin: GeneralRequestManager?
-
-        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/dates/" + String(2) + "/" + String(1002)), errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: "", bodyToPost: nil)
-
-        errorOnLogin?.getResponse {
-            (json: JSON, _: NSError?) in
-
-            if let list = json["dates"].object as? NSArray {
-                for i in 0 ..< list.count {
-                    if let dataBlock = list[i] as? NSDictionary {
-                        ScreeningDates.append(DatesData(add: dataBlock))
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let data = try await self.appServices.mbooks.dates(locationId: "2", movieId: "1002")
+                let json = try JSON(data: data)
+                if let list = json["dates"].object as? NSArray {
+                    for i in 0 ..< list.count {
+                        if let dataBlock = list[i] as? NSDictionary {
+                            ScreeningDates.append(DatesData(add: dataBlock))
+                        }
                     }
                 }
+            } catch {
+                NSLog("addDatesData: %@", error.localizedDescription)
             }
         }
     }
@@ -213,13 +217,13 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
 
         let urlString = URLManager.image(data.large_picture ?? "")
 
-        if let url = URL(string: urlString) {
-            var loadPictures: GeneralRequestManager?
-            loadPictures = GeneralRequestManager(url: urlString, errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
-
-            loadPictures?.getData_ { (data: Data, _: NSError?) in
-                let image = UIImage(data: data)
-                cell.imageView.image = image
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let imgData = try await self.appServices.images.getData(urlString: urlString, realmCache: true)
+                cell.imageView.image = UIImage(data: imgData)
+            } catch {
+                NSLog("VenueForMoviesVC image: %@", error.localizedDescription)
             }
         }
 

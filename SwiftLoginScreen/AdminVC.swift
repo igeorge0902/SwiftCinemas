@@ -24,7 +24,8 @@ var addScreeningDate = ""
 var addScreeningDateId = ""
 var addCategory = ""
 @available(iOS 9.0, *)
-class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIViewControllerTransitioningDelegate, UIPopoverPresentationControllerDelegate {
+class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIViewControllerTransitioningDelegate, UIPopoverPresentationControllerDelegate, HasAppServices {
+    var appServices: AppServices!
     deinit {
         print(#function, "\(self)")
     }
@@ -44,6 +45,7 @@ class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIVi
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        injectAppServicesIfNeeded()
         adminPage = true
         let tapGesture = UITapGestureRecognizer(target: view, action: #selector(UIView.endEditing))
         view.addGestureRecognizer(tapGesture)
@@ -110,7 +112,7 @@ class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIVi
         let ScreeningID_: NSString = ScreeningID.text! as NSString
         let category_: NSString = category.text! as NSString
 
-        let testdata: [String: String] = [
+        let testdata: [String: Any] = [
             "venue": venue as String,
             "movie": movie as String,
             "date": date as String,
@@ -120,33 +122,26 @@ class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIVi
             "category": category_ as String,
         ]
 
-        let test: Data = try! JSONSerialization.data(withJSONObject: testdata, options: [])
+        ScreenData_.removeAll()
 
-        let data = NSString(data: test, encoding: String.Encoding.utf8.rawValue)! as String
-        let post: NSString = "newScreen=\(data)" as NSString
-        // let postData: Data = post.data(using: String.Encoding.utf8.rawValue)!
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let responseData = try await self.appServices.mbooks.adminAddScreen(body: testdata)
+                let json = try JSON(data: responseData)
+                if let dataBlock = json.object as? NSDictionary {
+                    ScreenData_.append(ScreenData(add: dataBlock))
+                }
+                if ScreenData_[0].ScreeningId.contains("Error") {
+                    self.presentAlert(withTitle: "Error:", message: "Duplicate ScreeningId: \(ScreeningID_)")
 
-        let postData: Data = post.data(using: String.Encoding.utf8.rawValue, allowLossyConversion: true)!
-
-        var errorOnLogin: GeneralRequestManager?
-
-        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/admin/addscreen"), errors: "", method: "POST", headers: nil, queryParameters: nil, bodyParameters: testdata, isCacheable: nil, contentType: contentType_.json.rawValue, bodyToPost: nil)
-
-        errorOnLogin?.getResponse {
-            (json: JSON, _: NSError?) in
-
-            if let dataBlock = json.object as? NSDictionary {
-                ScreenData_.append(ScreenData(add: dataBlock))
-            }
-            if ScreenData_[0].ScreeningId.contains("Error") {
-                self.presentAlert(withTitle: "Error:", message: "Duplicate ScreeningId: \(ScreeningID_)")
-
-            } else {
-                self.presentAlert(withTitle: "Info:", message: "New screen added:, Screen: \(ScreenData_[0].movie!)")
+                } else {
+                    self.presentAlert(withTitle: "Info:", message: "New screen added:, Screen: \(ScreenData_[0].movie!)")
+                }
+            } catch {
+                NSLog("addNewScreen: %@", error.localizedDescription)
             }
         }
-
-        ScreenData_.removeAll()
     }
 
     @IBAction func selectMovies(_: UIButton) {

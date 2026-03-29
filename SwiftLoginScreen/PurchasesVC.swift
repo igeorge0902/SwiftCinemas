@@ -8,10 +8,12 @@
 
 import Foundation
 import SwiftyJSON
+import UIKit
 
 var TableData: [PurchaseData] = .init()
 @available(iOS 15.0, *)
-class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate {
+class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, HasAppServices {
+    var appServices: AppServices!
     deinit {
         TableData.removeAll()
         print(#function, "\(self)")
@@ -48,6 +50,8 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate 
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        injectAppServicesIfNeeded()
 
         tableView?.delegate = self
         tableView?.dataSource = self
@@ -177,16 +181,18 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate 
 
         let urlMovie = URLManager.image(TableData[indexPath.section].movie_picture)
 
-        var loadPictures: GeneralRequestManager?
-        loadPictures = GeneralRequestManager(url: urlMovie, errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
-
-        loadPictures?.getData_ {
-            (data: Data, _: NSError?) in
-            let image = UIImage(data: data)
-            cell!.imageView?.image = image
-            if let updatedCell = tableView.cellForRow(at: indexPath) {
-                updatedCell.imageView?.image = image
-                updatedCell.setNeedsLayout() // Force the cell to update
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let imgData = try await self.appServices.images.getData(urlString: urlMovie, realmCache: true)
+                let image = UIImage(data: imgData)
+                cell!.imageView?.image = image
+                if let updatedCell = tableView.cellForRow(at: indexPath) {
+                    updatedCell.imageView?.image = image
+                    updatedCell.setNeedsLayout()
+                }
+            } catch {
+                NSLog("PurchasesVC image: %@", error.localizedDescription)
             }
         }
 
@@ -219,19 +225,18 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate 
             let post: NSString = "purchaseId=\(self.purchaseId!)" as NSString
             let postData: Data = post.data(using: String.Encoding.ascii.rawValue)!
 
-            var errorOnLogin: GeneralRequestManager?
-            errorOnLogin = GeneralRequestManager(url: URLManager.login("/ManagePurchases"), errors: "", method: "POST", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: contentType_.urlEncoded.rawValue, bodyToPost: postData)
-
-            errorOnLogin?.getResponse {
-                (json: JSON, _: NSError?) in
-
-                if json["Success"].string == "true" {
-                    TableData.remove(at: indexPath.section)
-                    self.presentAlert(withTitle: "Info", message: "Purchase was refunded")
-                }
-
-                DispatchQueue.main.async {
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                do {
+                    let data = try await self.appServices.loginGateway.postManagePurchases(body: postData)
+                    let json = try JSON(data: data)
+                    if json["Success"].string == "true" {
+                        TableData.remove(at: indexPath.section)
+                        self.presentAlert(withTitle: "Info", message: "Purchase was refunded")
+                    }
                     self.tableView?.reloadData()
+                } catch {
+                    NSLog("delete purchase: %@", error.localizedDescription)
                 }
             }
 
@@ -251,36 +256,24 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate 
     }
 
     func addPurchasesData() {
-        var errorOnLogin: GeneralRequestManager?
-
-        errorOnLogin = GeneralRequestManager(url: URLManager.login("/GetAllPurchases"),
-                                             errors: "",
-                                             method: "GET",
-                                             headers: nil,
-                                             queryParameters: ["book": "GetAllPurchases"],
-                                             bodyParameters: nil,
-                                             isCacheable: nil,
-                                             contentType: contentType_.urlEncoded.rawValue,
-                                             bodyToPost: nil)
-
-        errorOnLogin?.getResponse { (json: JSON, error: NSError?) in
-            if let list = json["purchases"].object as? NSArray {
-                DispatchQueue.main.async {
-                    TableData.removeAll() // ✅ Fix: Clear existing data before adding new ones
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let data = try await self.appServices.loginGateway.getAllPurchases()
+                let json = try JSON(data: data)
+                if let list = json["purchases"].object as? NSArray {
+                    TableData.removeAll()
 
                     for i in 0 ..< list.count {
                         if let dataBlock = list[i] as? NSDictionary {
                             TableData.append(PurchaseData(add: dataBlock))
                         }
                     }
-                    self.tableView?.reloadData() // ✅ Fix: Reload on the main thread
+                    self.tableView?.reloadData()
                 }
-            }
-
-            if let error {
-                DispatchQueue.main.async {
-                    self.presentAlert(withTitle: "Error", message: error.localizedDescription)
-                }
+            } catch {
+                NSLog("addPurchasesData: %@", error.localizedDescription)
+                self.presentAlert(withTitle: "Error", message: error.localizedDescription)
             }
         }
     }

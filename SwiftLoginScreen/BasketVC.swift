@@ -9,6 +9,7 @@
 import BraintreeDropIn
 import Foundation
 import SwiftyJSON
+import UIKit
 
 // import FacebookCore
 
@@ -16,7 +17,8 @@ import SwiftyJSON
  Stores BasketData objects representing basket items.
  */
 var BasketData_ = [Int: BasketData]()
-class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
+class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, HasAppServices {
+    var appServices: AppServices!
     deinit {
         tableView_?.reloadData()
         print(#function, "\(self)")
@@ -39,6 +41,8 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        injectAppServicesIfNeeded()
 
         let btnNav = UIButton(frame: CGRect(x: 0, y: 50, width: view.frame.width / 2, height: 20))
         btnNav.backgroundColor = UIColor.black
@@ -187,14 +191,15 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
          */
         let urlString = values[indexPath.row].movie_picture
 
-        var loadPictures: GeneralRequestManager?
-        loadPictures = GeneralRequestManager(url: urlString!, errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
-
-        loadPictures?.getData_ {
-            (data: Data, _: NSError?) in
-            let image = UIImage(data: data)
-            cell.profileImage?.image = image!
-            cell.profileImage?.image = image!
+        Task { @MainActor [weak self] in
+            guard let self, let urlString else { return }
+            do {
+                let data = try await self.appServices.images.getData(urlString: urlString, realmCache: true)
+                let image = UIImage(data: data)
+                cell.profileImage?.image = image
+            } catch {
+                NSLog("BasketVC image: %@", error.localizedDescription)
+            }
         }
 
         let text = NSMutableAttributedString(string: "Ticket details: \n Seat Row: \(values[indexPath.row].seats_seatRow!), \n Seat Nr: \(values[indexPath.row].seats_seatNumber!), \nDate of Screening: \n\(values[indexPath.row].screening_date!)", attributes: convertToOptionalNSAttributedStringKeyDictionary([convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 14.0)!]))
@@ -222,16 +227,16 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
     }
 
     func getClientToken() {
-        var errorOnLogin: GeneralRequestManager?
-        errorOnLogin = GeneralRequestManager(url: URLManager.login("/CheckOut"), errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: contentType_.urlEncoded.rawValue, bodyToPost: nil)
-
-        errorOnLogin?.getResponse {
-            (json: JSON, error: NSError?) in
-
-            if error != nil {
-            } else {
-                self.clientToken = json["clientToken"].string
-                self.showDropIn(clientTokenOrTokenizationKey: self.clientToken!)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let data = try await self.appServices.loginGateway.getCheckOut()
+                let json = try JSON(data: data)
+                guard let token = json["clientToken"].string else { return }
+                self.clientToken = token
+                self.showDropIn(clientTokenOrTokenizationKey: token)
+            } catch {
+                NSLog("getClientToken: %@", error.localizedDescription)
             }
         }
     }
@@ -275,14 +280,12 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
         let post: NSString = "payment_method_nonce=\(paymentMethodNonce)&seatsToBeReserved=\(data)&orderId=\(time)" as NSString
         let postData: Data = post.data(using: String.Encoding.ascii.rawValue)!
 
-        var errorOnLogin: GeneralRequestManager?
-        errorOnLogin = GeneralRequestManager(url: URLManager.login("/CheckOut"), errors: "", method: "POST", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: contentType_.urlEncoded.rawValue, bodyToPost: postData)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let responseData = try await self.appServices.loginGateway.postCheckOut(body: postData)
+                let json = try JSON(data: responseData)
 
-        errorOnLogin?.getResponse {
-            (json: JSON, error: NSError?) in
-
-            if error != nil {
-            } else {
                 if let list = json["seatsforscreen"].object as? NSArray {
                     SeatsData_.removeAll()
                     for i in 0 ..< list.count {
@@ -339,6 +342,8 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
                     print(json)
                     self.presentAlert(withTitle: "Booking failed with payment info:", message: "Payment error: \(responseText)")
                 }
+            } catch {
+                NSLog("postNonceToServer: %@", error.localizedDescription)
             }
         }
     }

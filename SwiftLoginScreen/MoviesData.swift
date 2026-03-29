@@ -8,6 +8,7 @@
 
 import Foundation
 import SwiftyJSON
+import UIKit
 
 class MoviesData: NSObject {
     var movieId: Int!
@@ -28,19 +29,20 @@ class MoviesData: NSObject {
     }
 
     class func addData() {
-        var OnLogin: GeneralRequestManager?
-
-        OnLogin = GeneralRequestManager(url: URLManager.mbooks("/movies/paging"), errors: "", method: "GET", headers: nil, queryParameters: ["setFirstResult": String(0)], bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
-
-        OnLogin?.getResponse {
-            (json: JSON, _: NSError?) in
-
-            if let list = json["movies"].object as? NSArray {
-                for i in 0 ..< list.count {
-                    if let dataBlock = list[i] as? NSDictionary {
-                        Data.imageFromUrl(urlString: URLManager.image(MoviesData(add: dataBlock).large_picture!))
+        Task { @MainActor in
+            guard let app = UIApplication.shared.delegate as? AppDelegate else { return }
+            do {
+                let data = try await app.services.mbooks.moviesPaging(query: ["setFirstResult": String(0)])
+                let json = try JSON(data: data)
+                if let list = json["movies"].object as? NSArray {
+                    for i in 0 ..< list.count {
+                        if let dataBlock = list[i] as? NSDictionary {
+                            Data.imageFromUrl(urlString: URLManager.image(MoviesData(add: dataBlock).large_picture!))
+                        }
                     }
                 }
+            } catch {
+                NSLog("MoviesData.addData: %@", error.localizedDescription)
             }
         }
     }
@@ -48,21 +50,12 @@ class MoviesData: NSObject {
 
 extension Data {
     static func imageFromUrl(urlString: String) {
-        if let url = URL(string: urlString) {
-            // _ = try? Data(contentsOf: url)
-
-            let request = URLRequest(url: url as URL)
-
-            //   NSURLConnection.sendAsynchronousRequest(request, queue: OperationQueue.main) {
-            //       (_: URLResponse?, _: Data?, _: Error?) -> Void in
-            // }
-
-            var loadPictures: GeneralRequestManager?
-            loadPictures = GeneralRequestManager(url: urlString, errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
-
-            loadPictures?.getData_ {
-                (_: Data, _: NSError?) in
-                // let image = UIImage(data: data)
+        Task { @MainActor in
+            guard let app = UIApplication.shared.delegate as? AppDelegate else { return }
+            do {
+                _ = try await app.services.images.getData(urlString: urlString, realmCache: true)
+            } catch {
+                NSLog("imageFromUrl: %@", error.localizedDescription)
             }
         }
     }

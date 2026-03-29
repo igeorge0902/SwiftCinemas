@@ -8,6 +8,7 @@
 
 import Foundation
 import SwiftyJSON
+import UIKit
 
 class SeatsData: NSObject {
     var seatId: Int!
@@ -32,27 +33,28 @@ class SeatsData: NSObject {
 
         SeatsData_.removeAll()
 
-        var errorOnLogin: GeneralRequestManager?
+        Task { @MainActor in
+            guard let app = UIApplication.shared.delegate as? AppDelegate else { return }
+            do {
+                let data = try await app.services.mbooks.seats(screeningDateId: myString)
+                let json = try JSON(data: data)
+                if let list = json["seatsforscreen"].object as? NSArray {
+                    for i in 0 ..< list.count {
+                        if let dataBlock = list[i] as? NSDictionary {
+                            SeatsData_.append(SeatsData(add: dataBlock))
 
-        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/seats/" + myString), errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: nil, contentType: "", bodyToPost: nil)
-
-        errorOnLogin?.getResponse {
-            (json: JSON, _: NSError?) in
-
-            if let list = json["seatsforscreen"].object as? NSArray {
-                for i in 0 ..< list.count {
-                    if let dataBlock = list[i] as? NSDictionary {
-                        SeatsData_.append(SeatsData(add: dataBlock))
-
-                        for i in 0 ..< SeatsData_.count {
-                            if !numberOfRows.contains(SeatsData_[i].seatRow) {
-                                numberOfRows.append(SeatsData_[i].seatRow)
+                            for i in 0 ..< SeatsData_.count {
+                                if !numberOfRows.contains(SeatsData_[i].seatRow) {
+                                    numberOfRows.append(SeatsData_[i].seatRow)
+                                }
                             }
-                        }
 
-                        tableView_?.reloadData()
+                            tableView_?.reloadData()
+                        }
                     }
                 }
+            } catch {
+                NSLog("SeatsData.addData: %@", error.localizedDescription)
             }
         }
     }

@@ -3,7 +3,8 @@ import SwiftyJSON
 import UIKit
 
 @available(iOS 15.0, *)
-class MenuVC: UIViewController {
+class MenuVC: UIViewController, HasAppServices {
+    var appServices: AppServices!
     // MARK: - UI Elements
 
     private lazy var nameTextView = createTextView()
@@ -20,9 +21,10 @@ class MenuVC: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        injectAppServicesIfNeeded()
         setupUI()
         loadCookies()
-        addData()
+        getUser()
     }
 
     // MARK: - UI Setup
@@ -111,32 +113,53 @@ class MenuVC: UIViewController {
 
     // MARK: - Networking
 
-    private func addData() {
-        RestApiManager.sharedInstance.getRandomUser { [weak self] json, _ in
+    func getUser() {
+        Task { [weak self] in
             guard let self else { return }
 
-            if let errorMsg = json["Error Details"]["Error Message:"].string {
-                presentAlert(withTitle: "Error Details", message: errorMsg)
-            } else {
+            do {
+                let data = try await self.appServices.loginGateway.getUser()
+                let json = try JSON(data: data)
+
                 let user = json["user"].stringValue
                 let email = json["email"].stringValue
                 let profilePicture = json["profilePicture"].stringValue
-                DispatchQueue.main.async {
-                    self.nameTextView.text = user.isEmpty ? "No logged-in user" : user
-                    self.xsrfCookieTextView.text = email.isEmpty ? "No email" : email
+                
+                self.nameTextView.text = user.isEmpty
+                    ? "No logged-in user"
+                    : user
 
-                    let urlString = URLManager.image(profilePicture)
+                self.xsrfCookieTextView.text = email.isEmpty
+                    ? "No email"
+                    : email
 
-                    var loadPictures: GeneralRequestManager?
-                    loadPictures = GeneralRequestManager(url: urlString, errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
+                let urlString = URLManager.image(profilePicture)
 
-                    loadPictures?.getData_ {
-                        (data: Data, _: NSError?) in
-                        self.imageView.image = UIImage(data: data)
-                        self.imageView.setNeedsDisplay()
+                let imagedata = try await self.appServices.images.getData(
+                    urlString: urlString,
+                    realmCache: true
+                )
+
+                self.imageView.image = UIImage(data: imagedata)
+
+                } catch let err as AppError {
+                    let title: String
+                    switch err {
+                    case .activationRequired(voucherActive: false):
+                        title = "Warning!"
+                        self.presentAlertWithFunction(withTitle: title, message: ErrorHandler.message(for: err), function: "sendEmail")
+
+                    default:
+                        title = "No valid session!"
                     }
+                    self.presentAlert(withTitle: title, message: ErrorHandler.message(for: err))
+                    
+                } catch {
+                    self.presentAlert(
+                        withTitle: "Error!",
+                        message: ErrorHandler.message(for: AppError.networkFailure(underlying: error))
+                    )
                 }
-            }
         }
     }
 

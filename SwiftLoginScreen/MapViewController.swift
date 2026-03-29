@@ -20,7 +20,8 @@ protocol HandleMapSearch_ {
     func dropPinZoomIn(placemark: MKPlacemark)
 }
 
-class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDelegate, UIViewControllerTransitioningDelegate, UIPopoverPresentationControllerDelegate {
+class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDelegate, UIViewControllerTransitioningDelegate, UIPopoverPresentationControllerDelegate, HasAppServices {
+    var appServices: AppServices!
     deinit {
         PlacesData_.removeAll()
         mapViewPage = false
@@ -41,6 +42,8 @@ class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerD
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        injectAppServicesIfNeeded()
 
         mapViewPage = true
         locationManager = CLLocationManager()
@@ -143,48 +146,44 @@ class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerD
     }
 
     func addData() {
-        var pathString = ""
-        var queryString: [String: String]?
-        if selectVenueId == nil {
-            pathString = "locations"
-        } else {
-            pathString = "locations/venue"
-            queryString = ["venuesId": String(selectVenueId!)]
-        }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let data: Data
+                if self.selectVenueId == nil {
+                    data = try await self.appServices.mbooks.locations()
+                } else {
+                    data = try await self.appServices.mbooks.locationsVenue(venuesId: String(self.selectVenueId!))
+                }
+                let json = try JSON(data: data)
 
-        var errorOnLogin: GeneralRequestManager?
-
-        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/" + pathString), errors: "", method: "GET", headers: nil, queryParameters: queryString, bodyParameters: nil, isCacheable: "", contentType: "", bodyToPost: nil)
-
-        errorOnLogin?.getResponse {
-            (json: JSON, _: NSError?) in
-
-            //   PlacesData_.removeAll()
-
-            if let list = json["locations"].object as? NSArray {
-                for i in 0 ..< list.count {
-                    if let dataBlock = list[i] as? NSDictionary {
-                        if let artwork = PlacesData.fromJSON(dataBlock) {
-                            PlacesData_.append(artwork)
+                if let list = json["locations"].object as? NSArray {
+                    for i in 0 ..< list.count {
+                        if let dataBlock = list[i] as? NSDictionary {
+                            if let artwork = PlacesData.fromJSON(dataBlock) {
+                                PlacesData_.append(artwork)
+                            }
                         }
+                    }
+
+                } else {
+                    let locationId = json["locationId"].int
+                    let formatted_address = json["formatted_address"].string
+                    let name = json["name"].string
+                    let latitude = json["latitude"].rawValue
+                    let longitude = json["longitude"].rawValue
+
+                    let venuePlaceData: NSDictionary = ["locationId": locationId!, "formatted_address": formatted_address!, "name": name!, "latitude": latitude, "longitude": longitude]
+
+                    if let artwork = PlacesData.fromJSON(venuePlaceData) {
+                        PlacesData_.append(artwork)
                     }
                 }
 
-            } else {
-                let locationId = json["locationId"].int
-                let formatted_address = json["formatted_address"].string
-                let name = json["name"].string
-                let latitude = json["latitude"].rawValue
-                let longitude = json["longitude"].rawValue
-
-                let venuePlaceData: NSDictionary = ["locationId": locationId!, "formatted_address": formatted_address!, "name": name!, "latitude": latitude, "longitude": longitude]
-
-                if let artwork = PlacesData.fromJSON(venuePlaceData) {
-                    PlacesData_.append(artwork)
-                }
+                self.mapView.addAnnotations(PlacesData_)
+            } catch {
+                NSLog("MapViewController addData: %@", error.localizedDescription)
             }
-
-            self.mapView.addAnnotations(PlacesData_)
         }
     }
 

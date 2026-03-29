@@ -11,7 +11,8 @@ import SafariServices
 import SwiftyJSON
 import UIKit
 
-class MovieDetailVC: UIViewController, UIViewControllerTransitioningDelegate, UIScrollViewDelegate {
+class MovieDetailVC: UIViewController, UIViewControllerTransitioningDelegate, UIScrollViewDelegate, HasAppServices {
+    var appServices: AppServices!
     deinit {
         veil = true
         shouldShowSearchResults = false
@@ -44,6 +45,8 @@ class MovieDetailVC: UIViewController, UIViewControllerTransitioningDelegate, UI
     }
 
     override func viewWillAppear(_: Bool) {
+        injectAppServicesIfNeeded()
+
         let btnNav = UIButton(frame: CGRect(x: 0, y: 25, width: view.frame.width / 2, height: 20))
         btnNav.backgroundColor = UIColor.black
         btnNav.showsTouchWhenHighlighted = true
@@ -142,23 +145,23 @@ class MovieDetailVC: UIViewController, UIViewControllerTransitioningDelegate, UI
     }
 
     func addData() {
-        let RapidApi =
-            ["RapidAPI Project": "default-application_4096793", "x-rapidapi-host": "movie-database-imdb-alternative.p.rapidapi.com", "x-rapidapi-key": "60b13d7e5bmshfdf31342761c35cp1c3a50jsn0fd6be87de26"]
-
         let index = iMDB.index(iMDB.startIndex, offsetBy: 26)
-        let mySubstring = iMDB[index...]
-        var errorOnLogin: GeneralRequestManager?
+        let mySubstring = String(iMDB[index...])
 
-        errorOnLogin = GeneralRequestManager(url: "https://movie-database-imdb-alternative.p.rapidapi.com", errors: "", method: "GET", headers: RapidApi, queryParameters: ["i": String(mySubstring)], bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
-
-        errorOnLogin?.getData {
-            (json: JSON, _: NSError?) in
-            print(json)
-            if let responseText = json["Title"].string {
-                self.nameTextView.text = responseText
-            }
-            if let responseText = json["Genre"].string {
-                self.nameTextViewg.text = responseText
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let data = try await self.appServices.rapidMovieDatabase.imdbTitle(imdbId: mySubstring, realmCache: true)
+                let json = try JSON(data: data)
+                print(json)
+                if let responseText = json["Title"].string {
+                    self.nameTextView.text = responseText
+                }
+                if let responseText = json["Genre"].string {
+                    self.nameTextViewg.text = responseText
+                }
+            } catch {
+                NSLog("MovieDetailVC RapidAPI: %@", error.localizedDescription)
             }
         }
     }

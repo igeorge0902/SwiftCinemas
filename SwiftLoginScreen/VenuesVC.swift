@@ -10,7 +10,8 @@ import MapKit
 import SwiftyJSON
 import UIKit
 
-class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate {
+class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, HasAppServices {
+    var appServices: AppServices!
     var movieId: Int!
     var movieName: String!
     var selectLarge_picture: String!
@@ -92,6 +93,8 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        injectAppServicesIfNeeded()
+
         setupTableView()
         setupDetailsView()
 
@@ -152,78 +155,73 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate {
 
     func addData() {
         let myString = String(movieId)
-        var errorOnLogin: GeneralRequestManager?
 
-        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/venue/" + myString), errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
-
-        errorOnLogin?.getResponse {
-            (json: JSON, _: NSError?) in
-
-            if let list = json["venues"].object as? NSArray {
-                for i in 0 ..< list.count {
-                    if let dataBlock = list[i] as? NSDictionary {
-                        self.TableData.append(datastruct(add: dataBlock))
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let data = try await self.appServices.mbooks.venue(movieId: myString)
+                let json = try JSON(data: data)
+                if let list = json["venues"].object as? NSArray {
+                    for i in 0 ..< list.count {
+                        if let dataBlock = list[i] as? NSDictionary {
+                            self.TableData.append(datastruct(add: dataBlock))
+                        }
                     }
                 }
-            }
-
-            DispatchQueue.main.async {
                 self.tableView?.reloadData()
+            } catch {
+                NSLog("VenuesVC.addData: %@", error.localizedDescription)
             }
         }
     }
 
     func addLocalData() {
         let myString = String(movieId)
-        var errorOnLogin: GeneralRequestManager?
 
-        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/venue/" + myString), errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
-
-        errorOnLogin?.getResponse { [self]
-            (json: JSON, _: NSError?) in
-
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let data = try await self.appServices.mbooks.venue(movieId: myString)
+                let json = try JSON(data: data)
                 if let list = json["locations"].object as? NSArray {
                     for i in 0 ..< list.count {
                         if let dataBlock = list[i] as? NSDictionary {
                             if let artwork = PlacesData.fromJSON(dataBlock) {
-                                LocationData.append(artwork)
+                                self.LocationData.append(artwork)
                             }
                         }
                     }
                 }
-                DispatchQueue.main.async {
-                    self.tableView?.reloadData()
-                }
+                self.tableView?.reloadData()
+            } catch {
+                NSLog("VenuesVC.addLocalData: %@", error.localizedDescription)
+            }
         }
     }
 
     func addLocation() {
         PlacesData_.removeAll()
 
-        var errorOnLogin: GeneralRequestManager?
-
-        errorOnLogin = GeneralRequestManager(url: URLManager.mbooks("/locations"), errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "", contentType: "", bodyToPost: nil)
-
-        errorOnLogin?.getResponse {
-            (json: JSON, _: NSError?) in
-
-            //   PlacesData_.removeAll()
-
-            if let list = json["locations"].object as? NSArray {
-                for i in 0 ..< list.count {
-                    if let dataBlock = list[i] as? NSDictionary {
-                        if let location = PlacesData.fromJSON(dataBlock) {
-                            PlacesData_.append(location)
-                            if mapViewPage == true {
-                                PlacesData2_.append(location)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                let data = try await self.appServices.mbooks.locations()
+                let json = try JSON(data: data)
+                if let list = json["locations"].object as? NSArray {
+                    for i in 0 ..< list.count {
+                        if let dataBlock = list[i] as? NSDictionary {
+                            if let location = PlacesData.fromJSON(dataBlock) {
+                                PlacesData_.append(location)
+                                if mapViewPage == true {
+                                    PlacesData2_.append(location)
+                                }
                             }
                         }
                     }
                 }
-            }
-
-            DispatchQueue.main.async {
                 self.tableView?.reloadData()
+            } catch {
+                NSLog("VenuesVC.addLocation: %@", error.localizedDescription)
             }
         }
     }
@@ -284,16 +282,18 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate {
 
             let urlString = URLManager.image(data.venues_picture!)
 
-            var loadPictures: GeneralRequestManager?
-            loadPictures = GeneralRequestManager(url: urlString, errors: "", method: "GET", headers: nil, queryParameters: nil, bodyParameters: nil, isCacheable: "1", contentType: "", bodyToPost: nil)
-
-            loadPictures?.getData_ {
-                (data: Data, _: NSError?) in
-                let image = UIImage(data: data)
-                cell!.imageView?.image = image
-                if let updatedCell = tableView.cellForRow(at: indexPath) {
-                    updatedCell.imageView?.image = image
-                    updatedCell.setNeedsLayout() // Force the cell to update
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                do {
+                    let imgData = try await self.appServices.images.getData(urlString: urlString, realmCache: true)
+                    let image = UIImage(data: imgData)
+                    cell!.imageView?.image = image
+                    if let updatedCell = tableView.cellForRow(at: indexPath) {
+                        updatedCell.imageView?.image = image
+                        updatedCell.setNeedsLayout()
+                    }
+                } catch {
+                    NSLog("VenuesVC cell image: %@", error.localizedDescription)
                 }
             }
         }
