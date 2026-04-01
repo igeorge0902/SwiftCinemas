@@ -16,7 +16,6 @@
 		7D5C0D0B2F786EC70019481A /* ErrorHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D5C0D0A2F786EC50019481A /* ErrorHandler.swift */; };
 		7D5C0D0D2F786ED10019481A /* BackendServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D5C0D0C2F786ED00019481A /* BackendServices.swift */; };
 		7D5C0D0D2F790E510019481A /* UserData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D5C0D0C2F790E4A0019481A /* UserData.swift */; };
-		7DE541442F795EAE00747662 /* SwiftyJSON.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DE541432F795EAE00747662 /* SwiftyJSON.framework */; };
 		8527C603D854F13536457CC7 /* Pods_SwiftCinemas_SwiftCinemasTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC21FC33725912A24978F7C1 /* Pods_SwiftCinemas_SwiftCinemasTests.framework */; };
 		A4076A191D8F179900202E2A /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = A4076A181D8F179900202E2A /* GoogleService-Info.plist */; };
 		A407DE081C31DFA300D3CAD1 /* Time.swift in Sources */ = {isa = PBXBuildFile; fileRef = A407DE071C31DFA300D3CAD1 /* Time.swift */; };
@@ -271,7 +270,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7DE541442F795EAE00747662 /* SwiftyJSON.framework in Frameworks */,
 				8527C603D854F13536457CC7 /* Pods_SwiftCinemas_SwiftCinemasTests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -613,7 +611,6 @@
 				EA62FD4D1989F6AC00469896 /* Frameworks */,
 				EA62FD4E1989F6AC00469896 /* Resources */,
 				A46BF1D91C9DABBD00046FD9 /* ShellScript */,
-				A4A5A7862D57CAA300AD78AF /* ShellScript */,
 				1F657BE5EB9B3051743DD834 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
@@ -802,23 +799,6 @@
 			shellPath = /bin/sh;
 			shellScript = "TAGS=\"TODO:|FIXMES:|COREDATA:\"\nERRORTAG=\"ERRORS:\"\nfind \"${SRCROOT}\" \\( -name \"*.h\" -or -name \"*.m\" -or -name \"*.swift\" \\) -print0 | xargs -0 egrep --with-filename --line-number --only-matching \"($TAGS).*\\$|($ERRORTAG).*\\$\" | perl -p -e \"s/($TAGS)/ warning: \\$1/\" | perl -p -e \"s/($ERRORTAG)/ error: \\$1/\"\n";
 		};
-		A4A5A7862D57CAA300AD78AF /* ShellScript */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "FRAMEWORK_PATH=\"${BUILT_PRODUCTS_DIR}/Braintree/Braintree.framework\"\nDESTINATION=\"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Braintree.framework\"\n\nif [ -d \"$FRAMEWORK_PATH\" ]; then\n    echo \"Manually copying Braintree.framework...\"\n    cp -R \"$FRAMEWORK_PATH\" \"$DESTINATION\"\nelse\n    echo \"Error: Braintree.framework not found!\"\n    exit 1\nfi\n";
-		};
 		CBA224910DF12B01689C0F0F /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -967,7 +947,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = X8DL5FV4EA;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				FRAMEWORK_SEARCH_PATHS = "$(BUILT_PRODUCTS_DIR)/Braintree";
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
@@ -1015,7 +995,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = X8DL5FV4EA;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				FRAMEWORK_SEARCH_PATHS = "$(BUILT_PRODUCTS_DIR)/Braintree";
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
@@ -1059,7 +1039,7 @@
 				COPY_PHASE_STRIP = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				FRAMEWORK_SEARCH_PATHS = "$(BUILT_PRODUCTS_DIR)/Braintree";
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -1107,7 +1087,7 @@
 				COPY_PHASE_STRIP = YES;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				FRAMEWORK_SEARCH_PATHS = "$(BUILT_PRODUCTS_DIR)/Braintree";
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -1137,14 +1117,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = X8DL5FV4EA;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = "";
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)",
-					"$(PROJECT_DIR)/SwiftLoginScreen",
-					"$(PROJECT_DIR)/build/Debug-iphoneos",
-					"$(PROJECT_DIR)/Frameworks",
-					"$(BUILT_PRODUCTS_DIR)",
-				);
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = "$(SRCROOT)/SwiftLoginScreen/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = SwiftCinemas;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.shopping";
@@ -1207,14 +1180,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = X8DL5FV4EA;
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = "";
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"$(PROJECT_DIR)",
-					"$(PROJECT_DIR)/SwiftLoginScreen",
-					"$(PROJECT_DIR)/build/Debug-iphoneos",
-					"$(PROJECT_DIR)/Frameworks",
-					"$(BUILT_PRODUCTS_DIR)",
-				);
+				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = "$(SRCROOT)/SwiftLoginScreen/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = SwiftCinemas;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.shopping";
