@@ -10,7 +10,6 @@ import SwiftyJSON
 import UIKit
 import WebKit
 
-@available(iOS 9.0, *)
 class HomeVC: UIViewController, UIViewControllerTransitioningDelegate {
     
     /* , WebSocketDelegate */

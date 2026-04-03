@@ -11,7 +11,6 @@ import SwiftyJSON
 import UIKit
 
 var originalVenueName: NSAttributedString!
-@available(iOS 9.0, *)
 class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIViewControllerTransitioningDelegate, UIPopoverPresentationControllerDelegate, HasAppServices {
     var appServices: AppServices!
     deinit {

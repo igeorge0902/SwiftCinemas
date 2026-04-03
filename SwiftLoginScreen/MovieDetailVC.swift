@@ -129,7 +129,11 @@ class MovieDetailVC: UIViewController, UIViewControllerTransitioningDelegate, UI
     }
 
     @objc func Venues() {
-        performSegue(withIdentifier: "goto_venues2", sender: self)
+        if VenuesFeatureFlags.shouldUseMigration() {
+            presentVenuesMigration()
+        } else {
+            performSegue(withIdentifier: "goto_venues2", sender: self)
+        }
     }
 
     override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
@@ -164,6 +168,23 @@ class MovieDetailVC: UIViewController, UIViewControllerTransitioningDelegate, UI
                 NSLog("MovieDetailVC RapidAPI: %@", error.localizedDescription)
             }
         }
+    }
+
+    private func presentVenuesMigration() {
+        injectAppServicesIfNeeded()
+
+        let input = VenuesInput(
+            movieId: movieId,
+            movieName: movieName,
+            selectLargePicture: selectLarge_picture,
+            selectDetails: selectDetails,
+            imdb: iMDB,
+            mode: .standard
+        )
+
+        let migrationVC = VenuesMigrationFactory.make(input: input, mode: .standard, appServices: appServices)
+        migrationVC.modalPresentationStyle = .fullScreen
+        present(migrationVC, animated: true)
     }
 }
 

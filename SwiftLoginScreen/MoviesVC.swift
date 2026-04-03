@@ -464,38 +464,45 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         return cell!
     }
 
-    private func configureCell(cell: ListViewCell?, with data: MoviesData?, _: Admin_ScreenData?, categories: String?, indexPath _: IndexPath, shouldLoadImage: Bool) {
-        guard let cell, let data else { return }
+    private func configureCell(cell: ListViewCell?, with data: MoviesData?, _ venueData: Admin_ScreenData?, categories: String?, indexPath _: IndexPath, shouldLoadImage: Bool) {
+        guard let cell else { return }
 
-        if categories != "" {
-            cell.textLabel?.text = categories
-            cell.imageView?.image = nil
+        let textAttr: [NSAttributedString.Key: Any] = [
+            .font: UIFont(name: "Courier New", size: 13.0)!,
+            .foregroundColor: UIColor.label,
+        ]
+
+        // ── Admin/update mode: show venue › movie rows from ScreenData_2 ──
+        if adminUpdatePage, let venueData {
+            cell.configureLayout(compact: true)
+            let label = "\(venueData.venue ?? "") › \(venueData.movie ?? "")"
+            cell.titleText.attributedText = NSAttributedString(string: label, attributes: textAttr)
+            cell.movieImageView.image = nil
             return
-
-        } else {
-            // Set up text attributes
-            let myTextAttribute: [NSAttributedString.Key: Any] = [
-                .font: UIFont(name: "Courier New", size: 13.0)!,
-            ]
-            let detailText = NSMutableAttributedString(string: data.name, attributes: myTextAttribute)
-
-            // Configure cell appearance
-            cell.titleText.attributedText = detailText
-            cell.titleText.textColor = UIColor { traitCollection in
-                traitCollection.userInterfaceStyle == .dark ? .black : .black
-            }
-
-            // Load image only if shouldLoadImage is true
-            if shouldLoadImage {
-                let urlString = URLManager.image(data.large_picture)
-                if let url = URL(string: urlString) {
-                    loadImage(from: url, for: cell)
-                }
-            } else {
-                cell.imageView?.image = nil
-            }
         }
-        cell.textLabel?.numberOfLines = 3
+
+        // ── Category rows ──
+        if let categories, !categories.isEmpty {
+            cell.configureLayout(compact: true)
+            cell.titleText.attributedText = NSAttributedString(string: categories, attributes: textAttr)
+            cell.movieImageView.image = nil
+            return
+        }
+
+        // ── Normal movie rows ──
+        guard let data else { return }
+
+        cell.configureLayout(compact: false)
+        cell.titleText.attributedText = NSAttributedString(string: data.name, attributes: textAttr)
+
+        if shouldLoadImage {
+            let urlString = URLManager.image(data.large_picture)
+            if let url = URL(string: urlString) {
+                loadImage(from: url, for: cell)
+            }
+        } else {
+            cell.movieImageView.image = nil
+        }
     }
 
     private func loadImage(from url: URL, for cell: ListViewCell) {
@@ -621,9 +628,40 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
                 }
                 veil = false
                 shouldShowSearchResults = false
-                performSegue(withIdentifier: "goto_venues", sender: self)
+                if VenuesFeatureFlags.shouldUseMigration(), let movie = selectedMovie(at: indexPath) {
+                    presentVenuesMigration(for: movie)
+                } else {
+                    performSegue(withIdentifier: "goto_venues", sender: self)
+                }
             }
         }
+    }
+
+    private func selectedMovie(at indexPath: IndexPath) -> MoviesData? {
+        if TableData.count > 0 {
+            return TableData[indexPath.section]
+        }
+        if SearchData.count > 0 {
+            return SearchData[indexPath.section]
+        }
+        return nil
+    }
+
+    private func presentVenuesMigration(for movie: MoviesData) {
+        injectAppServicesIfNeeded()
+
+        let input = VenuesInput(
+            movieId: movie.movieId,
+            movieName: movie.name,
+            selectLargePicture: movie.large_picture,
+            selectDetails: movie.detail,
+            imdb: movie.imdb,
+            mode: .admin
+        )
+
+        let migrationVC = VenuesMigrationFactory.make(input: input, mode: .standard, appServices: appServices)
+        migrationVC.modalPresentationStyle = .fullScreen
+        present(migrationVC, animated: true)
     }
 
     func tableView(_: UITableView, willDisplay _: UITableViewCell, forRowAt indexPath: IndexPath) {

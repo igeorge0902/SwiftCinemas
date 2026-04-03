@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		54D956C6DD035C62972C4E3A /* Pods_SwiftCinemas.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8D825BF86296873B49574DCA /* Pods_SwiftCinemas.framework */; };
+		7D25892E2F8021CC00C5A23C /* VenuesMigrationSegueEntryVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D25892D2F8021CC00C5A23C /* VenuesMigrationSegueEntryVC.swift */; };
+		7D25892F2F8021CC00C5A23C /* VenuesMigrationSegueEntryVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D25892D2F8021CC00C5A23C /* VenuesMigrationSegueEntryVC.swift */; };
 		7D5C0D012F786E880019481A /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D5C0D002F786E790019481A /* APIClient.swift */; };
 		7D5C0D032F786E980019481A /* Endpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D5C0D022F786E940019481A /* Endpoint.swift */; };
 		7D5C0D052F786EA50019481A /* HeaderProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D5C0D042F786E9E0019481A /* HeaderProvider.swift */; };
@@ -16,6 +18,8 @@
 		7D5C0D0B2F786EC70019481A /* ErrorHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D5C0D0A2F786EC50019481A /* ErrorHandler.swift */; };
 		7D5C0D0D2F786ED10019481A /* BackendServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D5C0D0C2F786ED00019481A /* BackendServices.swift */; };
 		7D5C0D0D2F790E510019481A /* UserData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D5C0D0C2F790E4A0019481A /* UserData.swift */; };
+		7D7955EA2F800CB200887048 /* VenuesMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D7955E82F800CB200887048 /* VenuesMigration.swift */; };
+		7D7955EB2F800CB200887048 /* VenuesMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D7955E82F800CB200887048 /* VenuesMigration.swift */; };
 		8527C603D854F13536457CC7 /* Pods_SwiftCinemas_SwiftCinemasTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC21FC33725912A24978F7C1 /* Pods_SwiftCinemas_SwiftCinemasTests.framework */; };
 		A4076A191D8F179900202E2A /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = A4076A181D8F179900202E2A /* GoogleService-Info.plist */; };
 		A407DE081C31DFA300D3CAD1 /* Time.swift in Sources */ = {isa = PBXBuildFile; fileRef = A407DE071C31DFA300D3CAD1 /* Time.swift */; };
@@ -128,6 +132,7 @@
 
 /* Begin PBXFileReference section */
 		5F8537B88264A8B854ED3468 /* Pods-SwiftCinemas.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SwiftCinemas.debug.xcconfig"; path = "Target Support Files/Pods-SwiftCinemas/Pods-SwiftCinemas.debug.xcconfig"; sourceTree = "<group>"; };
+		7D25892D2F8021CC00C5A23C /* VenuesMigrationSegueEntryVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenuesMigrationSegueEntryVC.swift; sourceTree = "<group>"; };
 		7D5C0D002F786E790019481A /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		7D5C0D022F786E940019481A /* Endpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Endpoint.swift; sourceTree = "<group>"; };
 		7D5C0D042F786E9E0019481A /* HeaderProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeaderProvider.swift; sourceTree = "<group>"; };
@@ -136,6 +141,7 @@
 		7D5C0D0A2F786EC50019481A /* ErrorHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorHandler.swift; sourceTree = "<group>"; };
 		7D5C0D0C2F786ED00019481A /* BackendServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendServices.swift; sourceTree = "<group>"; };
 		7D5C0D0C2F790E4A0019481A /* UserData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserData.swift; sourceTree = "<group>"; };
+		7D7955E82F800CB200887048 /* VenuesMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenuesMigration.swift; sourceTree = "<group>"; };
 		7DD3DCD32F794D14006C94F6 /* SwiftCinemasTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwiftCinemasTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7DE541432F795EAE00747662 /* SwiftyJSON.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = SwiftyJSON.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		8D825BF86296873B49574DCA /* Pods_SwiftCinemas.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SwiftCinemas.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -302,6 +308,15 @@
 				7D5C0D0C2F786ED00019481A /* BackendServices.swift */,
 			);
 			path = Networking;
+			sourceTree = "<group>";
+		};
+		7D7955E92F800CB200887048 /* VenuesMigration */ = {
+			isa = PBXGroup;
+			children = (
+				7D25892D2F8021CC00C5A23C /* VenuesMigrationSegueEntryVC.swift */,
+				7D7955E82F800CB200887048 /* VenuesMigration.swift */,
+			);
+			path = VenuesMigration;
 			sourceTree = "<group>";
 		};
 		A42483551D1EB6E800F83E6C /* Utils */ = {
@@ -518,6 +533,7 @@
 		EA62FD521989F6AC00469896 /* SwiftLoginScreen */ = {
 			isa = PBXGroup;
 			children = (
+				7D7955E92F800CB200887048 /* VenuesMigration */,
 				7D5C0CFF2F786E5A0019481A /* Networking */,
 				A4A24B662D7CCCCB00F3B65A /* BroadCasting */,
 				A448624C2D56A71F004C81B7 /* SwiftLoginScreenDebug.entitlements */,
@@ -828,6 +844,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7D7955EB2F800CB200887048 /* VenuesMigration.swift in Sources */,
+				7D25892E2F8021CC00C5A23C /* VenuesMigrationSegueEntryVC.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -893,6 +911,7 @@
 				A449DA3F1BFD185A004A9402 /* AFSecurityPolicy.m in Sources */,
 				A4A24B6A2D8C000000F3B65A /* URLManager.swift in Sources */,
 				A433A5AA1D15734A0051F428 /* MoviesData.swift in Sources */,
+				7D25892F2F8021CC00C5A23C /* VenuesMigrationSegueEntryVC.swift in Sources */,
 				A424835C1D1FDC6300F83E6C /* PlacesData.swift in Sources */,
 				7D5C0D092F786EBC0019481A /* AppError.swift in Sources */,
 				A433301B238F044700A44212 /* iOSCalenderVC.swift in Sources */,
@@ -902,6 +921,7 @@
 				A4F5D5B91BF88548002850B2 /* CachedURLResponse.swift in Sources */,
 				EAA118A5198A1BF000F443F1 /* HomeVC.swift in Sources */,
 				A4C0AE561D8800E900260FCB /* FeedCells.swift in Sources */,
+				7D7955EA2F800CB200887048 /* VenuesMigration.swift in Sources */,
 				A49A51F61BF6829C00E197D7 /* WebViewController.swift in Sources */,
 				A493B5802D6B580800404BC0 /* MovieCollectionViewCell.swift in Sources */,
 				A4D58A451BFA40AB00D379F8 /* AFNetworkReachabilityManager.m in Sources */,
@@ -1055,7 +1075,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
 				METAL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -1096,7 +1116,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
 				METAL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -1121,7 +1141,7 @@
 				INFOPLIST_FILE = "$(SRCROOT)/SwiftLoginScreen/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = SwiftCinemas;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.shopping";
-				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1184,7 +1204,7 @@
 				INFOPLIST_FILE = "$(SRCROOT)/SwiftLoginScreen/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = SwiftCinemas;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.shopping";
-				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

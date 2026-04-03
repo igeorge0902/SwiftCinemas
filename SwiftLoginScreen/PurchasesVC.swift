@@ -11,7 +11,6 @@ import SwiftyJSON
 import UIKit
 
 var TableData: [PurchaseData] = .init()
-@available(iOS 15.0, *)
 class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, HasAppServices {
     var appServices: AppServices!
     deinit {

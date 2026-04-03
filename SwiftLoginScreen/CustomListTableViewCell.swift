@@ -20,7 +20,6 @@ class CustomListTableViewCell: UITableViewCell {
         bounds = bounds.inset(by: padding)
     }
 
-    @available(*, unavailable)
     required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }

@@ -23,7 +23,6 @@ var addScreeningID = ""
 var addScreeningDate = ""
 var addScreeningDateId = ""
 var addCategory = ""
-@available(iOS 9.0, *)
 class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIViewControllerTransitioningDelegate, UIPopoverPresentationControllerDelegate, HasAppServices {
     var appServices: AppServices!
     deinit {

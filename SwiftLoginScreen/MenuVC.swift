@@ -2,7 +2,6 @@ import SafariServices
 import SwiftyJSON
 import UIKit
 
-@available(iOS 15.0, *)
 class MenuVC: UIViewController, HasAppServices {
     var appServices: AppServices!
     // MARK: - UI Elements

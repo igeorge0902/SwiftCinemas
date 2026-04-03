@@ -14,7 +14,6 @@ import UIKit
 /**
  Stores BasketData objects representing basket items.
  */
-@available(iOS 15.0, *)
 class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, HasAppServices {
     var appServices: AppServices!
     deinit {
