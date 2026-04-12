@@ -153,6 +153,31 @@ open SwiftCinemas.xcworkspace
 
 > ⚠️ Always open the `.xcworkspace` file (not `.xcodeproj`) after installing pods.
 
+### CLI Test Stability (CocoaPods Embed Frameworks)
+
+If CLI test runs fail in `[CP] Embed Pods Frameworks` with `rsync: ... Operation not permitted`, the test target's script sandbox is usually blocking pod framework copy into the `.xctest` bundle.
+
+The project `podfile` now applies this automatically for `SwiftCinemasTests` during `pod install`:
+
+- `ENABLE_USER_SCRIPT_SANDBOXING=NO` (test target only)
+
+Refresh local pods/build artifacts before retrying:
+
+```bash
+cd SwiftCinemas
+rm -rf ~/Library/Developer/Xcode/DerivedData/SwiftCinemas-*
+xattr -dr com.apple.quarantine Pods || true
+chmod -R u+rwX Pods
+pod install
+```
+
+Run one focused REST contract test with the helper script:
+
+```bash
+cd SwiftCinemas
+scripts/run-rest-test.sh mocked
+```
+
 ### Configuration
 - **Server URL**: Edit `baseHost` in `URLManager.swift` (single place for base host, all service paths, WebSocket URL, and image URL)
 - **Self-signed hosts**: Automatically derived from `URLManager.baseHost` in `CustomURLSessionDelegate.swift`

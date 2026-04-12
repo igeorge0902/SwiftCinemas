@@ -22,3 +22,19 @@ target 'SwiftCinemas' do
   end
 
 end
+
+post_install do |installer|
+  user_projects = installer.aggregate_targets.map(&:user_project).uniq
+
+  user_projects.each do |user_project|
+    user_project.native_targets.each do |target|
+      next unless target.name == 'SwiftCinemasTests'
+
+      target.build_configurations.each do |config|
+        config.build_settings['ENABLE_USER_SCRIPT_SANDBOXING'] = 'NO'
+      end
+    end
+
+    user_project.save
+  end
+end
