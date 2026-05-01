@@ -138,6 +138,15 @@ final class MbooksService {
         try await get(suffix: "seats/\(screeningDateId)", query: nil, realmCache: false)
     }
 
+    /// Trending movies endpoint used by HomeVC. Defaults to top 5 rows.
+    func trendingMovies(limit: Int = 5, days: Int? = nil) async throws -> Data {
+        var query: [String: String] = ["limit": String(limit)]
+        if let days {
+            query["days"] = String(days)
+        }
+        return try await get(suffix: "trending-movies", query: query, realmCache: false)
+    }
+
     func adminAddScreen(body: [String: Any]) async throws -> Data {
         try await postJSON(suffix: "admin/addscreen", body: body)
     }

@@ -47,18 +47,39 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
     }
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Nav, Tool bar appearance tweaks
-        UINavigationBar.appearance().barStyle = .blackTranslucent
-        UINavigationBar.appearance().barTintColor = UIColor.darkGray
-        UINavigationBar.appearance().backgroundColor = UIColor.darkGray
+        
+        let navAppearance = UINavigationBarAppearance()
+        navAppearance.configureWithOpaqueBackground()
+        navAppearance.backgroundColor = .darkGray
+        navAppearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+        navAppearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
 
-        UIToolbar.appearance().barStyle = .blackTranslucent
-        UITabBar.appearance().barStyle = .black
-        UITabBar.appearance().isTranslucent = true
-        UITabBar.appearance().tintColor = UIColor.white
+        let buttonAppearance = UIBarButtonItemAppearance()
+        buttonAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.white]
+        buttonAppearance.highlighted.titleTextAttributes = [.foregroundColor: UIColor.white]
+        buttonAppearance.disabled.titleTextAttributes = [.foregroundColor: UIColor.lightGray]
+        buttonAppearance.focused.titleTextAttributes = [.foregroundColor: UIColor.white]
 
-        UIBarButtonItem.appearance().tintColor = UIColor.white
-        UIButton.appearance().tintColor = UIColor.white
+        navAppearance.buttonAppearance = buttonAppearance
+        navAppearance.doneButtonAppearance = buttonAppearance
+        navAppearance.backButtonAppearance = buttonAppearance
+
+        navAppearance.shadowColor = .clear
+
+        // Apply
+        let navBar = UINavigationBar.appearance()
+        navBar.standardAppearance = navAppearance
+        navBar.scrollEdgeAppearance = navAppearance
+        navBar.compactAppearance = navAppearance
+        navBar.compactScrollEdgeAppearance = navAppearance
+        navBar.tintColor = .gray
+
+        let barButtonItem = UIBarButtonItem.appearance()
+        barButtonItem.tintColor = .white
+        barButtonItem.setBackgroundImage(UIImage(), for: .normal, barMetrics: .default)
+        barButtonItem.setBackgroundImage(UIImage(), for: .highlighted, barMetrics: .default)
+        barButtonItem.setBackgroundImage(UIImage(), for: .disabled, barMetrics: .default)
+        barButtonItem.setBackButtonBackgroundImage(UIImage(), for: .normal, barMetrics: .default)
 
         contactStore = CNContactStore()
         contactStore!.requestAccess(for: .contacts) { succeeded, err in
