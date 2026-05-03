@@ -24,22 +24,27 @@ jobs:
           fi
           
           if [ -f Podfile ]; then
+            echo "IOS_PROJECT_DIR=." >> "$GITHUB_ENV"
             pod install --repo-update
           elif [ -f SwiftCinemas/Podfile ]; then
+            echo "IOS_PROJECT_DIR=SwiftCinemas" >> "$GITHUB_ENV"
             cd SwiftCinemas
             pod install --repo-update
           else
             echo "Podfile not found" >&2
             exit 1
-          fi                    
+          fi                
 
       # Run tests on iPhone Simulator
       - name: Run Tests on iPhone Simulator
+        working-directory: ${{ env.IOS_PROJECT_DIR }}
         env:
           MODE: ${{ vars.MODE }}
           DESTINATION: ${{ vars.DESTINATION }}
           TEST_IDENTIFIER: ${{ vars.TEST_IDENTIFIER }}
         run: |
+          xcodebuild -list -workspace SwiftCinemas.xcworkspace
+
           SWIFT_REST_BACKEND="$MODE" xcodebuild test \
             -workspace SwiftCinemas.xcworkspace \
             -scheme SwiftCinemas \
