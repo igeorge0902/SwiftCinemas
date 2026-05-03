@@ -31,7 +31,6 @@ extension HasAppServices where Self: UIViewController {
 
 // MARK: - mbooks-1/rest/book (MbooksService)
 
-@MainActor
 final class MbooksService {
     private let apiClient: APIClient
     private let session = SessionHeaderProvider()
@@ -162,7 +161,6 @@ final class MbooksService {
 
 // MARK: - /login (LoginGatewayService)
 
-@MainActor
 final class LoginGatewayService {
     private let apiClient: APIClient
     private let session = SessionHeaderProvider()
@@ -324,7 +322,6 @@ final class LoginGatewayService {
 
 // MARK: - simple-service-webapp images (ImageResourceService)
 
-@MainActor
 final class ImageResourceService {
     private let apiClient: APIClient
 
@@ -344,7 +341,6 @@ final class ImageResourceService {
 
 // MARK: - RapidAPI IMDb (RapidMovieDatabaseService)
 
-@MainActor
 final class RapidMovieDatabaseService {
     private let apiClient: APIClient
 

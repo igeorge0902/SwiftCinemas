@@ -20,6 +20,7 @@ extension MockHTTPResponse {
 final class MockURLProtocol: URLProtocol {
     static var requestHandler: ((URLRequest) -> MockHTTPResponse)?
     static var capturedRequests: [URLRequest] = []
+    static let queue = DispatchQueue(label: "MockURLProtocol")
 
     override class func canInit(with request: URLRequest) -> Bool {
         true
@@ -35,7 +36,9 @@ final class MockURLProtocol: URLProtocol {
             return
         }
 
-        Self.capturedRequests.append(request)
+        Self.queue.sync {
+            Self.capturedRequests.append(request)
+        }
         let mocked = handler(request)
         let response = HTTPURLResponse(
             url: request.url!,

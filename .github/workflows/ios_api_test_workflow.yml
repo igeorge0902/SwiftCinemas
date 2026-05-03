@@ -1,0 +1,47 @@
+name: ios_api_test_workflow.yml
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test-ios:
+    runs-on: macos-latest
+
+    steps:
+      # Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Install any dependencies
+      - name: Install Dependencies
+        run: |
+          if ! command -v pod >/dev/null 2>&1; then
+            sudo gem install cocoapods
+          fi
+          
+          if [ -f Podfile ]; then
+            pod install --repo-update
+          elif [ -f SwiftCinemas/Podfile ]; then
+            cd SwiftCinemas
+            pod install --repo-update
+          else
+            echo "Podfile not found" >&2
+            exit 1
+          fi                    
+
+      # Run tests on iPhone Simulator
+      - name: Run Tests on iPhone Simulator
+        env:
+          MODE: ${{ vars.MODE }}
+          DESTINATION: ${{ vars.DESTINATION }}
+          TEST_IDENTIFIER: ${{ vars.TEST_IDENTIFIER }}
+        run: |
+          SWIFT_REST_BACKEND="$MODE" xcodebuild test \
+            -workspace SwiftCinemas.xcworkspace \
+            -scheme SwiftCinemas \
+            -destination "$DESTINATION" \
+            -only-testing:"$TEST_IDENTIFIER"
