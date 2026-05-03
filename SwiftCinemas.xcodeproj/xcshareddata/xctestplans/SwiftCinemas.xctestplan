@@ -1,35 +1,24 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-	<key>configurations</key>
-	<array>
-		<dict>
-			<key>id</key>
-			<string>8AAA13AE-6232-4D2C-A92F-32033DACA351</string>
-			<key>name</key>
-			<string>Configuration 1</string>
-			<key>options</key>
-			<dict/>
-		</dict>
-	</array>
-	<key>defaultOptions</key>
-	<dict/>
-	<key>testTargets</key>
-	<array>
-		<dict>
-			<key>target</key>
-			<dict>
-				<key>containerPath</key>
-				<string>container:SwiftCinemas.xcodeproj</string>
-				<key>identifier</key>
-				<string>7DD3DCD22F794D14006C94F6</string>
-				<key>name</key>
-				<string>SwiftCinemasTests</string>
-			</dict>
-		</dict>
-	</array>
-	<key>version</key>
-	<integer>1</integer>
-</dict>
-</plist>
+{
+  "configurations" : [
+    {
+      "id" : "8AAA13AE-6232-4D2C-A92F-32033DACA351",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:SwiftCinemas.xcodeproj",
+        "identifier" : "7DD3DCD22F794D14006C94F6",
+        "name" : "SwiftCinemasTests"
+      }
+    }
+  ],
+  "version" : 1
+}
