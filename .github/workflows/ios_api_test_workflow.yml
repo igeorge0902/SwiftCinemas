@@ -16,24 +16,36 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Install any dependencies      # Cache CocoaPods artifacts
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cocoapods/repos
+            Pods
+            SwiftCinemas/Pods
+          key: ${{ runner.os }}-cocoapods-${{ hashFiles('Podfile.lock', 'SwiftCinemas/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cocoapods-
+
       # Install any dependencies
       - name: Install Dependencies
         run: |
           if ! command -v pod >/dev/null 2>&1; then
             sudo gem install cocoapods
           fi
-          
+
           if [ -f Podfile ]; then
             echo "IOS_PROJECT_DIR=." >> "$GITHUB_ENV"
-            pod install --repo-update
+            pod install
           elif [ -f SwiftCinemas/Podfile ]; then
             echo "IOS_PROJECT_DIR=SwiftCinemas" >> "$GITHUB_ENV"
             cd SwiftCinemas
-            pod install --repo-update
+            pod install
           else
             echo "Podfile not found" >&2
             exit 1
-          fi                
+          fi        
 
       # Run tests on iPhone Simulator
       - name: Run Tests on iPhone Simulator
@@ -43,19 +55,10 @@ jobs:
           DESTINATION: ${{ vars.DESTINATION }}
           TEST_IDENTIFIER: ${{ vars.TEST_IDENTIFIER }}
         run: |
-          set -euo pipefail
-
-          MODE="${MODE:-mocked}"
-          DESTINATION="${DESTINATION:-platform=iOS Simulator,name=iPhone 17,OS=26.1}"
-          TEST_IDENTIFIER="${TEST_IDENTIFIER:-SwiftCinemasTests/VenueForMoviesIntegrationTests/testLocations_UsesGetPathAndReturnsFixtureInMockMode}"
-
-          TESTPLAN_FILE="SwiftCinemas.xcodeproj/xcshareddata/xctestplans/SwiftCinemas.xctestplan"
-          test -f "$TESTPLAN_FILE"
-          plutil -lint "$TESTPLAN_FILE"
+          xcodebuild -list -workspace SwiftCinemas.xcworkspace
 
           SWIFT_REST_BACKEND="$MODE" xcodebuild test \
             -workspace SwiftCinemas.xcworkspace \
             -scheme SwiftCinemas \
-            -testPlan SwiftCinemas \
             -destination "$DESTINATION" \
             -only-testing:"$TEST_IDENTIFIER"
