@@ -30,7 +30,7 @@
       shouldUseLaunchSchemeArgsEnv = "YES">
       <TestPlans>
          <TestPlanReference
-            reference = "container:../SwiftCinemas.xctestplan"
+            reference = "container:SwiftCinemasTests/SwiftCinemas.xctestplan"
             default = "YES">
          </TestPlanReference>
       </TestPlans>

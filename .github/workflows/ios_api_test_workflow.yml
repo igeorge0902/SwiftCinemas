@@ -43,10 +43,19 @@ jobs:
           DESTINATION: ${{ vars.DESTINATION }}
           TEST_IDENTIFIER: ${{ vars.TEST_IDENTIFIER }}
         run: |
-          xcodebuild -list -workspace SwiftCinemas.xcworkspace
+          set -euo pipefail
+
+          MODE="${MODE:-mocked}"
+          DESTINATION="${DESTINATION:-platform=iOS Simulator,name=iPhone 17,OS=26.1}"
+          TEST_IDENTIFIER="${TEST_IDENTIFIER:-SwiftCinemasTests/VenueForMoviesIntegrationTests/testLocations_UsesGetPathAndReturnsFixtureInMockMode}"
+
+          TESTPLAN_FILE="SwiftCinemas.xcodeproj/xcshareddata/xctestplans/SwiftCinemas.xctestplan"
+          test -f "$TESTPLAN_FILE"
+          plutil -lint "$TESTPLAN_FILE"
 
           SWIFT_REST_BACKEND="$MODE" xcodebuild test \
             -workspace SwiftCinemas.xcworkspace \
             -scheme SwiftCinemas \
+            -testPlan SwiftCinemas \
             -destination "$DESTINATION" \
             -only-testing:"$TEST_IDENTIFIER"
