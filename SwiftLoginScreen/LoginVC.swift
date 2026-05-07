@@ -46,7 +46,6 @@ final class LoginVC: UIViewController, UITextFieldDelegate, HasAppServices {
         super.viewDidLoad()
 
         injectAppServicesIfNeeded()
-        assert(appServices != nil, "AppServices not injected")
 
         let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.documentDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
         print(paths[0])
@@ -94,7 +93,7 @@ final class LoginVC: UIViewController, UITextFieldDelegate, HasAppServices {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 do {
-                    try await self.appServices.loginGateway.signIn(
+                    try await AuthDataManager.shared.signIn(
                         username: self.username! as String,
                         passwordHash: hash,
                         deviceId: deviceId,

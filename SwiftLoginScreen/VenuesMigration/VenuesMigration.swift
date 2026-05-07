@@ -57,8 +57,8 @@ struct VenuesInput {
     var imdb: String
     var mode: VenuesMode
     
-    /// Determines mode from legacy global flags (adminPage, mapViewPage)
-    static func fromLegacyFlags(
+    /// Determines mode from manager-owned context.
+    static func fromManagerContext(
         movieId: Int,
         movieName: String,
         selectLargePicture: String,
@@ -66,10 +66,8 @@ struct VenuesInput {
         imdb: String
     ) -> VenuesInput {
         let mode: VenuesMode
-        if mapViewPage {
+        if LocationsDataManager.shared.isVenuesFromMapFlow {
             mode = .map
-        } else if adminPage {
-            mode = .admin
         } else {
             mode = .standard
         }
@@ -103,10 +101,10 @@ struct VenuesUnifiedItem: Identifiable, Equatable {
 @MainActor
 final class VenuesMigrationViewModel: ObservableObject {
     @Published var venues: [VenuesUnifiedItem] = []
-    @Published var locations: [PlacesData] = []
-    @Published var mapLocations: [PlacesData] = []
+    @Published var locations: [Location] = []
+    @Published var mapLocations: [Location] = []
     @Published var selectedVenue: VenuesUnifiedItem?
-    @Published var selectedLocation: PlacesData?
+    @Published var selectedLocation: Location?
     @Published var mapRegion = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 47.4979, longitude: 19.0402),
         span: MKCoordinateSpan(latitudeDelta: 0.4, longitudeDelta: 0.4)
@@ -132,11 +130,9 @@ final class VenuesMigrationViewModel: ObservableObject {
 
     deinit {
         backObserver?.cancel()
-        // Reset legacy flags on exit
-        adminPage = false
-        mapViewPage = false
-        PlacesData_.removeAll()
-        PlacesData2_.removeAll()
+        LocationsDataManager.shared.isVenuesFromMapFlow = false
+        LocationsDataManager.shared.locationsToDisplay = []
+        LocationsDataManager.shared.locationsForMapPicker = []
     }
 
     func loadInitialData() async {
@@ -157,14 +153,20 @@ final class VenuesMigrationViewModel: ObservableObject {
             if let list = json["venues"].object as? NSArray {
                 venues = list.compactMap { block in
                     guard let dict = block as? NSDictionary else { return nil }
+                    let venuesId = dict["venuesId"] as? Int
+                        ?? (dict["venuesId"] as? String).flatMap(Int.init)
+                    let locationId = dict["locationId"] as? Int
+                        ?? (dict["locationId"] as? String).flatMap(Int.init)
+                    let screenId = dict["screen_screenId"] as? String
+                        ?? (dict["screen_screenId"] as? Int).map(String.init)
                     return VenuesUnifiedItem(
-                        id: "venue-\(dict["venuesId"] as? Int ?? -1)-\(dict["locationId"] as? Int ?? -1)",
-                        venuesId: dict["venuesId"] as? Int,
-                        locationId: dict["locationId"] as? Int,
+                        id: "venue-\(venuesId ?? -1)-\(locationId ?? -1)",
+                        venuesId: venuesId,
+                        locationId: locationId,
                         name: dict["name"] as? String ?? "",
                         address: dict["address"] as? String ?? "",
                         venuesPicture: dict["venues_picture"] as? String,
-                        screenScreenId: dict["screen_screenId"] as? String,
+                        screenScreenId: screenId,
                         coordinate: nil
                     )
                 }
@@ -184,21 +186,15 @@ final class VenuesMigrationViewModel: ObservableObject {
             if let list = json["locations"].object as? NSArray {
                 locations = list.compactMap { block in
                     guard let dict = block as? NSDictionary else { return nil }
-                    return PlacesData.fromJSON(dict)
+                    return Location(json: JSON(dict))
                 }
                 locations.sort { ($0.title ?? "") < ($1.title ?? "") }
 
-                // ⚠️ Keep legacy globals in sync for now (AdminUpdateVC observers may depend on this)
-                PlacesData_.removeAll()
-                PlacesData_.append(contentsOf: locations)
+                LocationsDataManager.shared.locationsToDisplay = locations
 
-                PlacesData2_.removeAll()
                 if input.mode == .map {
-                    // Preserve legacy filtered-list contract used by map workflows.
-                    if PlacesData2_.isEmpty {
-                        PlacesData2_.append(contentsOf: locations)
-                    }
-                    mapLocations = PlacesData2_
+                    LocationsDataManager.shared.locationsForMapPicker = locations
+                    mapLocations = LocationsDataManager.shared.locationsForMapPicker
                 } else {
                     mapLocations = locations
                 }
@@ -217,7 +213,7 @@ final class VenuesMigrationViewModel: ObservableObject {
         selectedVenue = venue
     }
 
-    func select(location: PlacesData, emitNotification: Bool = true) {
+    func select(location: Location, emitNotification: Bool = true) {
         selectedLocation = location
         mapRegion = MKCoordinateRegion(
             center: location.coordinate,
@@ -225,12 +221,10 @@ final class VenuesMigrationViewModel: ObservableObject {
         )
 
         guard emitNotification else { return }
-        addVenue = location.title ?? ""
-
         if input.mode == .admin {
-            NotificationCenter.default.post(name: NSNotification.Name(rawValue: "newScreenVenueSelected"), object: nil)
+            LocationsDataManager.shared.applySelection(location, notificationName: "newScreenVenueSelected")
         } else if input.mode == .map {
-            NotificationCenter.default.post(name: NSNotification.Name(rawValue: "screeningVenueSelected"), object: nil)
+            LocationsDataManager.shared.applySelection(location, notificationName: "screeningVenueSelected")
         }
     }
 
@@ -469,10 +463,10 @@ private struct VenuePictureRow: View {
 }
 
 struct VenuesLegacyMapView: UIViewRepresentable {
-    let locations: [PlacesData]
+    let locations: [Location]
     @Binding var region: MKCoordinateRegion
-    @Binding var selectedLocation: PlacesData?
-    let onSelect: (PlacesData) -> Void
+    @Binding var selectedLocation: Location?
+    let onSelect: (Location) -> Void
 
     func makeCoordinator() -> Coordinator {
         Coordinator(parent: self)
@@ -506,7 +500,7 @@ struct VenuesLegacyMapView: UIViewRepresentable {
         }
 
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-            guard let place = view.annotation as? PlacesData else { return }
+            guard let place = view.annotation as? Location else { return }
             parent.onSelect(place)
         }
     }
@@ -555,22 +549,25 @@ final class VenuesMigrationHostVC: UIViewController, HasAppServices {
     }
 
     private func presentVenuesDetails(for venue: VenuesUnifiedItem) {
-        let detailsVC = VenuesDetailsVC()
+        let storyboard = UIStoryboard(name: "Storyboard", bundle: nil)
+        guard let detailsVC = storyboard.instantiateViewController(withIdentifier: "VenuesDetailsVC") as? VenuesDetailsVC else {
+            return
+        }
         detailsVC.appServices = appServices
 
         // Set properties from migration input
         detailsVC.movieId = input.movieId
         detailsVC.movieName = input.movieName
         detailsVC.movieDetails = input.selectDetails
-        detailsVC.selectLarge_picture = input.selectLargePicture
+        detailsVC.selectLargePicture = input.selectLargePicture
         detailsVC.iMDB = input.imdb
 
         // Set venue-specific properties from selected venue
         detailsVC.selectVenueId = venue.venuesId
         detailsVC.venueName = venue.name
         detailsVC.selectAddress = venue.address
-        detailsVC.selectVenues_picture = venue.venuesPicture
-        detailsVC.screen_screenId = venue.screenScreenId
+        detailsVC.selectVenuesPicture = venue.venuesPicture
+        detailsVC.screenScreenId = venue.screenScreenId
         detailsVC.locationId = venue.locationId ?? 0
 
         detailsVC.modalPresentationStyle = .fullScreen
@@ -585,9 +582,8 @@ enum VenuesMigrationFactory {
         return VenuesMigrationHostVC(input: configuredInput, appServices: appServices)
     }
     
-    /// Make controller using legacy global flags (adminPage, mapViewPage).
-    /// Respects feature flag to determine if migration should be used.
-    static func makeFromLegacyFlags(
+    /// Make controller using manager context.
+    static func makeFromManagerContext(
         movieId: Int,
         movieName: String,
         selectLargePicture: String,
@@ -595,7 +591,7 @@ enum VenuesMigrationFactory {
         imdb: String,
         appServices: AppServices
     ) -> UIViewController {
-        let input = VenuesInput.fromLegacyFlags(
+        let input = VenuesInput.fromManagerContext(
             movieId: movieId,
             movieName: movieName,
             selectLargePicture: selectLargePicture,

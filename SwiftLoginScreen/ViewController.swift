@@ -13,10 +13,9 @@ protocol HandleMapSearch {
     func dropPinZoomIn(placemark: MKPlacemark)
 }
 
-// var mapview_:MKMapView? = nil
 class ViewController: UIViewController, UIPopoverPresentationControllerDelegate {
     deinit {
-        mapview_ = nil
+        LocationsDataManager.shared.activeMapView = nil
     }
 
     @IBOutlet var mapView: MKMapView!
@@ -26,13 +25,13 @@ class ViewController: UIViewController, UIPopoverPresentationControllerDelegate 
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        mapViewPage = true
+        LocationsDataManager.shared.isVenuesFromMapFlow = true
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.requestWhenInUseAuthorization()
         locationManager.requestLocation()
 
-        mapview_ = mapView
+        LocationsDataManager.shared.activeMapView = mapView
 
         let btnVen = UIButton(frame: CGRect(x: view.frame.width / 2, y: 100, width: view.frame.width / 2, height: 20))
         btnVen.backgroundColor = UIColor.black
@@ -55,7 +54,7 @@ class ViewController: UIViewController, UIPopoverPresentationControllerDelegate 
     }
 
     @objc func listVenues() {
-        mapViewPage = true
+        LocationsDataManager.shared.isVenuesFromMapFlow = true
         DispatchQueue.main.async {
             let popOver = VenuesVC()
             popOver.modalPresentationStyle = UIModalPresentationStyle.popover

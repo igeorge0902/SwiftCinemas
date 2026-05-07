@@ -8,17 +8,16 @@
 
 import Foundation
 import PDFKit
-import SwiftyJSON
 import UIKit
 
 /**
- Stores BasketData objects representing basket items.
+ Displays ticket data for completed purchases.
  */
 class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, HasAppServices {
     var appServices: AppServices!
     deinit {
         purchaseId = nil
-        CollectionData.removeAll()
+        collectionData.removeAll()
         print(#function, "\(self)")
     }
 
@@ -33,12 +32,16 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
     var movieName: String?
     var purchaseId: String!
 
+    private var resolvedPurchaseId: String? {
+        purchaseId ?? CheckoutDataManager.shared.selectedPurchaseId
+    }
+
     var pdfURL_: URL?
     var pdfNameFromUrl: String?
 
     lazy var filter = CIFilter(name: "CIQRCodeGenerator")
 
-    var CollectionData: [AllTicketsData] = .init()
+    var collectionData: [TicketDetailModel] = []
     lazy var layout = UICollectionViewFlowLayout()
 
     override func viewDidLoad() {
@@ -194,17 +197,13 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
     func addData() {
         Task { @MainActor [weak self] in
             guard let self else { return }
+            guard let purchaseId = self.resolvedPurchaseId else {
+                self.presentAlert(withTitle: "Warning!", message: "No purchase selected")
+                return
+            }
             do {
-                let data = try await self.appServices.loginGateway.getManagePurchases(purchaseId: self.purchaseId)
-                let json = try JSON(data: data)
-                if let list = json["tickets"].object as? NSArray {
-                    for i in 0 ..< list.count {
-                        if let dataBlock = list[i] as? NSDictionary {
-                            self.CollectionData.append(AllTicketsData(add: dataBlock))
-                            self.CollectionData.sort { ($0.seats_seatNumber ?? "") < ($1.seats_seatNumber ?? "") }
-                        }
-                    }
-                }
+                self.collectionData = try await CheckoutDataManager.shared.fetchTickets(purchaseId: purchaseId)
+                self.collectionData.sort { $0.seatNumber < $1.seatNumber }
                 self.collectionView?.reloadData()
             } catch {
                 NSLog("TicketsVC addData: %@", error.localizedDescription)
@@ -216,22 +215,16 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
      Method to delete tickets one by one
      */
     @objc func cancelTicket(button: UIButton, event _: UIEvent) {
-        let ticketId = CollectionData[button.tag].ticketId
-        var ticketIds = [Int]()
-        ticketIds.append(ticketId!)
-        let data: NSDictionary = ["ticketIds": ticketIds]
-        let jsonData: Data = try! JSONSerialization.data(withJSONObject: data, options: [])
-        let prepareDataToPost = NSString(data: jsonData, encoding: String.Encoding.utf8.rawValue)! as String
-
-        let post: NSString = "purchaseId=\(purchaseId!)&ticketsToBeCancelled=\(prepareDataToPost)" as NSString
-        let postData: Data = post.data(using: String.Encoding.ascii.rawValue)!
+        guard let purchaseId = resolvedPurchaseId else {
+            presentAlert(withTitle: "Warning!", message: "No purchase selected")
+            return
+        }
+        let ticketId = collectionData[button.tag].ticketId
 
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let data = try await self.appServices.loginGateway.postManagePurchases(body: postData)
-                let json = try JSON(data: data)
-                if json["Success"].string == "true" {
+                if try await CheckoutDataManager.shared.cancelTickets(purchaseId: purchaseId, ticketIds: [ticketId]) {
                     NotificationCenter.default.post(name: NSNotification.Name(rawValue: "newDataNotif"), object: nil)
                 }
             } catch {
@@ -239,7 +232,7 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
             }
         }
 
-        CollectionData.remove(at: button.tag)
+        collectionData.remove(at: button.tag)
         collectionView.reloadData()
     }
 
@@ -248,8 +241,8 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
     }
 
     func collectionView(_: UICollectionView, numberOfItemsInSection _: Int) -> Int {
-        if CollectionData.count > 0 {
-            return CollectionData.count
+        if collectionData.count > 0 {
+            return collectionData.count
         }
 
         return 0
@@ -272,7 +265,7 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "FeedCell", for: indexPath) as! FeedCells
 
-        cell.textLabel?.text = CollectionData[indexPath.row].movie_name
+        cell.textLabel?.text = collectionData[indexPath.row].movieName
         cell.textLabel?.numberOfLines = 2
         cell.textLabel?.translatesAutoresizingMaskIntoConstraints = false
 
@@ -281,12 +274,12 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
 
         let title = NSMutableAttributedString(string: (cell.textLabel?.text!)!, attributes: convertToOptionalNSAttributedStringKeyDictionary([convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 14.0)!]))
 
-        title.append(NSAttributedString(string: "\n\(CollectionData[indexPath.row].movie_name!)", attributes: convertToOptionalNSAttributedStringKeyDictionary([convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 12.0)!, convertFromNSAttributedStringKey(NSAttributedString.Key.foregroundColor): UIColor(red: 155 / 255, green: 161 / 255, blue: 171 / 255, alpha: 1)])))
+        title.append(NSAttributedString(string: "\n\(collectionData[indexPath.row].movieName)", attributes: convertToOptionalNSAttributedStringKeyDictionary([convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 12.0)!, convertFromNSAttributedStringKey(NSAttributedString.Key.foregroundColor): UIColor(red: 155 / 255, green: 161 / 255, blue: 171 / 255, alpha: 1)])))
 
         title.addAttribute(NSAttributedString.Key.paragraphStyle, value: paragrapStyle, range: NSMakeRange(0, title.string.count))
         cell.textLabel?.attributedText = title
 
-        let urlMovie = URLManager.image(CollectionData[indexPath.row].movie_picture)
+        let urlMovie = URLManager.image(collectionData[indexPath.row].moviePicture)
 
         Task { @MainActor [weak self] in
             guard let self else { return }
@@ -300,7 +293,7 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
             }
         }
 
-        let text = NSMutableAttributedString(string: "Ticket details: \n Seat Row: \(CollectionData[indexPath.row].seats_seatRow!), \n Seat Nr: \(CollectionData[indexPath.row].seats_seatNumber!), \nDate of Screening: \n\(CollectionData[indexPath.row].screening_date!), \n Venue: \(CollectionData[indexPath.row].venue_name!)", attributes: convertToOptionalNSAttributedStringKeyDictionary([convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 14.0)!]))
+        let text = NSMutableAttributedString(string: "Ticket details: \n Seat Row: \(collectionData[indexPath.row].seatRow), \n Seat Nr: \(collectionData[indexPath.row].seatNumber), \nDate of Screening: \n\(collectionData[indexPath.row].screeningDate), \n Venue: \(collectionData[indexPath.row].venueName)", attributes: convertToOptionalNSAttributedStringKeyDictionary([convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 14.0)!]))
 
         cell.statusText?.backgroundColor = UIColor { traitCollection in
             traitCollection.userInterfaceStyle == .dark ? .gray : .white
@@ -313,12 +306,12 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
         let btn = UIButton(type: UIButton.ButtonType.custom) as UIButton
         btn.frame = cell.CancelImage!.frame
         btn.addTarget(self, action: #selector(TicketsVC.cancelTicket), for: .touchUpInside)
-        btn.tag = indexPath.section
+        btn.tag = indexPath.row
         btn.setImage(UIImage(named: "trash"), for: .normal)
         cell.contentView.addSubview(btn)
 
         guard let filter,
-              let data = CollectionData[indexPath.row].seats_seatNumber!.data(using: .isoLatin1, allowLossyConversion: false)
+              let data = collectionData[indexPath.row].seatNumber.data(using: .isoLatin1, allowLossyConversion: false)
         else {
             return cell
         }

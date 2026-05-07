@@ -22,6 +22,12 @@ protocol HasAppServices: AnyObject {
     var appServices: AppServices! { get set }
 }
 
+extension HasAppServices {
+    func inject(appServices: AppServices) {
+        self.appServices = appServices
+    }
+}
+
 extension HasAppServices where Self: UIViewController {
     func injectAppServicesIfNeeded() {
         guard appServices == nil else { return }
@@ -125,7 +131,7 @@ final class MbooksService {
         try await get(suffix: "venue/movies", query: ["locationId": locationId], realmCache: false)
     }
 
-    func dates(locationId: String, movieId: String) async throws -> Data {
+    func dates(locationId: Int, movieId: Int) async throws -> Data {
         try await get(suffix: "dates/\(locationId)/\(movieId)", query: nil, realmCache: false)
     }
 
@@ -238,6 +244,9 @@ final class LoginGatewayService {
                 prefs.setValue(deviceId, forKey: "deviceId")
                 prefs.setValue(xtoken, forKey: "X-Token")
                 prefs.synchronize()
+
+                SecureStore.set(sessionID as String, for: "JSESSIONID")
+                SecureStore.set(xtoken as String, for: "X-Token")
             }
 
             NSLog("got a 200")

@@ -17,7 +17,7 @@
                         <viewControllerLayoutGuide type="bottom" id="W5n-uJ-vyX"/>
                     </layoutGuides>
                     <view key="view" contentMode="scaleToFill" id="Edn-h3-Tpy">
-                        <rect key="frame" x="0.0" y="0.0" width="375" height="752"/>
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="762"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                     </view>
@@ -161,11 +161,11 @@
                         <viewControllerLayoutGuide type="bottom" id="KOB-kV-MO9"/>
                     </layoutGuides>
                     <view key="view" contentMode="scaleToFill" id="BzU-En-SY5">
-                        <rect key="frame" x="0.0" y="0.0" width="375" height="762"/>
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="752"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" showsTouchWhenHighlighted="YES" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ivm-Zt-H0w">
-                                <rect key="frame" x="157" y="626" width="61" height="30"/>
+                                <rect key="frame" x="157" y="616" width="61" height="30"/>
                                 <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="61" id="Tez-sr-ZkH"/>
@@ -206,11 +206,11 @@
                         <viewControllerLayoutGuide type="bottom" id="N4C-RY-qcE"/>
                     </layoutGuides>
                     <view key="view" contentMode="scaleToFill" id="dMd-Oi-AIX">
-                        <rect key="frame" x="0.0" y="0.0" width="375" height="752"/>
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="762"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="top" alwaysBounceVertical="YES" bouncesZoom="NO" translatesAutoresizingMaskIntoConstraints="NO" id="j9j-C2-rR7">
-                                <rect key="frame" x="0.0" y="34" width="375" height="525"/>
+                                <rect key="frame" x="0.0" y="34" width="375" height="535"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="7b8-mM-JzW">
                                         <rect key="frame" x="14" y="24" width="347" height="555"/>
@@ -716,11 +716,11 @@
                         <viewControllerLayoutGuide type="bottom" id="xMy-5A-VZy"/>
                     </layoutGuides>
                     <view key="view" contentMode="scaleToFill" id="Kgi-Lg-fUN">
-                        <rect key="frame" x="0.0" y="0.0" width="375" height="752"/>
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="762"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <mapView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" mapType="standard" showsScale="YES" translatesAutoresizingMaskIntoConstraints="NO" id="WeY-XU-Evs">
-                                <rect key="frame" x="-4" y="50" width="383" height="652"/>
+                                <rect key="frame" x="-4" y="50" width="383" height="662"/>
                             </mapView>
                         </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
@@ -939,7 +939,7 @@
         <!--Venues DetailsVC-->
         <scene sceneID="Wps-LK-zFm">
             <objects>
-                <viewController id="8bK-2g-tmG" customClass="VenuesDetailsVC" customModule="SwiftCinemas" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="VenuesDetailsVC" id="8bK-2g-tmG" customClass="VenuesDetailsVC" customModule="SwiftCinemas" sceneMemberID="viewController">
                     <layoutGuides>
                         <viewControllerLayoutGuide type="top" id="Hsa-Kk-Tgf"/>
                         <viewControllerLayoutGuide type="bottom" id="DRI-EP-I3a"/>
@@ -1009,7 +1009,7 @@
                         <viewControllerLayoutGuide type="bottom" id="7Uv-U4-elJ"/>
                     </layoutGuides>
                     <view key="view" contentMode="scaleToFill" id="HzZ-TP-30N">
-                        <rect key="frame" x="0.0" y="0.0" width="375" height="752"/>
+                        <rect key="frame" x="0.0" y="0.0" width="375" height="762"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                     </view>
@@ -1052,11 +1052,10 @@
         </scene>
     </scenes>
     <inferredMetricsTieBreakers>
-        <segue reference="e6t-AA-2MF"/>
         <segue reference="LKr-QZ-LCg"/>
         <segue reference="n3a-ZX-8SF"/>
         <segue reference="xiF-My-4cW"/>
-        <segue reference="MVo-F5-4Ad"/>
+        <segue reference="7ua-hE-UVo"/>
         <segue reference="RIs-hV-r9r"/>
     </inferredMetricsTieBreakers>
     <resources>
@@ -1068,13 +1067,13 @@
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </systemColor>
         <systemColor name="systemGray2Color">
-            <color red="0.68235294117647061" green="0.68235294117647061" blue="0.69803921568627447" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.68235294120000001" green="0.68235294120000001" blue="0.69803921570000005" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="systemGrayColor">
-            <color red="0.55686274509803924" green="0.55686274509803924" blue="0.57647058823529407" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.5568627451" green="0.5568627451" blue="0.57647058819999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="systemRedColor">
-            <color red="1" green="0.2196078431372549" blue="0.23529411764705882" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="1" green="0.23137254900000001" blue="0.18823529410000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>

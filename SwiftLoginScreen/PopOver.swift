@@ -6,34 +6,15 @@
 //  Copyright © 2016 George Gaspar. All rights reserved.
 //
 
-import CoreData
-import SwiftyJSON
 import UIKit
 
 // import FacebookCore
 // import Braintree
 
-/**
- Stores Seat objects in Array.
- */
-var SeatsData_: [SeatsData] = .init()
-/**
- Stores returned Ticket objects in Array.
- */
-var TicketsData_: [TicketsData] = .init()
 var tickets = [String: String]()
 /**
- Map to be used to handle seats to be reserved per screening. seatNumbers will be added to Seats Array to CheckOut.
-
- @Int: seatId
-
- @String: seatNumber
+ Legacy seat selection globals were replaced by manager-owned context.
  */
-var seatsToBeReserved = [Int: String]()
-/**
- Stores seatId and screeningDateId to finalize reservation during the CheckOut.
- */
-var Seats = [String: NSDictionary]()
 var tableView_: UITableView?
 class PopOver: UIViewController, UITableViewDelegate, UITableViewDataSource, UIViewControllerTransitioningDelegate {
     lazy var storedOffsets = [Int: CGFloat]()
@@ -42,22 +23,13 @@ class PopOver: UIViewController, UITableViewDelegate, UITableViewDataSource, UIV
     // lazy var braintreeClient = BTAPIClient(authorization: "sandbox_dpdzm97y_j3ndqpzrhy4gp2p7")!
 
     deinit {
-        seatsToBeReserved.removeAll()
+        SeatsDataManager.shared.selectedSeatIds = []
+        SeatsDataManager.shared.selectedSeatNumbers = []
         print(#function, "\(self)")
     }
 
-    var refreshControl: UIRefreshControl!
-
-    var ResponseText: String?
-    var ResponseCode: String?
-    var AuthCode: String?
-    var Status: String?
-    var movieName: String?
-
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        refreshControl = UIRefreshControl()
     }
 
     override func viewWillAppear(_: Bool) {
@@ -68,7 +40,10 @@ class PopOver: UIViewController, UITableViewDelegate, UITableViewDataSource, UIV
         label.textAlignment = NSTextAlignment.left
 
         let myTextAttribute = [convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 13.0)!]
-        let detailText = NSMutableAttributedString(string: String.formatDate(date: Date.formatDate(dateString: String(myDateString!.first!))), attributes: convertToOptionalNSAttributedStringKeyDictionary(myTextAttribute))
+        let selectedDateText = DatesDataManager.shared.selectedScreeningDateText ?? ""
+        let normalizedDateString = selectedDateText.split(separator: ".").first.map(String.init) ?? selectedDateText
+        let displayDate = normalizedDateString.isEmpty ? Date() : Date.formatDate(dateString: normalizedDateString)
+        let detailText = NSMutableAttributedString(string: String.formatDate(date: displayDate), attributes: convertToOptionalNSAttributedStringKeyDictionary(myTextAttribute))
 
         label.attributedText = detailText
 
@@ -107,7 +82,7 @@ class PopOver: UIViewController, UITableViewDelegate, UITableViewDataSource, UIV
     }
 
     func tableView(_: UITableView, numberOfRowsInSection _: Int) -> Int {
-        numberOfRows.count
+        rowKeys.count
     }
 
     func tableView(_: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
@@ -132,12 +107,17 @@ class PopOver: UIViewController, UITableViewDelegate, UITableViewDataSource, UIV
     }
 
     @objc func clearSeatsToBeReserved() {
-        Seats.removeValue(forKey: screeningDateId!)
+        guard let screeningDateId = DatesDataManager.shared.selectedScreeningDateId else { return }
 
-        for seats in SeatsData_ {
-            BasketData_.removeValue(forKey: seats.seatId)
-            seatsToBeReserved.removeValue(forKey: seats.seatId)
+        BasketDataManager.shared.seatsToReservePayloadByScreening.removeValue(forKey: screeningDateId)
+
+        for seat in SeatsDataManager.shared.allSeats {
+            let seatId = seat.seatId
+            BasketDataManager.shared.basketItemsBySeatId.removeValue(forKey: seatId)
         }
+
+        SeatsDataManager.shared.selectedSeatIds = []
+        SeatsDataManager.shared.selectedSeatNumbers = []
 
         tableView_?.reloadData()
     }
@@ -147,7 +127,7 @@ class PopOver: UIViewController, UITableViewDelegate, UITableViewDataSource, UIV
     }
 
     @objc func openBasket() {
-        if BasketData_.count < 1 {
+        if BasketDataManager.shared.basketItemsBySeatId.isEmpty {
             presentAlert(withTitle: "Warning!", message: "No free seat(s) to be reserved!")
 
         } else {
@@ -168,55 +148,57 @@ class PopOver: UIViewController, UITableViewDelegate, UITableViewDataSource, UIV
     }
 }
 
+private extension PopOver {
+    var rowKeys: [String] {
+        SeatsDataManager.shared.getRows(SeatsDataManager.shared.allSeats)
+    }
+
+    func seats(forRowTag tag: Int) -> [SeatModel] {
+        guard tag >= 0, tag < rowKeys.count else { return [] }
+        let row = rowKeys[tag]
+        return SeatsDataManager.shared.allSeats.filter { $0.seatRow == row }
+    }
+
+    var selectedSeatsById: [Int: String] {
+        BasketDataManager.shared.basketItemsBySeatId.reduce(into: [Int: String]()) { result, element in
+            result[element.key] = element.value.seatNumber
+        }
+    }
+
+    func updateSeatPayload(for screeningDateId: String) {
+        let concatenated = selectedSeatsById.values.sorted().map { "\($0)-" }.joined()
+        if concatenated.isEmpty {
+            BasketDataManager.shared.seatsToReservePayloadByScreening.removeValue(forKey: screeningDateId)
+        } else {
+            BasketDataManager.shared.seatsToReservePayloadByScreening[screeningDateId] = concatenated
+        }
+    }
+}
+
 extension PopOver: UICollectionViewDelegate, UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection _: Int) -> Int {
-        for j in 0 ..< numberOfRows.count {
-            if collectionView.tag == j {
-                return SeatsData_.filter {
-                    $0.seatRow == String(j + 1)
-                }.count
-            }
-        }
-        return 6
+        seats(forRowTag: collectionView.tag).count
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell: SeatCells = collectionView.dequeueReusableCell(withReuseIdentifier: "SeatCells", for: indexPath) as! SeatCells
         // cell.cellDelegate = self
 
-        for j in 0 ..< numberOfRows.count {
-            if collectionView.tag == j {
-                let filteredAttendees = SeatsData_.filter {
-                    $0.seatRow == String(j + 1)
-                }
+        let seatsForRow = seats(forRowTag: collectionView.tag)
+        guard indexPath.item < seatsForRow.count else { return cell }
+        let seat = seatsForRow[indexPath.item]
+        let total = Double(seat.price) * seat.tax
+        let myTextAttribute = [convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 13.0)!]
+        let detailText = NSMutableAttributedString(string: seat.seatNumber, attributes: convertToOptionalNSAttributedStringKeyDictionary(myTextAttribute))
+        let myTextAttribute_ = [convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "CourierNewPS-BoldMT", size: 11.0)!]
+        let priceTag = NSMutableAttributedString(string: String(total).appending(" Ft"), attributes: convertToOptionalNSAttributedStringKeyDictionary(myTextAttribute_))
 
-                for i in 0 ..< filteredAttendees.count {
-                    // cell.backgroundColor = self.model[collectionView.tag][indexPath.item]
-                    if indexPath.item == i {
-                        let total = Double(filteredAttendees[i].price) * filteredAttendees[i].tax
-                        let myTextAttribute = [convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 13.0)!]
-                        let detailText = NSMutableAttributedString(string: filteredAttendees[i].seatNumber, attributes: convertToOptionalNSAttributedStringKeyDictionary(myTextAttribute))
-
-                        let myTextAttribute_ = [convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "CourierNewPS-BoldMT", size: 11.0)!]
-                        let priceTag = NSMutableAttributedString(string: String(total).appending(" Ft"), attributes: convertToOptionalNSAttributedStringKeyDictionary(myTextAttribute_))
-
-                        cell.textLabel.attributedText = detailText
-                        cell.priceLabel.attributedText = priceTag
-
-                        cell.layer.borderColor = UIColor.gray.cgColor
-                        cell.layer.borderWidth = 1
-                        cell.layer.cornerRadius = 5
-
-                        if filteredAttendees[i].isReserved == "1" {
-                            cell.backgroundColor = UIColor.darkGray
-
-                        } else {
-                            cell.backgroundColor = UIColor.lightGray
-                        }
-                    }
-                }
-            }
-        }
+        cell.textLabel.attributedText = detailText
+        cell.priceLabel.attributedText = priceTag
+        cell.layer.borderColor = UIColor.gray.cgColor
+        cell.layer.borderWidth = 1
+        cell.layer.cornerRadius = 5
+        cell.backgroundColor = seat.isReserved ? UIColor.darkGray : UIColor.lightGray
 
         return cell
     }
@@ -228,15 +210,11 @@ extension PopOver: UICollectionViewDelegate, UICollectionViewDataSource {
     }
 
     func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
-        let filteredAttendees = SeatsData_.filter {
-            $0.seatRow == String(collectionView.tag + 1)
-        }
-
-        let seatId = filteredAttendees[indexPath.row].seatId
-        // let seatNumber = filteredAttendees[indexPath.row].seatNumber
-
-        let seatIds = [Int](seatsToBeReserved.keys.sorted(by: { $0 < $1 }))
-        if seatIds.contains(seatId!) {
+        let seatsForRow = seats(forRowTag: collectionView.tag)
+        guard indexPath.row < seatsForRow.count else { return }
+        let seatId = seatsForRow[indexPath.row].seatId
+        let seatIds = [Int](selectedSeatsById.keys.sorted(by: { $0 < $1 }))
+        if seatIds.contains(seatId) {
             cell.layer.borderWidth = 4
         }
     }
@@ -249,75 +227,69 @@ extension PopOver: UICollectionViewDelegate, UICollectionViewDataSource {
 
         collectionView.scrollToItem(at: indexPath, at: .centeredVertically, animated: true)
 
-        let filteredAttendees = SeatsData_.filter {
-            $0.seatRow == String(collectionView.tag + 1)
-        }
+        let seatsForRow = seats(forRowTag: collectionView.tag)
+        guard indexPath.row < seatsForRow.count else { return }
+        let selectedSeat = seatsForRow[indexPath.row]
+        let seatId = selectedSeat.seatId
+        let seatNumber = selectedSeat.seatNumber
 
-        let seatId = filteredAttendees[indexPath.row].seatId
-        let seatNumber = filteredAttendees[indexPath.row].seatNumber
-
-        let seatIds = [Int](seatsToBeReserved.keys.sorted(by: { $0 < $1 }))
-        if !seatIds.contains(seatId!), filteredAttendees[indexPath.row].isReserved == "0" {
-            seatsToBeReserved.updateValue(seatNumber!, forKey: seatId!)
-
-            let date_ = Date.formatDate(dateString: String(myDateString!.first!))
-
-            let basketItem: NSDictionary = ["movie_name": SelectMovieName!, "seatId": seatId!, "seats_seatRow": filteredAttendees[indexPath.row].seatRow!, "seats_seatNumber": seatNumber as Any, "price": filteredAttendees[indexPath.row].price!, "tax": filteredAttendees[indexPath.row].tax!, "screeningDateId": screeningDateId!, "movie_picture": SelectMoviePicture!, "venue_picture": "", "venue_name": SelectVenueName!, "screening_date": String.formatDate(date: date_)]
-
-            BasketData_.updateValue(BasketData(add: basketItem), forKey: seatId!)
-
-            var string = ""
-            for seats in seatsToBeReserved.values {
-                string += seats + "-"
+        let seatIds = [Int](selectedSeatsById.keys.sorted(by: { $0 < $1 }))
+        if !seatIds.contains(seatId), !selectedSeat.isReserved {
+            guard let screeningDateId = DatesDataManager.shared.selectedScreeningDateId,
+                  let movieName = MoviesDataManager.shared.selectedMovie?.name,
+                  let moviePicturePath = MoviesDataManager.shared.selectedMovie?.largePicture,
+                  let venueName = VenuesDataManager.shared.selectedVenue?.name,
+                  let dateString = DatesDataManager.shared.selectedScreeningDateText?.split(separator: ".").first else {
+                return
             }
 
-            let seat = ["screeningDateId": screeningDateId!, "seat": string]
+            let date_ = Date.formatDate(dateString: String(dateString))
 
-            Seats.updateValue(seat as NSDictionary, forKey: screeningDateId!)
+            let basketItem = BasketItem(
+                movieName: movieName,
+                seatId: seatId,
+                seatRow: selectedSeat.seatRow,
+                seatNumber: seatNumber,
+                price: selectedSeat.price,
+                tax: selectedSeat.tax,
+                screeningDateId: screeningDateId,
+                moviePicture: URLManager.image(moviePicturePath),
+                venuePicture: "",
+                venueName: venueName,
+                screeningDateText: String.formatDate(date: date_)
+            )
 
-            NSLog("SeatId is: \(seatNumber!)")
+            BasketDataManager.shared.basketItemsBySeatId[seatId] = basketItem
+            SeatsDataManager.shared.selectedSeatIds = [Int](selectedSeatsById.keys.sorted())
+            SeatsDataManager.shared.selectedSeatNumbers = selectedSeatsById.values.sorted()
+            updateSeatPayload(for: screeningDateId)
+
+            NSLog("SeatId is: \(seatNumber)")
 
         } else {
             cell?.layer.borderWidth = 1
-
-            seatsToBeReserved.removeValue(forKey: seatId!)
-
-            var string = ""
-            for seats in seatsToBeReserved.values {
-                string += seats + "-"
+            BasketDataManager.shared.basketItemsBySeatId.removeValue(forKey: seatId)
+            SeatsDataManager.shared.selectedSeatIds = [Int](selectedSeatsById.keys.sorted())
+            SeatsDataManager.shared.selectedSeatNumbers = selectedSeatsById.values.sorted()
+            if let screeningDateId = DatesDataManager.shared.selectedScreeningDateId {
+                updateSeatPayload(for: screeningDateId)
             }
-
-            let seat = ["screeningDateId": screeningDateId!, "seat": string]
-
-            Seats.updateValue(seat as NSDictionary, forKey: screeningDateId!)
-
-            BasketData_.removeValue(forKey: seatId!)
-
-            NSLog("SeatId is: \(seatNumber!) is already added!")
+            NSLog("SeatId is: \(seatNumber) is already added!")
         }
 
         print("Collection view at row \(collectionView.tag) selected index path \(indexPath), section is \(indexPath.section), \(indexPath.row)")
     }
 
     func collectionView(_ collectionView: UICollectionView, shouldDeselectItemAt indexPath: IndexPath) -> Bool {
-        let filteredAttendees = SeatsData_.filter {
-            $0.seatRow == String(collectionView.tag + 1)
+        let seatsForRow = seats(forRowTag: collectionView.tag)
+        guard indexPath.row < seatsForRow.count else { return true }
+        let seatId = seatsForRow[indexPath.row].seatId
+        BasketDataManager.shared.basketItemsBySeatId.removeValue(forKey: seatId)
+        SeatsDataManager.shared.selectedSeatIds = [Int](selectedSeatsById.keys.sorted())
+        SeatsDataManager.shared.selectedSeatNumbers = selectedSeatsById.values.sorted()
+        if let screeningDateId = DatesDataManager.shared.selectedScreeningDateId {
+            updateSeatPayload(for: screeningDateId)
         }
-
-        let seatId = filteredAttendees[indexPath.row].seatId
-
-        seatsToBeReserved.removeValue(forKey: seatId!)
-
-        var string = ""
-        for seats in seatsToBeReserved.values {
-            string += seats + "-"
-        }
-
-        let seat = ["screeningDateId": screeningDateId!, "seat": string]
-
-        Seats.updateValue(seat as NSDictionary, forKey: screeningDateId!)
-
-        BasketData_.removeValue(forKey: seatId!)
 
         return true
     }

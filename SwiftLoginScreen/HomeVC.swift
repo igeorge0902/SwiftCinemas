@@ -55,7 +55,9 @@ class HomeVC: UIViewController, UIViewControllerTransitioningDelegate, HasAppSer
 
     override func viewDidLoad() {
         super.viewDidLoad()
+       
         injectAppServicesIfNeeded()
+        
         UIApplication.shared.isNetworkActivityIndicatorVisible = false
 
         imageView = UIImageView(frame: view.bounds)
@@ -65,7 +67,7 @@ class HomeVC: UIViewController, UIViewControllerTransitioningDelegate, HasAppSer
         setupTrendingSectionUI()
         setupTrendingGestures()
         fetchTrendingMovies(days: 10000)
-        MoviesData.addData()
+        MoviesDataManager.shared.warmImageCache()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -237,8 +239,18 @@ class HomeVC: UIViewController, UIViewControllerTransitioningDelegate, HasAppSer
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let data = try await self.appServices.mbooks.trendingMovies(limit: 5, days: days)
-                self.trendingMovies = self.parseTrendingMovies(from: data)
+                let movies = try await MoviesDataManager.shared.fetchTrending(limit: 5, days: days)
+                self.trendingMovies = movies.map {
+                    TrendingMovie(
+                        movieId: $0.movieId,
+                        name: $0.name,
+                        thumbnailPicture: "",
+                        largePicture: $0.largePicture,
+                        bookedTickets: 0,
+                        lastBookingTime: nil,
+                        descriptionText: $0.detail.isEmpty ? "Trending now." : $0.detail
+                    )
+                }
                 self.isLoadingTrending = false
                 self.trendingErrorMessage = nil
                 print("HomeVC.trending ok count=\(self.trendingMovies.count) ms=\(Int(Date().timeIntervalSince(started) * 1000))")
@@ -258,31 +270,6 @@ class HomeVC: UIViewController, UIViewControllerTransitioningDelegate, HasAppSer
         }
     }
 
-    private func parseTrendingMovies(from data: Data) -> [TrendingMovie] {
-        guard
-            let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-            let list = root["trendingMovies"] as? [[String: Any]]
-        else { return [] }
-
-        return list.map { row in
-            let name = (row["name"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-            let bookedTickets = row["bookedTickets"] as? Int ?? 0
-            let rawDesc = (row["description"] as? String ?? row["overview"] as? String ?? row["plot"] as? String ?? "")
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            let description = rawDesc.isEmpty
-                ? (bookedTickets > 0 ? "Popular pick with \(bookedTickets) ticket(s) recently booked." : "Trending now.")
-                : rawDesc
-            return TrendingMovie(
-                movieId: row["movieId"] as? Int ?? 0,
-                name: name.isEmpty ? "Untitled" : name,
-                thumbnailPicture: row["thumbnail_picture"] as? String ?? "",
-                largePicture: row["large_picture"] as? String ?? "",
-                bookedTickets: bookedTickets,
-                lastBookingTime: row["lastBookingTime"] as? String,
-                descriptionText: description
-            )
-        }
-    }
 
     private func updateTrendingStateUI() {
         if isLoadingTrending {
@@ -393,7 +380,7 @@ class HomeVC: UIViewController, UIViewControllerTransitioningDelegate, HasAppSer
     }
 
     @IBAction func basket(_: UIButton) {
-        guard BasketData_.count > 0 else {
+        guard !BasketDataManager.shared.basketItemsBySeatId.isEmpty else {
             UIAlertController.popUp(title: "Warning!", message: "No free seat(s) to be reserved!")
             return
         }
@@ -447,11 +434,9 @@ extension UIViewController {
             action = UIAlertAction(title: "OK", style: .default) { _ in
                 let user = UserDefaults.standard.value(forKey: "USERNAME")
                 Task { @MainActor in
-                    guard let app = UIApplication.shared.delegate as? AppDelegate,
-                          let userStr = user as? String else { return }
+                    guard let userStr = user as? String else { return }
                     do {
-                        let data = try await app.services.loginGateway.postActivation(deviceId: deviceId, user: userStr)
-                        print(String(data: data, encoding: .utf8) ?? "")
+                        try await AuthDataManager.shared.activateCurrentDevice(user: userStr)
                     } catch { print(error) }
                 }
             }

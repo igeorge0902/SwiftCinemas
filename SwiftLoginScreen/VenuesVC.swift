@@ -19,74 +19,33 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
     var selectVenues_picture: String!
     var imdb: String!
 
-    var mapView: MKMapView? = nil
-    var handleMapSearchDelegate: HandleMapSearch? = nil
+    // Old flow used mapViewPage global; keep equivalent as per-instance state.
+    var openedFromMapFlow: Bool = false
 
     deinit {
         adminPage = false
         print(#function, "\(self)")
-        PlacesData2_.removeAll()
-        PlacesData_.removeAll()
-    }
-
-    // local
-    var TableData: [datastruct] = .init()
-    var LocationData: [PlacesData] = .init()
-
-    struct datastruct: Equatable {
-        var venuesId: Int!
-        var name: String!
-        var address: String!
-        var venues_picture: String!
-        var screen_screenId: String!
-        var locationId: Int!
-        var image: UIImage?
-
-        init(add: NSDictionary) {
-            venuesId = (add["venuesId"] as! Int)
-            name = (add["name"] as! String)
-            address = (add["address"] as! String)
-            venues_picture = (add["venues_picture"] as! String)
-            screen_screenId = (add["screen_screenId"] as! String)
-            locationId = (add["locationId"] as! Int)
-        }
-
-        static func == (lhs: datastruct, rhs: datastruct) -> Bool {
-            lhs.name == rhs.name
+        // Keep map caches while MapViewController is alive; it owns lifecycle reset.
+        if !isMapFlow {
+            LocationsDataManager.shared.locationsForMapPicker.removeAll()
+            LocationsDataManager.shared.locationsToDisplay.removeAll()
         }
     }
+
+    var tableData: [VenueModel] = []
+
+    var mapView: MKMapView? = nil
+    var handleMapSearchDelegate: HandleMapSearch? = nil
 
     var tableView: UITableView!
     var detailsView: UIView!
     var detailsLabel: UILabel!
 
     override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
-        if segue.identifier == "goto_venues_details" {
-            let nextSegue = segue.destination as? VenuesDetailsVC
-            if let indexPath = tableView!.indexPathForSelectedRow {
-                let data = TableData[indexPath.row]
-                // let data_ = LocationData[indexPath.row]
-
-                // TODO: remove venues data, and use location data, instead
-                nextSegue?.selectVenues_picture = data.venues_picture
-                nextSegue?.selectVenueId = data.venuesId
-                nextSegue?.venueName = data.name
-                nextSegue?.selectAddress = data.address
-                nextSegue?.screen_screenId = data.screen_screenId
-                nextSegue?.locationId = data.locationId
-
-                nextSegue?.movieId = movieId
-                nextSegue?.movieName = movieName
-                nextSegue?.movieDetails = selectDetails
-                nextSegue?.selectLarge_picture = selectLarge_picture
-                nextSegue?.iMDB = imdb
-
-                /*
-                 nextSegue?.locationId = data_.locationId
-                 nextSegue?.selectVenues_picture = data_.thumbnail
-                 nextSegue?.venueName = data_.title
-                 */
-            }
+        if segue.identifier == "goto_venues_details",
+           let indexPath = tableView?.indexPathForSelectedRow,
+           indexPath.row < tableData.count {
+            VenuesDataManager.shared.selectedVenue = tableData[indexPath.row]
         }
     }
 
@@ -102,6 +61,14 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
     }
 
     override func viewWillAppear(_: Bool) {
+        if let selectedMovie = MoviesDataManager.shared.selectedMovie {
+            movieId = selectedMovie.movieId
+            movieName = selectedMovie.name
+            selectLarge_picture = selectedMovie.largePicture
+            selectDetails = selectedMovie.detail
+            imdb = selectedMovie.imdbUrl
+        }
+
         let btnNav = UIButton(frame: CGRect(x: 0, y: 25, width: view.frame.width / 2, height: 20))
         btnNav.backgroundColor = UIColor.black
         btnNav.setTitle("Back", for: UIControl.State())
@@ -112,11 +79,15 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
 
         if adminPage {
             addLocation()
-        } else if mapViewPage {
+        } else if isMapFlow {
             addLocation()
         } else {
             addData()
         }
+    }
+
+    private var isMapFlow: Bool {
+        openedFromMapFlow || LocationsDataManager.shared.isVenuesFromMapFlow
     }
 
     private func setupTableView() {
@@ -154,20 +125,10 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
     }
 
     func addData() {
-        let myString = String(movieId)
-
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let data = try await self.appServices.mbooks.venue(movieId: myString)
-                let json = try JSON(data: data)
-                if let list = json["venues"].object as? NSArray {
-                    for i in 0 ..< list.count {
-                        if let dataBlock = list[i] as? NSDictionary {
-                            self.TableData.append(datastruct(add: dataBlock))
-                        }
-                    }
-                }
+                self.tableData = try await VenuesDataManager.shared.fetchVenuesForMovie(movieId: String(self.movieId ?? 0))
                 self.tableView?.reloadData()
             } catch {
                 NSLog("VenuesVC.addData: %@", error.localizedDescription)
@@ -175,55 +136,40 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
         }
     }
 
-    func addLocalData() {
-        let myString = String(movieId)
+
+    func addLocation() {
+        if isMapFlow, !LocationsDataManager.shared.locationsToDisplay.isEmpty {
+            LocationsDataManager.shared.locationsForMapPicker = LocationsDataManager.shared.locationsToDisplay
+            tableView?.reloadData()
+            return
+        }
 
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let data = try await self.appServices.mbooks.venue(movieId: myString)
-                let json = try JSON(data: data)
-                if let list = json["locations"].object as? NSArray {
-                    for i in 0 ..< list.count {
-                        if let dataBlock = list[i] as? NSDictionary {
-                            if let artwork = PlacesData.fromJSON(dataBlock) {
-                                self.LocationData.append(artwork)
-                            }
-                        }
-                    }
+                let locations = try await LocationsDataManager.shared.fetchLocations()
+                LocationsDataManager.shared.locationsToDisplay = locations
+                if self.isMapFlow {
+                    LocationsDataManager.shared.locationsForMapPicker = locations
                 }
                 self.tableView?.reloadData()
             } catch {
-                NSLog("VenuesVC.addLocalData: %@", error.localizedDescription)
+                // Keep any existing in-memory map data as fallback to avoid empty modal.
+                if self.isMapFlow, !LocationsDataManager.shared.locationsToDisplay.isEmpty {
+                    LocationsDataManager.shared.locationsForMapPicker = LocationsDataManager.shared.locationsToDisplay
+                    self.tableView?.reloadData()
+                    return
+                }
+                NSLog("VenuesVC.addLocation: %@", error.localizedDescription)
             }
         }
     }
 
-    func addLocation() {
-        PlacesData_.removeAll()
-
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            do {
-                let data = try await self.appServices.mbooks.locations()
-                let json = try JSON(data: data)
-                if let list = json["locations"].object as? NSArray {
-                    for i in 0 ..< list.count {
-                        if let dataBlock = list[i] as? NSDictionary {
-                            if let location = PlacesData.fromJSON(dataBlock) {
-                                PlacesData_.append(location)
-                                if mapViewPage == true {
-                                    PlacesData2_.append(location)
-                                }
-                            }
-                        }
-                    }
-                }
-                self.tableView?.reloadData()
-            } catch {
-                NSLog("VenuesVC.addLocation: %@", error.localizedDescription)
-            }
+    private var mapFlowRows: [Location] {
+        if !LocationsDataManager.shared.locationsForMapPicker.isEmpty {
+            return LocationsDataManager.shared.locationsForMapPicker
         }
+        return LocationsDataManager.shared.locationsToDisplay
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -233,14 +179,14 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
             cell = UITableViewCell(style: UITableViewCell.CellStyle.value1, reuseIdentifier: "CELL")
         }
 
-        if adminPage || mapViewPage {
-            PlacesData_.sort { ($0.title ?? "") < ($1.title ?? "") }
-            PlacesData2_.sort { ($0.title ?? "") < ($1.title ?? "") }
+        if adminPage || isMapFlow {
+            LocationsDataManager.shared.locationsToDisplay.sort { ($0.title ?? "") < ($1.title ?? "") }
+            LocationsDataManager.shared.locationsForMapPicker.sort { ($0.title ?? "") < ($1.title ?? "") }
 
-            var data_: PlacesData? = if mapViewPage {
-                PlacesData2_[indexPath.row]
+            let data_: Location? = if isMapFlow {
+                mapFlowRows[indexPath.row]
             } else {
-                PlacesData_[indexPath.row]
+                LocationsDataManager.shared.locationsToDisplay[indexPath.row]
             }
 
             var s = ""
@@ -272,15 +218,15 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
             cell?.contentView.addSubview(btn)
 
             // TableData.sort { ($0.title ?? "") < ($1.title ?? "")}
-            let data = TableData[indexPath.row]
+            let data = tableData[indexPath.row]
 
             let myTextAttribute = [convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 13.0)!]
-            let detailText = NSMutableAttributedString(string: data.name!, attributes: convertToOptionalNSAttributedStringKeyDictionary(myTextAttribute))
+            let detailText = NSMutableAttributedString(string: data.name, attributes: convertToOptionalNSAttributedStringKeyDictionary(myTextAttribute))
 
             cell!.textLabel?.attributedText = detailText
             // cell!.detailTextLabel?.text = data.address!
 
-            let urlString = URLManager.image(data.venues_picture!)
+            let urlString = URLManager.image(data.venuesPicture)
 
             Task { @MainActor [weak self] in
                 guard let self else { return }
@@ -303,43 +249,34 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
 
     func tableView(_: UITableView, numberOfRowsInSection _: Int) -> Int {
         if adminPage {
-            PlacesData_.count
+            LocationsDataManager.shared.locationsToDisplay.count
 
-        } else if mapViewPage {
-            PlacesData2_.count
+        } else if isMapFlow {
+            mapFlowRows.count
         } else {
-            TableData.count
+            tableData.count
         }
     }
 
     func tableView(_: UITableView, didSelectRowAt indexPath: IndexPath) {
-        if adminPage, TableData.count == 0 {
-            addVenue = PlacesData_[indexPath.row].title!
-            NotificationCenter.default.post(name: NSNotification.Name(rawValue: "newScreenVenueSelected"), object: nil)
+        if adminPage, tableData.isEmpty {
+            let selectedVenue = LocationsDataManager.shared.locationsToDisplay[indexPath.row]
+            LocationsDataManager.shared.applySelection(selectedVenue, notificationName: "newScreenVenueSelected")
 
-        } else if mapViewPage {
-            addVenue = PlacesData_[indexPath.row].title!
-            NotificationCenter.default.post(name: NSNotification.Name(rawValue: "screeningVenueSelected"), object: nil)
-
-            let selectedItem = PlacesData_[indexPath.row].mapItem().placemark
-            //  mapview_!.removeAnnotations(mapview_!.annotations)
-            let annotation = MKPointAnnotation()
-            annotation.coordinate = selectedItem.coordinate
-            annotation.title = selectedItem.name
-
-            if let city = selectedItem.locality, let state = selectedItem.administrativeArea {
-                annotation.subtitle = "(city) (state)"
-            }
-            mapview_!.addAnnotation(annotation)
-            let span = MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-            let region = MKCoordinateRegion(center: selectedItem.coordinate, span: span)
-            mapview_!.setRegion(region, animated: true)
+        } else if isMapFlow {
+            let rows = mapFlowRows
+            guard indexPath.row < rows.count else { return }
+            let selectedVenue = rows[indexPath.row]
+            let placemark = MKPlacemark(coordinate: selectedVenue.coordinate)
+            handleMapSearchDelegate?.dropPinZoomIn(placemark: placemark)
+            LocationsDataManager.shared.applySelection(selectedVenue, notificationName: "screeningVenueSelected")
 
             dismiss(animated: true, completion: nil)
         } else {
-            let data = TableData[indexPath.row]
+            let data = tableData[indexPath.row]
+            VenuesDataManager.shared.selectedVenue = data
             // Update detailsView with the selected venue information
-            detailsLabel.text = "📍 Venue: \(data.name ?? "Unknown")\n🏠 Address: \(data.address ?? "N/A")"
+            detailsLabel.text = "📍 Venue: \(data.name)\n🏠 Address: \(data.address)"
 
             performSegue(withIdentifier: "goto_venues_details", sender: self)
         }

@@ -15,7 +15,9 @@ protocol HeaderProvider {
 /// Same session headers as ``GeneralRequestManager.dataTask`` for `https://…` hosts (`Ciphertext`, `X-Token`, `X-Device`).
 final class SessionHeaderProvider: HeaderProvider {
     func headers() -> [String: String] {
-        let xtoken = UserDefaults.standard.value(forKey: "X-Token") as? String ?? ""
+        let xtoken = SecureStore.get("X-Token")
+            ?? (UserDefaults.standard.value(forKey: "X-Token") as? String)
+            ?? ""
         return [
             "Ciphertext": xtoken,
             "X-Token": "client-secret",

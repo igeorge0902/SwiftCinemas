@@ -15,7 +15,6 @@ final class VenuesMigrationSegueEntryVC: UIViewController, HasAppServices {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        injectAppServicesIfNeeded()
     }
 
     override func viewWillAppear(_: Bool) {
@@ -26,7 +25,7 @@ final class VenuesMigrationSegueEntryVC: UIViewController, HasAppServices {
             return
         }
 
-        let input = VenuesInput.fromLegacyFlags(
+        let input = VenuesInput.fromManagerContext(
             movieId: movieId,
             movieName: movieName,
             selectLargePicture: selectLargePicture,
@@ -34,7 +33,7 @@ final class VenuesMigrationSegueEntryVC: UIViewController, HasAppServices {
             imdb: imdb
         )
 
-        let migrationVC = VenuesMigrationFactory.makeFromLegacyFlags(
+        let migrationVC = VenuesMigrationFactory.makeFromManagerContext(
             movieId: movieId,
             movieName: movieName,
             selectLargePicture: selectLargePicture,

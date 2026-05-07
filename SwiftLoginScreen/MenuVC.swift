@@ -117,22 +117,17 @@ class MenuVC: UIViewController, HasAppServices {
             guard let self else { return }
 
             do {
-                let data = try await self.appServices.loginGateway.getUser()
-                let json = try JSON(data: data)
+                let profile = try await AuthDataManager.shared.fetchUserProfile()
 
-                let user = json["user"].stringValue
-                let email = json["email"].stringValue
-                let profilePicture = json["profilePicture"].stringValue
-                
-                self.nameTextView.text = user.isEmpty
+                self.nameTextView.text = profile.username.isEmpty
                     ? "No logged-in user"
-                    : user
+                    : profile.username
 
-                self.xsrfCookieTextView.text = email.isEmpty
+                self.xsrfCookieTextView.text = profile.email.isEmpty
                     ? "No email"
-                    : email
+                    : profile.email
 
-                let urlString = URLManager.image(profilePicture)
+                let urlString = URLManager.image(profile.profilePicture)
 
                 let imagedata = try await self.appServices.images.getData(
                     urlString: urlString,
@@ -206,5 +201,7 @@ class MenuVC: UIViewController, HasAppServices {
         xsrfCookieTextView.text = "xsrf-cookie"
 
         UserDefaults.standard.removePersistentDomain(forName: Bundle.main.bundleIdentifier!)
+        SecureStore.remove("X-Token")
+        SecureStore.remove("JSESSIONID")
     }
 }

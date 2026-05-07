@@ -89,6 +89,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
         }
 
         checkRealm()
+        bootstrapDataManagers()
         requestNotificationPermission()
         requestLocationPermission()
         loadLocations()
@@ -230,7 +231,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
             }
         }
     }
-    
+
+    private func bootstrapDataManagers() {
+        let container = services
+        MoviesDataManager.shared.inject(appServices: container)
+        SeatsDataManager.shared.inject(appServices: container)
+        VenuesDataManager.shared.inject(appServices: container)
+        DatesDataManager.shared.inject(appServices: container)
+        LocationsDataManager.shared.inject(appServices: container)
+        AuthDataManager.shared.inject(appServices: container)
+        CheckoutDataManager.shared.inject(appServices: container)
+        BasketDataManager.shared.inject(appServices: container)
+        AdminDataManager.shared.inject(appServices: container)
+    }
+
     func setupFirebase() {
       //  let environment = Bundle.main.object(forInfoDictionaryKey: "ENVIRONMENT") as? String ?? "prod"
       //  let plistFileName = environment == "dev" ? "GoogleService-Info-Dev" : "GoogleService-Info-Prod"

@@ -45,7 +45,14 @@ class MovieDetailVC: UIViewController, UIViewControllerTransitioningDelegate, UI
     }
 
     override func viewWillAppear(_: Bool) {
-        injectAppServicesIfNeeded()
+
+        if let selectedMovie = MoviesDataManager.shared.selectedMovie {
+            movieId = selectedMovie.movieId
+            movieName = selectedMovie.name
+            selectLarge_picture = selectedMovie.largePicture
+            selectDetails = selectedMovie.detail
+            iMDB = selectedMovie.imdbUrl
+        }
 
         let btnNav = UIButton(frame: CGRect(x: 0, y: 25, width: view.frame.width / 2, height: 20))
         btnNav.backgroundColor = UIColor.black
@@ -137,33 +144,25 @@ class MovieDetailVC: UIViewController, UIViewControllerTransitioningDelegate, UI
     }
 
     override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
-        if segue.identifier == "goto_venues2" {
-            let nextSegue = segue.destination as? VenuesVC
-
-            nextSegue!.movieId = movieId
-            nextSegue!.movieName = movieName
-            nextSegue!.selectDetails = selectDetails
-            nextSegue!.selectLarge_picture = selectLarge_picture
-            nextSegue!.imdb = iMDB
+        if segue.identifier == "goto_venues2", movieId != nil {
+            MoviesDataManager.shared.selectedMovie = Movie(
+                movieId: movieId,
+                movieIdString: String(movieId),
+                name: movieName,
+                detail: selectDetails,
+                largePicture: selectLarge_picture,
+                imdbUrl: iMDB
+            )
         }
     }
 
     func addData() {
-        let index = iMDB.index(iMDB.startIndex, offsetBy: 26)
-        let mySubstring = String(iMDB[index...])
-
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let data = try await self.appServices.rapidMovieDatabase.imdbTitle(imdbId: mySubstring, realmCache: true)
-                let json = try JSON(data: data)
-                print(json)
-                if let responseText = json["Title"].string {
-                    self.nameTextView.text = responseText
-                }
-                if let responseText = json["Genre"].string {
-                    self.nameTextViewg.text = responseText
-                }
+                let metadata = try await MoviesDataManager.shared.fetchMovieMetadata(imdbURL: self.iMDB)
+                self.nameTextView.text = metadata.title
+                self.nameTextViewg.text = metadata.genre
             } catch {
                 NSLog("MovieDetailVC RapidAPI: %@", error.localizedDescription)
             }

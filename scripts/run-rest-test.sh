@@ -20,4 +20,3 @@ SWIFT_REST_BACKEND="$MODE" xcodebuild test \
   -scheme SwiftCinemas \
   -destination "$DESTINATION" \
   -only-testing:"$TEST_IDENTIFIER"
-

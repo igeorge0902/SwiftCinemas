@@ -7,33 +7,11 @@
 //
 //
 
-import CoreData
-import SwiftyJSON
 import UIKit
 
-var SelectScreeningDateText: String?
-var myDateString: [String.SubSequence]?
-var screeningDateId: String?
-var SelectMovieName: String?
-var SelectMoviePicture: String?
-var SelectVenueForMovie: String?
-var SelectVenueName: String?
-var numberOfRows: [String] = .init()
 class PopOverDates: UIViewController, UIPickerViewDelegate, UIPickerViewDataSource {
     deinit {
         print(#function, "\(self)")
-
-        /*
-         var filteredAttendees = SeatsData_.filter({
-             $0.seatRow == String(0)
-         })
-         */
-
-        for i in 0 ..< SeatsData_.count {
-            if !numberOfRows.contains(SeatsData_[i].seatRow) {
-                numberOfRows.append(SeatsData_[i].seatRow)
-            }
-        }
     }
 
     lazy var pickerView: UIPickerView = .init()
@@ -41,14 +19,20 @@ class PopOverDates: UIViewController, UIPickerViewDelegate, UIPickerViewDataSour
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        pickerView.frame = CGRect(x: 0, y: -(view.frame.height / 34), width: view.frame.width, height: view.frame.height / 4)
-        // pickerView.sizeToFit()
+        view.backgroundColor = .systemBackground
+        pickerView.frame = view.bounds.insetBy(dx: 0, dy: 8)
+        pickerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         pickerView.dataSource = self
         pickerView.delegate = self
         pickerView.showsSelectionIndicator = true
 
         view.addSubview(pickerView)
         pickerView.isHidden = false
+
+        if !DatesDataManager.shared.availableDates.isEmpty {
+            pickerView.selectRow(1, inComponent: 0, animated: false)
+            pickerView(pickerView, didSelectRow: 1, inComponent: 0)
+        }
     }
 
     override func viewWillAppear(_: Bool) {}
@@ -62,79 +46,32 @@ class PopOverDates: UIViewController, UIPickerViewDelegate, UIPickerViewDataSour
     }
 
     func pickerView(_: UIPickerView, numberOfRowsInComponent _: Int) -> Int {
-        ScreeningDates.count + 1
+        DatesDataManager.shared.availableDates.count + 1
     }
 
-    func pickerView(_: UIPickerView, attributedTitleForRow row: Int, forComponent _: Int) -> NSAttributedString? {
-        let titleData = "Available dates"
-        var myTitle: NSAttributedString!
-        let myTextAttribute = [NSAttributedString.Key.font: UIFont(name: "CourierNewPS-BoldMT", size: 14.0)!]
-
-        if row > 0 {
-            let myDateString_ = titleData
-            let date_ = Date.formatDate(dateString: String(myDateString_.first!))
-
-            myTitle = NSMutableAttributedString(string: String.formatDate(date: date_), attributes: myTextAttribute)
-
-        } else {
-            myTitle = NSMutableAttributedString(string: titleData, attributes: myTextAttribute)
+    func pickerView(_: UIPickerView, titleForRow row: Int, forComponent _: Int) -> String? {
+        if row == 0 {
+            return "Select a date"
         }
-
-        return myTitle
-    }
-
-    func pickerView(_: UIPickerView, viewForRow row: Int, forComponent _: Int, reusing view: UIView?) -> UIView {
-        var pickerLabel = view as! UILabel?
-        if view == nil { // if no label there yet
-            pickerLabel = UILabel()
-            // color the label's background
-            // let hue = CGFloat(row)/CGFloat(ScreeningDates.count)
-            // pickerLabel?.backgroundColor = UIColor(hue: hue, saturation: 1.0, brightness: 1.0, alpha: 1.0)
-        }
-
-        var myTitle: NSAttributedString!
-
-        if row > 0 {
-            let titleData = ScreeningDates[row - 1].screeningDate
-            let myDateString_ = titleData!.split(separator: ".")
-            let date_ = Date.formatDate(dateString: String(myDateString_.first!))
-
-            myTitle = NSAttributedString(string: String.formatDate(date: date_), attributes: convertToOptionalNSAttributedStringKeyDictionary([convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "CourierNewPS-BoldMT", size: 16.0)!, convertFromNSAttributedStringKey(NSAttributedString.Key.foregroundColor): UIColor.black]))
-
-            pickerLabel!.attributedText = myTitle
-            pickerLabel!.textAlignment = .center
-
-        } else {
-            let titleData = "Select date"
-            myTitle = NSAttributedString(string: titleData, attributes: convertToOptionalNSAttributedStringKeyDictionary([convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "CourierNewPS-BoldMT", size: 14.0)!, convertFromNSAttributedStringKey(NSAttributedString.Key.foregroundColor): UIColor.black]))
-
-            pickerLabel!.attributedText = myTitle
-            pickerLabel!.textAlignment = .left
-        }
-
-        return pickerLabel!
+        let titleData = DatesDataManager.shared.availableDates[row - 1].date
+        let myDateString_ = titleData.split(separator: ".")
+        let date_ = Date.formatDate(dateString: String(myDateString_.first!))
+        return String.formatDate(date: date_)
     }
 
     func pickerView(_: UIPickerView, didSelectRow row: Int, inComponent _: Int) {
+        guard !DatesDataManager.shared.availableDates.isEmpty else { return }
+
         if row == 0 {
             pickerView.selectRow(1, inComponent: 0, animated: true)
-            pickerView(pickerView, didSelectRow: 1, inComponent: 0)
+            return
         } else {
-            SelectScreeningDateText = ScreeningDates[row - 1].screeningDate
-            if ScreeningDates[row - 1].screeningDatesId != 0 {
-                //    SeatsData.addData(ScreeningDates[row].screeningDatesId)
-                screeningDateId = String(ScreeningDates[row - 1].screeningDatesId)
-                myDateString = SelectScreeningDateText!.split(separator: ".")
-            }
+            guard (row - 1) < DatesDataManager.shared.availableDates.count else { return }
+            let selectedDate = DatesDataManager.shared.availableDates[row - 1]
+            let selectedDateText = selectedDate.date
+            DatesDataManager.shared.selectedScreeningDateText = selectedDateText
+            DatesDataManager.shared.selectedScreeningDateId = selectedDate.screeningDateId
         }
-    }
-
-    func pickerView(_: UIPickerView, widthForComponent _: Int) -> CGFloat {
-        view.frame.width
-    }
-
-    func pickerView(_: UIPickerView, rowHeightForComponent _: Int) -> CGFloat {
-        view.frame.height / 3
     }
 
     override func didReceiveMemoryWarning() {
@@ -143,13 +80,3 @@ class PopOverDates: UIViewController, UIPickerViewDelegate, UIPickerViewDataSour
     }
 }
 
-// Helper function inserted by Swift 4.2 migrator.
-private func convertToOptionalNSAttributedStringKeyDictionary(_ input: [String: Any]?) -> [NSAttributedString.Key: Any]? {
-    guard let input else { return nil }
-    return Dictionary(uniqueKeysWithValues: input.map { key, value in (NSAttributedString.Key(rawValue: key), value) })
-}
-
-// Helper function inserted by Swift 4.2 migrator.
-private func convertFromNSAttributedStringKey(_ input: NSAttributedString.Key) -> String {
-    input.rawValue
-}

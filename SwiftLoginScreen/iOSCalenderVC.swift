@@ -26,7 +26,11 @@ class iOSCalendarVC: UIViewController, UITableViewDataSource, UITableViewDelegat
     var calendars: [EKCalendar]?
     var calendars_: [EKCalendar]?
 
-    lazy var datE = Date.formatDate(dateString: String(myDateString!.first!))
+    var selectedEventDate: Date {
+        let selectedDateText = DatesDataManager.shared.selectedScreeningDateText ?? ""
+        let normalized = selectedDateText.split(separator: ".").first.map(String.init) ?? ""
+        return normalized.isEmpty ? Date() : Date.formatDate(dateString: normalized)
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -72,14 +76,17 @@ class iOSCalendarVC: UIViewController, UITableViewDataSource, UITableViewDelegat
 
     @objc func calendar( /* _ sender: UIButton */ ) {
         event = EKEvent(eventStore: eventStore)
+        let movieName = MoviesDataManager.shared.selectedMovie?.name ?? "Movie"
+        let venueAddress = VenuesDataManager.shared.selectedVenue?.address
+        let datE = selectedEventDate
 
-        event?.title = SelectMovieName!
+        event?.title = movieName
         event?.startDate = datE
         event?.endDate = datE.addingTimeInterval(7200)
         event?.notes = "This is a note of creating event"
         event?.calendar = eventStore.defaultCalendarForNewEvents
         event?.addAlarm(EKAlarm(relativeOffset: 60.0))
-        event?.location = SelectVenueForMovie
+        event?.location = venueAddress
         event?.calendar = (calendars_?[(selectCalendar?.row)!])!
 
         do {
@@ -91,7 +98,7 @@ class iOSCalendarVC: UIViewController, UITableViewDataSource, UITableViewDelegat
         } catch {
             print("An error occurred")
         }
-        showAlert(SelectMovieName!, message: "Event added to calendar: ".appending(String.formatDate(date: datE)))
+        showAlert(movieName, message: "Event added to calendar: ".appending(String.formatDate(date: datE)))
     }
 
     // Helper for showing an alert

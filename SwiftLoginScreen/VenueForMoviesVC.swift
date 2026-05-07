@@ -6,10 +6,8 @@
 //  Copyright © 2016 George Gaspar. All rights reserved.
 //
 
-import SwiftyJSON
 import UIKit
 
-var ScreeningDates: [DatesData] = .init()
 class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UISearchResultsUpdating, UISearchBarDelegate, HasAppServices {
     var appServices: AppServices!
     deinit {
@@ -17,55 +15,31 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
     }
 
     var venuesId: Int!
-    var selectDetails: String!
     var venues_picture: String!
     var locationId: Int!
 
-    var TableData: [MoviesData] = .init()
+    var tableData: [VenueMovieSelection] = []
     var searchController: UISearchController!
     var shouldShowSearchResults = false
-
-    var running = false
-
-    // local
-    var VenueData: [datastruct] = .init()
-
-    struct datastruct {
-        var venuesId: Int!
-        var name: String!
-        var address: String!
-        var venues_picture: String!
-        var screen_screenId: String!
-        var image: UIImage?
-
-        init(add: NSDictionary) {
-            venuesId = (add["venuesId"] as! Int)
-            name = (add["name"] as! String)
-            address = (add["address"] as! String)
-            venues_picture = (add["venues_picture"] as! String)
-            screen_screenId = (add["screen_screenId"] as! String)
-        }
-    }
 
     var refreshControl: UIRefreshControl!
     var collectionView: UICollectionView!
 
     override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
         if segue.identifier == "goto_venues_details2" {
-            let nextSegue = segue.destination as? VenuesDetailsVC
             if let indexPath = collectionView.indexPathsForSelectedItems?.first {
-                let data = TableData[indexPath.row]
-                let venueData = VenueData[indexPath.row]
+                let selection = tableData[indexPath.row]
 
-                nextSegue?.selectVenues_picture = venueData.venues_picture
-                nextSegue?.selectVenueId = venueData.venuesId
-                nextSegue?.venueName = venueData.name
-                nextSegue?.movieId = data.movieId
-                nextSegue?.movieName = data.name
-                nextSegue?.movieDetails = data.detail
-                nextSegue?.selectLarge_picture = data.large_picture
-                nextSegue?.iMDB = data.imdb
-                nextSegue?.locationId = locationId
+                MoviesDataManager.shared.selectedMovie = selection.movie
+                VenuesDataManager.shared.selectedVenue = Venue(
+                    venuesId: selection.venue.venuesId,
+                    name: selection.venue.name,
+                    address: selection.venue.address,
+                    venuesPicture: selection.venue.venuesPicture,
+                    screenId: selection.venue.screenId,
+                    locationId: locationId
+                )
+                LocationsDataManager.shared.selectedLocationId = locationId
             }
         }
     }
@@ -118,6 +92,9 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
     }
 
     override func viewWillAppear(_: Bool) {
+        if locationId == nil {
+            locationId = LocationsDataManager.shared.selectedLocationId
+        }
         addData()
         // self.addDatesData()
     }
@@ -127,31 +104,12 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
     }
 
     func addData() {
-        TableData.removeAll()
-        VenueData.removeAll()
+        tableData.removeAll()
 
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let data = try await self.appServices.mbooks.venueMovies(locationId: String(self.locationId))
-                let json = try JSON(data: data)
-
-                if let list = json["movies"].object as? NSArray {
-                    for i in 0 ..< list.count {
-                        if let dataBlock = list[i] as? NSDictionary {
-                            self.TableData.append(MoviesData(add: dataBlock))
-                        }
-                    }
-                }
-
-                if let list = json["venue"].object as? NSArray {
-                    for i in 0 ..< list.count {
-                        if let dataBlock = list[i] as? NSDictionary {
-                            self.VenueData.append(datastruct(add: dataBlock))
-                        }
-                    }
-                }
-
+                self.tableData = try await VenuesDataManager.shared.fetchVenueMovieSelections(locationId: String(self.locationId ?? 0))
                 self.collectionView.reloadData()
             } catch {
                 NSLog("VenueForMoviesVC addData: %@", error.localizedDescription)
@@ -159,24 +117,6 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
         }
     }
 
-    func addDatesData() {
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            do {
-                let data = try await self.appServices.mbooks.dates(locationId: "2", movieId: "1002")
-                let json = try JSON(data: data)
-                if let list = json["dates"].object as? NSArray {
-                    for i in 0 ..< list.count {
-                        if let dataBlock = list[i] as? NSDictionary {
-                            ScreeningDates.append(DatesData(add: dataBlock))
-                        }
-                    }
-                }
-            } catch {
-                NSLog("addDatesData: %@", error.localizedDescription)
-            }
-        }
-    }
 
     func searchBarTextDidBeginEditing(_: UISearchBar) {
         shouldShowSearchResults = true
@@ -198,24 +138,24 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
     }
 
     func updateSearchResults(for searchController: UISearchController) {
-        let searchString = searchController.searchBar.text
+        _ = searchController.searchBar.text
 
         // TODO: call API for fulltextSearch
     }
 
     func collectionView(_: UICollectionView, numberOfItemsInSection _: Int) -> Int {
-        TableData.count
+        tableData.count
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CELL", for: indexPath) as! MovieCollectionViewCell
 
-        let data = TableData[indexPath.row]
+        let data = tableData[indexPath.row].movie
 
         // Add text into the cell
         cell.textLabel.text = data.name
 
-        let urlString = URLManager.image(data.large_picture ?? "")
+        let urlString = URLManager.image(data.largePicture)
 
         Task { @MainActor [weak self] in
             guard let self else { return }

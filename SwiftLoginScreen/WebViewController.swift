@@ -72,6 +72,7 @@ class WebViewController: UIViewController, WKUIDelegate, WKNavigationDelegate {
                 if cookie.name == "X-Token" {
                     let prefs = UserDefaults.standard
                     prefs.setValue(cookie.value, forKey: "X-Token")
+                    SecureStore.set(cookie.value, for: "X-Token")
                 }
             }
 

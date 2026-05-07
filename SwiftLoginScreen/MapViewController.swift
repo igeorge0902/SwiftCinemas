@@ -7,24 +7,16 @@
 //
 
 import MapKit
-import SwiftyJSON
 import UIKit
-import UserNotifications
 
-var PlacesData_: [PlacesData] = .init()
-var PlacesData2_: [PlacesData] = .init()
-var mapViewPage: Bool = false
-var mapview_: MKMapView?
 
-protocol HandleMapSearch_ {
-    func dropPinZoomIn(placemark: MKPlacemark)
-}
-
-class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDelegate, UIViewControllerTransitioningDelegate, UIPopoverPresentationControllerDelegate, HasAppServices {
+class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDelegate, UIViewControllerTransitioningDelegate, UIPopoverPresentationControllerDelegate, HasAppServices, HandleMapSearch {
     var appServices: AppServices!
     deinit {
-        PlacesData_.removeAll()
-        mapViewPage = false
+        LocationsDataManager.shared.locationsToDisplay = []
+        LocationsDataManager.shared.locationsForMapPicker = []
+        LocationsDataManager.shared.isVenuesFromMapFlow = false
+        LocationsDataManager.shared.isMapFromVenueDetails = false
         print(#function, "\(self)")
     }
 
@@ -33,8 +25,7 @@ class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerD
     var locationManager: CLLocationManager!
     var locationId_: Int!
     var selectVenueId: Int!
-    var map2: Bool?
-    var selectedPin: MKPlacemark? = nil
+    var map2: Bool = false
 
     @IBOutlet var mapView: MKMapView!
 
@@ -43,14 +34,16 @@ class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerD
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        injectAppServicesIfNeeded()
+        if selectVenueId == nil {
+            selectVenueId = VenuesDataManager.shared.selectedVenue?.venuesId
+        }
 
-        mapViewPage = true
+        LocationsDataManager.shared.isVenuesFromMapFlow = true
         locationManager = CLLocationManager()
         locationManager.requestWhenInUseAuthorization()
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         locationManager.delegate = self
-        mapview_ = mapView
+        LocationsDataManager.shared.activeMapView = mapView
 
         // user activated automatic authorization info mode
         let status = CLLocationManager.authorizationStatus()
@@ -70,7 +63,7 @@ class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerD
         mapView.delegate = self
         mapView.showsUserLocation = true
         mapView.mapType = MKMapType.standard
-        mapView.userTrackingMode = .follow
+        mapView.userTrackingMode = LocationsDataManager.shared.isMapFromVenueDetails ? .none : .follow
         // mapView.userTrackingMode = MKUserTrackingMode(rawValue: 2)!
 
         mapView.showsScale = true
@@ -100,28 +93,35 @@ class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerD
         super.viewWillAppear(true)
 
         addData()
-        mapView.addAnnotations(PlacesData_)
+        mapView.addAnnotations(LocationsDataManager.shared.locationsToDisplay)
     }
 
     override func viewDidAppear(_: Bool) {
         super.viewDidAppear(true)
 
+        if LocationsDataManager.shared.isMapFromVenueDetails {
+            return
+        }
+
         let location = locationManager.location
-        centerMapOnLocation(location!)
-        mapView.centerCoordinate = location!.coordinate
+        if let location {
+            centerMapOnLocation(location)
+            mapView.centerCoordinate = location.coordinate
+        }
     }
 
-    // instantiate Artwork class
-    var artworks = [PlacesData]()
 
     @objc func navigateBack() {
         dismiss(animated: true, completion: nil)
     }
 
     @objc func listVenues() {
-        mapViewPage = true
+        LocationsDataManager.shared.isVenuesFromMapFlow = true
         DispatchQueue.main.async {
             let popOver = VenuesVC()
+            popOver.openedFromMapFlow = true
+            popOver.mapView = self.mapView
+            popOver.handleMapSearchDelegate = self
             popOver.modalPresentationStyle = UIModalPresentationStyle.popover
             popOver.preferredContentSize = CGSize(width: self.view.frame.width * 0.90, height: self.view.frame.height / 2)
 
@@ -145,46 +145,46 @@ class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerD
         }
     }
 
+
     func addData() {
         Task { @MainActor [weak self] in
             guard let self else { return }
+            let mgr = LocationsDataManager.shared
             do {
-                let data: Data
-                if self.selectVenueId == nil {
-                    data = try await self.appServices.mbooks.locations()
+                // Load the relevant location(s)
+                if let venueId = self.selectVenueId ?? mgr.selectedVenueId {
+                    mgr.locationsToDisplay = [try await mgr.fetchLocationForVenue(venuesId: String(venueId))]
                 } else {
-                    data = try await self.appServices.mbooks.locationsVenue(venuesId: String(self.selectVenueId!))
-                }
-                let json = try JSON(data: data)
-
-                if let list = json["locations"].object as? NSArray {
-                    for i in 0 ..< list.count {
-                        if let dataBlock = list[i] as? NSDictionary {
-                            if let artwork = PlacesData.fromJSON(dataBlock) {
-                                PlacesData_.append(artwork)
-                            }
-                        }
-                    }
-
-                } else {
-                    let locationId = json["locationId"].int
-                    let formatted_address = json["formatted_address"].string
-                    let name = json["name"].string
-                    let latitude = json["latitude"].rawValue
-                    let longitude = json["longitude"].rawValue
-
-                    let venuePlaceData: NSDictionary = ["locationId": locationId!, "formatted_address": formatted_address!, "name": name!, "latitude": latitude, "longitude": longitude]
-
-                    if let artwork = PlacesData.fromJSON(venuePlaceData) {
-                        PlacesData_.append(artwork)
-                    }
+                    let all = try await mgr.fetchLocations()
+                    mgr.locationsToDisplay = mgr.isMapFromVenueDetails ? all.filter { $0.locationId == mgr.selectedLocationId } : all
                 }
 
-                self.mapView.addAnnotations(PlacesData_)
+                if mgr.isVenuesFromMapFlow {
+                    mgr.locationsForMapPicker = mgr.locationsToDisplay
+                }
+
+                // Update pins
+                mapView.removeAnnotations(mapView.annotations.filter { !($0 is MKUserLocation) })
+                mapView.addAnnotations(mgr.locationsToDisplay)
+
+                // Focus on venue when coming from details
+                if mgr.isMapFromVenueDetails, let pin = mgr.locationsToDisplay.first {
+                    mapView.setRegion(MKCoordinateRegion(
+                        center: pin.coordinate,
+                        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                    ), animated: true)
+                    mapView.selectAnnotation(pin, animated: true)
+                }
             } catch {
                 NSLog("MapViewController addData: %@", error.localizedDescription)
             }
         }
+    }
+
+    func dropPinZoomIn(placemark: MKPlacemark) {
+        let span = MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+        let region = MKCoordinateRegion(center: placemark.coordinate, span: span)
+        mapView.setRegion(region, animated: true)
     }
 
     func centerMapOnLocation(_ location: CLLocation) {
@@ -194,7 +194,7 @@ class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerD
     }
 
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
-        if let annotation = annotation as? PlacesData {
+        if let annotation = annotation as? Location {
             let identifier = "pin"
             var view: MKPinAnnotationView
 
@@ -232,7 +232,7 @@ class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerD
                  button.addTarget(self, action:#selector(self.showActionSheetTapped), forControlEvents: UIControlEvents.TouchUpInside)
                  */
 
-                if map2 == false {
+                if !LocationsDataManager.shared.isMapFromVenueDetails {
                     let infoButton = UIButton() as UIView
 
                     infoButton.frame.size.width = 44
@@ -261,10 +261,11 @@ class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerD
             // Fallback on earlier versions
         }
 
-        if map2 == false {
+        if !LocationsDataManager.shared.isMapFromVenueDetails {
             if control == view.leftCalloutAccessoryView {
-                let location = view.annotation as! PlacesData
+                let location = view.annotation as! Location
                 locationId_ = location.locationId
+                LocationsDataManager.shared.selectedLocationId = location.locationId
                 control.isHighlighted = true
                 control.isSelected = true
                 showActionSheetTapped()
@@ -272,7 +273,7 @@ class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerD
         }
 
         if control == view.rightCalloutAccessoryView {
-            let location = view.annotation as! PlacesData
+            let location = view.annotation as! Location
             let launchOptions = [MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving]
             location.mapItem().openInMaps(launchOptions: launchOptions)
         }
@@ -310,9 +311,7 @@ class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerD
 
     override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
         if segue.identifier == "goto_venues_for_movies" {
-            let nextSegue = segue.destination as? VenueForMoviesVC
-
-            nextSegue!.locationId = locationId_
+            LocationsDataManager.shared.selectedLocationId = locationId_
         }
     }
 
@@ -364,20 +363,4 @@ class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerD
         // Return no adaptive presentation style, use default presentation behaviour
         .none
     }
-
-    // MARK: - location manager to authorize user location for Maps app
-
-    //  var locationManager = CLLocationManager()
-    //  func checkLocationAuthorizationStatus() {
-    //    if CLLocationManager.authorizationStatus() == .AuthorizedWhenInUse {
-    //      mapView.showsUserLocation = true
-    //    } else {
-    //      locationManager.requestWhenInUseAuthorization()
-    //    }
-    //  }
-    //
-    //  override func viewDidAppear(animated: Bool) {
-    //    super.viewDidAppear(animated)
-    //    checkLocationAuthorizationStatus()
-    //  }
 }

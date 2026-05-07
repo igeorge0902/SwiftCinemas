@@ -111,7 +111,7 @@ final class APIClient: APIClientProtocol {
             }
             return data
 
-        case 401:
+        case 401, 403:
             throw AppError.authRequired
 
         case 300:

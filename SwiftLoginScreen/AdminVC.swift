@@ -7,11 +7,7 @@
 //
 
 import Foundation
-import SwiftyJSON
 import UIKit
-
-// data modell for adding new screen
-var ScreenData_: [ScreenData] = .init()
 
 var adminPage = false
 var adminUpdatePage = false
@@ -121,21 +117,15 @@ class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIVi
             "category": category_ as String,
         ]
 
-        ScreenData_.removeAll()
-
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let responseData = try await self.appServices.mbooks.adminAddScreen(body: testdata)
-                let json = try JSON(data: responseData)
-                if let dataBlock = json.object as? NSDictionary {
-                    ScreenData_.append(ScreenData(add: dataBlock))
-                }
-                if ScreenData_[0].ScreeningId.contains("Error") {
+                let screenResult = try await AdminDataManager.shared.addScreen(body: testdata)
+                if screenResult.screeningId.contains("Error") {
                     self.presentAlert(withTitle: "Error:", message: "Duplicate ScreeningId: \(ScreeningID_)")
 
                 } else {
-                    self.presentAlert(withTitle: "Info:", message: "New screen added:, Screen: \(ScreenData_[0].movie!)")
+                    self.presentAlert(withTitle: "Info:", message: "New screen added:, Screen: \(screenResult.movie)")
                 }
             } catch {
                 NSLog("addNewScreen: %@", error.localizedDescription)

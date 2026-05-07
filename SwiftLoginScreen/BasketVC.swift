@@ -8,15 +8,10 @@
 
 import BraintreeDropIn
 import Foundation
-import SwiftyJSON
 import UIKit
 
 // import FacebookCore
 
-/**
- Stores BasketData objects representing basket items.
- */
-var BasketData_ = [Int: BasketData]()
 class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, HasAppServices {
     var appServices: AppServices!
     deinit {
@@ -25,18 +20,11 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
     }
 
     var collectionView: UICollectionView!
-    lazy var token = "sandbox_dpdzm97y_j3ndqpzrhy4gp2p7"
-
-    var ResponseText: String?
-    var ResponseCode: String?
-    var AuthCode: String?
-    var Status: String?
-    var Amount: String?
-    var TaxAmount: String?
-    var movieName: String?
     var clientToken: String?
 
-    lazy var values = [BasketData](BasketData_.values.sorted { ($0.movie_name ?? "") < ($1.movie_name ?? "") })
+    var values: [BasketItem] {
+        [BasketItem](BasketDataManager.shared.basketItemsBySeatId.values.sorted { $0.movieName < $1.movieName })
+    }
     lazy var layout = UICollectionViewFlowLayout()
 
     override func viewDidLoad() {
@@ -87,8 +75,8 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
     }
 
     func collectionView(_: UICollectionView, numberOfItemsInSection _: Int) -> Int {
-        if BasketData_.count > 0 {
-            return BasketData_.count
+        if !BasketDataManager.shared.basketItemsBySeatId.isEmpty {
+            return BasketDataManager.shared.basketItemsBySeatId.count
         }
 
         return 0
@@ -109,57 +97,29 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         //   let cell = collectionView.cellForItem(at: indexPath)
 
-        let seatId = values[indexPath.row].seatId!
-        let seatData = [NSDictionary](Seats.values)
-        let seatNr = values[indexPath.row].seats_seatNumber
+        let seatId = values[indexPath.row].seatId
+        let seatNr = values[indexPath.row].seatNumber
         let screeningDateId = values[indexPath.row].screeningDateId
 
-        for item in seatData {
-            _ = item.contains { _, value -> Bool in
-
-                if (value as! String) == screeningDateId {
-                    for (keys, values) in item {
-                        if (keys as! String) == "seat" {
-                            if (values as! String).contains(seatNr! + "-") {
-                                let str = (values as AnyObject).replacingOccurrences(of: seatNr! + "-", with: "")
-
-                                let seat = ["screeningDateId": screeningDateId, "seat": str]
-
-                                Seats.updateValue(seat as NSDictionary, forKey: screeningDateId!)
-
-                                let seatDatas = [NSDictionary](Seats.values)
-                                for item in seatDatas {
-                                    _ = item.contains { _, value -> Bool in
-                                        for (keys, values) in item {
-                                            if (keys as! String) == "seat" {
-                                                if !(values as! String).contains("-") {
-                                                    Seats.removeValue(forKey: value as! String)
-                                                }
-                                            }
-                                        }
-                                        return true
-                                    }
-                                }
-                            }
-
-                            BasketData_.removeValue(forKey: seatId)
-                            return true
-                        }
-                    }
-                }
-
-                return false
+        if let current = BasketDataManager.shared.seatsToReservePayloadByScreening[screeningDateId] {
+            let updated = current.replacingOccurrences(of: seatNr + "-", with: "")
+            if updated.isEmpty {
+                BasketDataManager.shared.seatsToReservePayloadByScreening.removeValue(forKey: screeningDateId)
+            } else {
+                BasketDataManager.shared.seatsToReservePayloadByScreening[screeningDateId] = updated
             }
         }
-        seatsToBeReserved.removeValue(forKey: seatId)
-        values.remove(at: indexPath.row)
+
+        BasketDataManager.shared.basketItemsBySeatId.removeValue(forKey: seatId)
+        SeatsDataManager.shared.selectedSeatIds.removeAll { $0 == seatId }
+        SeatsDataManager.shared.selectedSeatNumbers.removeAll { $0 == seatNr }
         collectionView.reloadData()
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "FeedCell", for: indexPath) as! FeedCells
 
-        cell.textLabel?.text = values[indexPath.row].movie_name
+        cell.textLabel?.text = values[indexPath.row].movieName
         cell.textLabel?.numberOfLines = 2
         cell.textLabel?.translatesAutoresizingMaskIntoConstraints = false
 
@@ -168,7 +128,7 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
 
         let title = NSMutableAttributedString(string: (cell.textLabel?.text!)!, attributes: convertToOptionalNSAttributedStringKeyDictionary([convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 14.0)!]))
 
-        title.append(NSAttributedString(string: "\n\(values[indexPath.row].venue_name!)", attributes: convertToOptionalNSAttributedStringKeyDictionary([convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 12.0)!, convertFromNSAttributedStringKey(NSAttributedString.Key.foregroundColor): UIColor(red: 155 / 255, green: 161 / 255, blue: 171 / 255, alpha: 1)])))
+        title.append(NSAttributedString(string: "\n\(values[indexPath.row].venueName)", attributes: convertToOptionalNSAttributedStringKeyDictionary([convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 12.0)!, convertFromNSAttributedStringKey(NSAttributedString.Key.foregroundColor): UIColor(red: 155 / 255, green: 161 / 255, blue: 171 / 255, alpha: 1)])))
 
         title.addAttribute(NSAttributedString.Key.paragraphStyle, value: paragrapStyle, range: NSMakeRange(0, title.string.count))
 
@@ -189,10 +149,10 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
              }
          }
          */
-        let urlString = values[indexPath.row].movie_picture
+        let urlString = values[indexPath.row].moviePicture
 
         Task { @MainActor [weak self] in
-            guard let self, let urlString else { return }
+            guard let self else { return }
             do {
                 let data = try await self.appServices.images.getData(urlString: urlString, realmCache: true)
                 let image = UIImage(data: data)
@@ -202,7 +162,7 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
             }
         }
 
-        let text = NSMutableAttributedString(string: "Ticket details: \n Seat Row: \(values[indexPath.row].seats_seatRow!), \n Seat Nr: \(values[indexPath.row].seats_seatNumber!), \nDate of Screening: \n\(values[indexPath.row].screening_date!)", attributes: convertToOptionalNSAttributedStringKeyDictionary([convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 14.0)!]))
+        let text = NSMutableAttributedString(string: "Ticket details: \n Seat Row: \(values[indexPath.row].seatRow), \n Seat Nr: \(values[indexPath.row].seatNumber), \nDate of Screening: \n\(values[indexPath.row].screeningDateText)", attributes: convertToOptionalNSAttributedStringKeyDictionary([convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 14.0)!]))
 
         cell.statusText?.attributedText = text
 
@@ -217,7 +177,7 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
      @return
      */
     @objc func book() {
-        if BasketData_.count < 1 {
+        if BasketDataManager.shared.basketItemsBySeatId.isEmpty {
             presentAlert(withTitle: "Warning!", message: "Select free seat(s) first!")
 
         } else {
@@ -230,11 +190,9 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let data = try await self.appServices.loginGateway.getCheckOut()
-                let json = try JSON(data: data)
-                guard let token = json["clientToken"].string else { return }
-                self.clientToken = token
-                self.showDropIn(clientTokenOrTokenizationKey: token)
+                let token = try await CheckoutDataManager.shared.fetchClientToken()
+                self.clientToken = token.clientToken
+                self.showDropIn(clientTokenOrTokenizationKey: token.clientToken)
             } catch {
                 NSLog("getClientToken: %@", error.localizedDescription)
             }
@@ -267,80 +225,40 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
     }
 
     func postNonceToServer(_ paymentMethodNonce: String) {
-        let seatData = [NSDictionary](Seats.values)
-        let testdata: NSDictionary = ["seatsToBeReserved": seatData]
-        let test: Data = try! JSONSerialization.data(withJSONObject: testdata, options: [])
-        let data = NSString(data: test, encoding: String.Encoding.utf8.rawValue)! as String
-        let time = zeroTime(0).getCurrentMillis()
-        let hmacSHA512 = CryptoJS.hmacSHA512()
-        // Create a clean alpha-numeric (length shall match the specs of BrainTree API) orderId - invoice nr - as the hash result of current time and paymentMethodNonce.
-        let orderId: NSString = hmacSHA512.hmac(String(time), secret: paymentMethodNonce as String) as NSString
-        // post data. The server will use this data to reproduce the hash
-        // when saving nonce to vault then send the current time as X-MICRO-TIME header
-        let post: NSString = "payment_method_nonce=\(paymentMethodNonce)&seatsToBeReserved=\(data)&orderId=\(time)" as NSString
-        let postData: Data = post.data(using: String.Encoding.ascii.rawValue)!
-
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let responseData = try await self.appServices.loginGateway.postCheckOut(body: postData)
-                let json = try JSON(data: responseData)
+                let orderId = String(zeroTime(0).getCurrentMillis())
+                let seatsPayload = try BasketDataManager.shared.makeSeatsToBeReservedPayload()
+                let result = try await CheckoutDataManager.shared.checkout(
+                    paymentMethodNonce: paymentMethodNonce,
+                    orderId: orderId,
+                    seatsToBeReserved: seatsPayload
+                )
 
-                if let list = json["seatsforscreen"].object as? NSArray {
-                    SeatsData_.removeAll()
-                    for i in 0 ..< list.count {
-                        if let dataBlock = list[i] as? NSDictionary {
-                            SeatsData_.append(SeatsData(add: dataBlock))
-                        }
-                    }
-                }
-                if let list = json["tickets"].object as? NSArray {
-                    print(json)
-                    for i in 0 ..< list.count {
-                        if let dataBlock = list[i] as? NSDictionary {
-                            let ticketId = "ticketId_" + String(i)
-                            TicketsData_.append(TicketsData(add: dataBlock))
-                            tickets.updateValue(String(TicketsData_[i].ticketId), forKey: ticketId)
-                        }
-                    }
-                }
-                if let responseText = json["ResponseText"].string {
-                    // success case
-                    if responseText == "hello" {
-                        // let ResponseCode = json["ResponseCode"].string
-                        // let AuthCode = json["AuthCode"].string
-                        let Status = json["Status"].string
-                        let Amount = json["Amount"].rawValue
-                        let TaxAmount = json["TaxAmount"].rawValue
+                SeatsDataManager.shared.allSeats = result.reservedSeats
 
-                        self.presentAlert(withTitle: "Payment info:", message: "ResponseText: \(responseText), Status: \(Status!), Amount: \(Amount), TaxAmount: \(TaxAmount), Movie name: \(TicketsData_[0].movie_name!), \(tickets.minimalDescrption)")
+                if result.isSuccess {
+                    let ticketSummary = result.tickets.map(\.seatNumber).minimalDescrption
+                    self.presentAlert(
+                        withTitle: "Payment info:",
+                        message: "ResponseText: \(result.responseText ?? "success"), Status: \(result.status ?? "success"), Amount: \(result.amount ?? ""), TaxAmount: \(result.taxAmount ?? ""), Seats: \(ticketSummary)"
+                    )
 
-                        TicketsData_.removeAll()
-                        tickets.removeAll()
-                        Seats.removeAll()
-                        BasketData_.removeAll()
-                        // updates seats state if reserved
-                        self.collectionView.reloadData()
-                    }
-
-                } else if let responseText = json["Error"].string {
-                    // error case
-                    print(json)
-                    if let list = json["failedTickets"].object as? NSArray {
-                        for i in 0 ..< list.count {
-                            if let dataBlock = list[i] as? NSDictionary {
-                                TicketsData_.append(TicketsData(add: dataBlock))
-                            }
-                        }
-                    }
-                    let Status = json["Success"].string!
-                    self.presentAlert(withTitle: "Booking failed with payment info:", message: "Failed tickets for movie: \(TicketsData_[0].movie_name!), seats_seatNumber: \(TicketsData_[0].seats_seatNumber!), ResponseText: \(responseText), Status: \(Status))")
-                }
-
-                else if let responseText = json["Error with Transaction"].string {
-                    // error case
-                    print(json)
-                    self.presentAlert(withTitle: "Booking failed with payment info:", message: "Payment error: \(responseText)")
+                    BasketDataManager.shared.resetNavigationContext()
+                    SeatsDataManager.shared.resetNavigationContext()
+                    DatesDataManager.shared.resetNavigationContext()
+                    self.collectionView.reloadData()
+                } else if let failedTicket = result.failedTickets.first {
+                    self.presentAlert(
+                        withTitle: "Booking failed with payment info:",
+                        message: "Failed tickets for movie: \(failedTicket.movieName), seats_seatNumber: \(failedTicket.seatNumber), ResponseText: \(result.errorMessage ?? "Payment failed")"
+                    )
+                } else {
+                    self.presentAlert(
+                        withTitle: "Booking failed with payment info:",
+                        message: "Payment error: \(result.errorMessage ?? "Unknown error")"
+                    )
                 }
             } catch {
                 NSLog("postNonceToServer: %@", error.localizedDescription)

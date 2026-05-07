@@ -6,14 +6,14 @@
 //  Copyright © 2016 George Gaspar. All rights reserved.
 //
 
-import AVFoundation
-import SwiftyJSON
 import UIKit
 
 // data modell for updating Screen
-var ScreenData_2: [Admin_ScreenData] = .init()
+var ScreenData_2: [AdminScreeningModel] {
+    get { AdminScreeningsDataManager.shared.screeningsForAdminUpdate }
+    set { AdminScreeningsDataManager.shared.screeningsForAdminUpdate = newValue }
+}
 
-var TableData_: [MoviesData] = .init()
 var endOfFile = false
 var veil = true
 var shouldShowSearchResults = false
@@ -27,71 +27,27 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         print(#function, "\(self)")
     }
 
-    var SearchData: [MoviesData] = .init()
-    var TableData: [MoviesData] = .init()
+    var SearchData: [MovieDataModel] = []
+    var TableData: [MovieDataModel] = []
 //    var ScreenData_: [datastruct] = [datastruct]()
     var CategoryData = [String]()
-    var data: MoviesData?
-    var venueData: Admin_ScreenData?
     var searchController: UISearchController?
-    lazy var session = URLSession.sharedCustomSession
-
-    var refreshControl: UIRefreshControl!
     var tableView: UITableView?
     lazy var section_: Int = 0
     var category_: String?
     var searchString: String?
 
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if segue.identifier == "goto_venues" {
-            let nextSegue = segue.destination as? VenuesVC
-
-            if let indexPath = tableView!.indexPathForSelectedRow {
-                var data: MoviesData
-
-                if TableData.count > 0 {
-                    data = TableData[indexPath.section]
-
-                    nextSegue!.movieId = data.movieId
-                    nextSegue!.movieName = data.name
-                    nextSegue!.selectDetails = data.detail
-                    nextSegue!.selectLarge_picture = data.large_picture
-                    nextSegue!.imdb = data.imdb
-                }
-                if SearchData.count > 0 {
-                    data = SearchData[indexPath.section]
-
-                    nextSegue!.movieId = data.movieId
-                    nextSegue!.movieName = data.name
-                    nextSegue!.selectDetails = data.detail
-                    nextSegue!.selectLarge_picture = data.large_picture
-                    nextSegue!.imdb = data.imdb
-                }
-            }
+        if segue.identifier == "goto_venues",
+           let indexPath = tableView?.indexPathForSelectedRow,
+           let movie = selectedMovie(at: indexPath) {
+            MoviesDataManager.shared.selectedMovie = movie
         }
-        if segue.identifier == "goto_movie_detail" {
-            let nextSegue = segue.destination as? MovieDetailVC
-            guard let tag = (sender as? UIButton)?.tag else { return }
-            var data: MoviesData
-
-            if TableData.count > 0 {
-                data = TableData[tag]
-
-                nextSegue!.movieId = data.movieId
-                nextSegue!.movieName = data.name
-                nextSegue!.selectDetails = data.detail
-                nextSegue!.selectLarge_picture = data.large_picture
-                nextSegue!.iMDB = data.imdb
-            }
-            if SearchData.count > 0 {
-                data = SearchData[tag]
-
-                nextSegue!.movieId = data.movieId
-                nextSegue!.movieName = data.name
-                nextSegue!.selectDetails = data.detail
-                nextSegue!.selectLarge_picture = data.large_picture
-                nextSegue!.iMDB = data.imdb
-            }
+        if segue.identifier == "goto_movie_detail",
+           let tag = (sender as? UIButton)?.tag,
+           tag < TableData.count || tag < SearchData.count {
+            let movie = TableData.indices.contains(tag) ? TableData[tag] : SearchData[tag]
+            MoviesDataManager.shared.selectedMovie = movie
         }
     }
 
@@ -154,7 +110,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
     ///
     /// - Parameters:
     ///   - category: Name of the category.
-    /// - Returns: list of ``MoviesData`` objects.
+    /// - Returns: list of movie models.
     func addData(category: String) {
         var setFirstResult: Int?
         var query: [String: String]?
@@ -172,18 +128,9 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         Task { @MainActor [weak self] in
             guard let self, let query else { return }
             do {
-                let data = try await self.appServices.mbooks.moviesPaging(query: query)
-                let json = try JSON(data: data)
-                if let list = json["movies"].object as? NSArray {
-                    for i in 0 ..< list.count {
-                        if let dataBlock = list[i] as? NSDictionary {
-                            self.TableData.append(MoviesData(add: dataBlock))
-                        }
-                    }
-                }
-                if let _ = json["NotFoundMovies"].string as NSString? {
-                    endOfFile = true
-                }
+                let movies = try await MoviesDataManager.shared.fetchPaging(query: query)
+                self.TableData.append(contentsOf: movies)
+                endOfFile = movies.isEmpty
                 self.tableView?.reloadData()
             } catch {
                 NSLog("addData: %@", error.localizedDescription)
@@ -201,15 +148,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let data = try await self.appServices.mbooks.adminMoviesOnVenuesCategorized(query: query)
-                let json = try JSON(data: data)
-                if let list = json["venues"].object as? NSArray {
-                    for i in 0 ..< list.count {
-                        if let dataBlock = list[i] as? NSDictionary {
-                            ScreenData_2.append(Admin_ScreenData(add: dataBlock))
-                        }
-                    }
-                }
+                ScreenData_2 = try await AdminDataManager.shared.fetchScreenings(category: query?["category"])
                 self.tableView?.reloadData()
             } catch {
                 NSLog("addLoadMoviesonVenue(category): %@", error.localizedDescription)
@@ -223,15 +162,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let data = try await self.appServices.mbooks.adminMoviesOnVenuesSearch(query: query)
-                let json = try JSON(data: data)
-                if let list = json["venues"].object as? NSArray {
-                    for i in 0 ..< list.count {
-                        if let dataBlock = list[i] as? NSDictionary {
-                            ScreenData_2.append(Admin_ScreenData(add: dataBlock))
-                        }
-                    }
-                }
+                ScreenData_2 = try await AdminDataManager.shared.searchScreenings(match: search)
                 self.tableView?.reloadData()
             } catch {
                 NSLog("addLoadMoviesonVenue(search): %@", error.localizedDescription)
@@ -261,19 +192,9 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         Task { @MainActor [weak self] in
             guard let self, let query else { return }
             do {
-                let data = try await self.appServices.mbooks.moviesSearch(query: query)
-                let json = try JSON(data: data)
-                if let list = json["searchedMovies"].object as? NSArray {
-                    for i in 0 ..< list.count {
-                        if let dataBlock = list[i] as? NSDictionary {
-                            self.SearchData.append(MoviesData(add: dataBlock))
-                            shouldShowSearchResults = true
-                        }
-                    }
-                }
-                if let _ = json["NotFoundMovies"].string as NSString? {
-                    endOfFile = true
-                }
+                self.SearchData = try await MoviesDataManager.shared.search(query: query)
+                shouldShowSearchResults = true
+                endOfFile = self.SearchData.isEmpty
                 self.tableView?.reloadData()
             } catch {
                 NSLog("addData_: %@", error.localizedDescription)
@@ -287,14 +208,8 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let data = try await self.appServices.mbooks.adminMoviesOnVenues()
-                let json = try JSON(data: data)
-                if let list = json["venues"].object as? NSArray {
-                    for i in 0 ..< list.count {
-                        if let dataBlock = list[i] as? NSDictionary {
-                            ScreenData_2.append(Admin_ScreenData(add: dataBlock))
-                        }
-                    }
+                ScreenData_2 = try await AdminDataManager.shared.fetchScreenings()
+                if !ScreenData_2.isEmpty {
                     NotificationCenter.default.post(name: NSNotification.Name(rawValue: "venueSelected"), object: nil)
                 }
                 self.tableView?.reloadData()
@@ -371,8 +286,6 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         print(searchString!)
     }
 
-    func searchDisplayController(_: UISearchController, shouldReloadTableForSearchString _: NSString) {}
-
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         let headerView = UIView(frame: CGRect(x: 0, y: 0, width: tableView.frame.width, height: 50)) // Set header height
 
@@ -436,35 +349,38 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         var categories = ""
 
         // Define your data type here
+        var movieData: MovieDataModel?
+        var adminRow: AdminScreeningModel?
+
         if adminUpdatePage {
             if ScreenData_2.count > 0 {
-                venueData = ScreenData_2[indexPath.row]
+                adminRow = ScreenData_2[indexPath.row]
             } else if TableData.count > 0 {
-                data = TableData[indexPath.row]
+                movieData = TableData[indexPath.row]
             } else if SearchData.count > 0 {
-                data = SearchData[indexPath.row]
+                movieData = SearchData[indexPath.row]
             } else if CategoryData.count > 0 {
                 categories = CategoryData[indexPath.row]
             }
         } else {
             if ScreenData_2.count > 0 {
-                venueData = ScreenData_2[indexPath.section]
+                adminRow = ScreenData_2[indexPath.section]
             } else if TableData.count > 0 {
-                data = TableData[indexPath.section]
+                movieData = TableData[indexPath.section]
             } else if SearchData.count > 0 {
-                data = SearchData[indexPath.section]
+                movieData = SearchData[indexPath.section]
             } else if CategoryData.count > 0 {
                 categories = CategoryData[indexPath.row]
             }
         }
 
         // Pass the information about whether to load image or not
-        configureCell(cell: cell, with: data, venueData, categories: categories, indexPath: indexPath, shouldLoadImage: section_ != 1)
+        configureCell(cell: cell, with: movieData, adminRow, categories: categories, indexPath: indexPath, shouldLoadImage: section_ != 1)
 
         return cell!
     }
 
-    private func configureCell(cell: ListViewCell?, with data: MoviesData?, _ venueData: Admin_ScreenData?, categories: String?, indexPath _: IndexPath, shouldLoadImage: Bool) {
+    private func configureCell(cell: ListViewCell?, with data: MovieDataModel?, _ venueData: AdminScreeningModel?, categories: String?, indexPath _: IndexPath, shouldLoadImage: Bool) {
         guard let cell else { return }
 
         let textAttr: [NSAttributedString.Key: Any] = [
@@ -496,7 +412,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         cell.titleText.attributedText = NSAttributedString(string: data.name, attributes: textAttr)
 
         if shouldLoadImage {
-            let urlString = URLManager.image(data.large_picture)
+            let urlString = URLManager.image(data.largePicture)
             if let url = URL(string: urlString) {
                 loadImage(from: url, for: cell)
             }
@@ -518,19 +434,6 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
                 NSLog("loadImage: %@", error.localizedDescription)
             }
         }
-    }
-
-    private func addButtonToCell(cell: ListViewCell, at indexPath: IndexPath) {
-        if let existingButton = cell.contentView.viewWithTag(indexPath.row) as? UIButton {
-            return
-        }
-
-        let btn = UIButton(type: .custom)
-        btn.frame = CGRect(x: cell.frame.width - 30, y: 15, width: 20, height: 30)
-        btn.addTarget(self, action: #selector(MoviesVC.movieDetail), for: .touchUpInside)
-        btn.tag = indexPath.row // Set the tag to identify the button later
-        btn.setImage(UIImage(named: "window-7.png"), for: .normal)
-        cell.contentView.addSubview(btn)
     }
 
     func numberOfSections(in _: UITableView) -> Int {
@@ -598,7 +501,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
             if ScreenData_2.count > 0 {
                 addMovie = ScreenData_2[indexPath.row].movie
                 addVenue = ScreenData_2[indexPath.row].venue
-                addScreeningID = ScreenData_2[indexPath.row].ScreeningId
+                addScreeningID = ScreenData_2[indexPath.row].screeningId
                 addScreeningDate = ScreenData_2[indexPath.row].date
                 addScreeningDateId = ScreenData_2[indexPath.row].screeningDatesId
                 addMovieId = ScreenData_2[indexPath.row].movieId
@@ -628,6 +531,9 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
                 }
                 veil = false
                 shouldShowSearchResults = false
+                if let movie = selectedMovie(at: indexPath) {
+                    MoviesDataManager.shared.selectedMovie = movie
+                }
                 if VenuesFeatureFlags.shouldUseMigration(), let movie = selectedMovie(at: indexPath) {
                     presentVenuesMigration(for: movie)
                 } else {
@@ -637,7 +543,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         }
     }
 
-    private func selectedMovie(at indexPath: IndexPath) -> MoviesData? {
+    private func selectedMovie(at indexPath: IndexPath) -> MovieDataModel? {
         if TableData.count > 0 {
             return TableData[indexPath.section]
         }
@@ -647,15 +553,15 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         return nil
     }
 
-    private func presentVenuesMigration(for movie: MoviesData) {
+    private func presentVenuesMigration(for movie: MovieDataModel) {
         injectAppServicesIfNeeded()
 
         let input = VenuesInput(
             movieId: movie.movieId,
             movieName: movie.name,
-            selectLargePicture: movie.large_picture,
+            selectLargePicture: movie.largePicture,
             selectDetails: movie.detail,
-            imdb: movie.imdb,
+            imdb: movie.imdbUrl,
             mode: .admin
         )
 
@@ -705,46 +611,3 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
     }
 }
 
-extension UIImageView {
-    func load(url: URL) {
-        DispatchQueue.global().async { [weak self] in
-            if let data = try? Data(contentsOf: url) {
-                if let image = UIImage(data: data) {
-                    DispatchQueue.main.async {
-                        self?.image = image
-                    }
-                }
-            }
-        }
-    }
-}
-
-public extension UIImage {
-    /// Resize image while keeping the aspect ratio. Original image is not modified.
-    /// - Parameters:
-    ///   - width: A new width in pixels.
-    ///   - height: A new height in pixels.
-    /// - Returns: Resized image.
-    func resize(_ width: Int, _ height: Int) -> UIImage {
-        // Keep aspect ratio
-        let maxSize = CGSize(width: width, height: height)
-
-        let availableRect = AVFoundation.AVMakeRect(
-            aspectRatio: size,
-            insideRect: .init(origin: .zero, size: maxSize)
-        )
-        let targetSize = availableRect.size
-
-        // Set scale of renderer so that 1pt == 1px
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = 1
-        let renderer = UIGraphicsImageRenderer(size: targetSize, format: format)
-
-        // Resize the image
-        let resized = renderer.image { _ in
-            self.draw(in: CGRect(origin: .zero, size: targetSize))
-        }
-
-        return resized
-    }
-}

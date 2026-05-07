@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import SwiftyJSON
 import UIKit
 
 var originalVenueName: NSAttributedString!
@@ -270,21 +269,15 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
             "category": category_ as String,
         ]
 
-        ScreenData_.removeAll()
-
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let responseData = try await self.appServices.mbooks.adminUpdateScreen(body: testdata)
-                let json = try JSON(data: responseData)
-                if let dataBlock = json.object as? NSDictionary {
-                    ScreenData_.append(ScreenData(add: dataBlock))
-                }
-                if ScreenData_[0].ScreeningId.contains("Error") {
+                let screenResult = try await AdminDataManager.shared.updateScreen(body: testdata)
+                if screenResult.screeningId.contains("Error") {
                     self.presentAlert(withTitle: "Error:", message: "Duplicate ScreeningId: \(ScreeningID_)")
 
                 } else {
-                    self.presentAlert(withTitle: "Info:", message: "Screen updated:, ScreeningId: \(ScreenData_[0].ScreeningId!)")
+                    self.presentAlert(withTitle: "Info:", message: "Screen updated:, ScreeningId: \(screenResult.screeningId)")
                 }
             } catch {
                 NSLog("updateScreen: %@", error.localizedDescription)
@@ -300,9 +293,7 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let responseData = try await self.appServices.mbooks.adminDeleteScreen(body: testdata)
-                let json = try JSON(data: responseData)
-                if json["screeningDatesId"].string != nil {
+                if try await AdminDataManager.shared.deleteScreen(body: testdata) {
                     self.presentAlert(withTitle: "Info:", message: "Screen deleted:, ScreeningDatesId: \(addScreeningDateId)")
 
                     addMovie = ""

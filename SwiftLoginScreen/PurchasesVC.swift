@@ -7,14 +7,12 @@
 //
 
 import Foundation
-import SwiftyJSON
 import UIKit
 
-var TableData: [PurchaseData] = .init()
 class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, HasAppServices {
     var appServices: AppServices!
     deinit {
-        TableData.removeAll()
+        purchaseTableData.removeAll()
         print(#function, "\(self)")
     }
 
@@ -22,6 +20,7 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
     var sortBy = "purchase"
     var refreshControl: UIRefreshControl!
     var tableView: UITableView?
+    var purchaseTableData: [PurchaseSummaryModel] = []
 
     var ResponseText: String?
     var ResponseCode: String?
@@ -107,7 +106,7 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
     }
 
     @objc func sortByPurchaseDate() {
-        TableData.sort { ($0.purchaseDate ?? "") > ($1.purchaseDate ?? "") }
+        purchaseTableData.sort { $0.purchaseDate > $1.purchaseDate }
         sortBy = "purchase"
         let myTextAttribute = [convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 13.0)!]
         let detailText = NSMutableAttributedString(string: sortBy, attributes: convertToOptionalNSAttributedStringKeyDictionary(myTextAttribute))
@@ -118,7 +117,7 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
     }
 
     @objc func sortByScreeningDate() {
-        TableData.sort { ($0.screeningDate ?? "") > ($1.screeningDate ?? "") }
+        purchaseTableData.sort { $0.screeningDate > $1.screeningDate }
         sortBy = "screening"
         let myTextAttribute = [convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 13.0)!]
         let detailText = NSMutableAttributedString(string: sortBy, attributes: convertToOptionalNSAttributedStringKeyDictionary(myTextAttribute))
@@ -129,7 +128,7 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
     }
 
     @objc func refresh() {
-        TableData.removeAll()
+        purchaseTableData.removeAll()
         addPurchasesData()
     }
 
@@ -139,16 +138,15 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
 
     override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
         if segue.identifier == "goto_tickets" {
-            let nextSegue = segue.destination as? TicketsVC
-            nextSegue?.purchaseId = purchaseId
+            CheckoutDataManager.shared.selectedPurchaseId = purchaseId
         }
     }
 
     func tableView(_: UITableView, titleForHeaderInSection section: Int) -> String? {
         if sortBy == "purchase" {
-            TableData[section].purchaseDate
+            purchaseTableData[section].purchaseDate
         } else {
-            TableData[section].screeningDate
+            purchaseTableData[section].screeningDate
         }
     }
 
@@ -160,25 +158,25 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
         }
 
         if sortBy == "purchase" {
-            TableData.sort { ($0.purchaseDate ?? "") > ($1.purchaseDate ?? "") }
+            purchaseTableData.sort { $0.purchaseDate > $1.purchaseDate }
         }
         if sortBy == "screening" {
-            TableData.sort { ($0.screeningDate ?? "") > ($1.screeningDate ?? "") }
+            purchaseTableData.sort { $0.screeningDate > $1.screeningDate }
         }
 
-        let data = TableData[indexPath.section]
+        let data = purchaseTableData[indexPath.section]
 
         let myTextAttribute = [convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 13.0)!]
-        let detailText = NSMutableAttributedString(string: data.movie_name, attributes: convertToOptionalNSAttributedStringKeyDictionary(myTextAttribute))
+        let detailText = NSMutableAttributedString(string: data.movieName, attributes: convertToOptionalNSAttributedStringKeyDictionary(myTextAttribute))
 
-        detailText.append(NSAttributedString(string: "\n\(TableData[indexPath.section].screeningDate!)", attributes: convertToOptionalNSAttributedStringKeyDictionary([convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 12.0)!, convertFromNSAttributedStringKey(NSAttributedString.Key.foregroundColor): UIColor(red: 155 / 255, green: 161 / 255, blue: 171 / 255, alpha: 1)])))
+        detailText.append(NSAttributedString(string: "\n\(purchaseTableData[indexPath.section].screeningDate)", attributes: convertToOptionalNSAttributedStringKeyDictionary([convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 12.0)!, convertFromNSAttributedStringKey(NSAttributedString.Key.foregroundColor): UIColor(red: 155 / 255, green: 161 / 255, blue: 171 / 255, alpha: 1)])))
 
         cell!.textLabel?.numberOfLines = 5
         // cell!.textLabel?.translatesAutoresizingMaskIntoConstraints = false
 
         cell!.textLabel?.attributedText = detailText
 
-        let urlMovie = URLManager.image(TableData[indexPath.section].movie_picture)
+        let urlMovie = URLManager.image(purchaseTableData[indexPath.section].moviePicture)
 
         Task { @MainActor [weak self] in
             guard let self else { return }
@@ -199,7 +197,7 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
     }
 
     func numberOfSections(in _: UITableView) -> Int {
-        TableData.count
+        purchaseTableData.count
     }
 
     func tableView(_: UITableView, numberOfRowsInSection _: Int) -> Int {
@@ -211,7 +209,8 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
     }
 
     func tableView(_: UITableView, didSelectRowAt indexPath: IndexPath) {
-        purchaseId = TableData[indexPath.section].purchaseId
+        purchaseId = purchaseTableData[indexPath.section].purchaseId
+        CheckoutDataManager.shared.selectedPurchaseId = purchaseId
         performSegue(withIdentifier: "goto_tickets", sender: self)
     }
 
@@ -220,17 +219,12 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
     {
         // Write action code for the trash
         let TrashAction = UIContextualAction(style: .normal, title: "Trash", handler: { (_: UIContextualAction, _: UIView, success: (Bool) -> Void) in
-            self.purchaseId = TableData[indexPath.section].purchaseId
-            let post: NSString = "purchaseId=\(self.purchaseId!)" as NSString
-            let postData: Data = post.data(using: String.Encoding.ascii.rawValue)!
-
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 do {
-                    let data = try await self.appServices.loginGateway.postManagePurchases(body: postData)
-                    let json = try JSON(data: data)
-                    if json["Success"].string == "true" {
-                        TableData.remove(at: indexPath.section)
+                    let purchaseId = self.purchaseTableData[indexPath.section].purchaseId
+                    if try await CheckoutDataManager.shared.refundPurchase(purchaseId: purchaseId) {
+                        self.purchaseTableData.remove(at: indexPath.section)
                         self.presentAlert(withTitle: "Info", message: "Purchase was refunded")
                     }
                     self.tableView?.reloadData()
@@ -258,18 +252,8 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let data = try await self.appServices.loginGateway.getAllPurchases()
-                let json = try JSON(data: data)
-                if let list = json["purchases"].object as? NSArray {
-                    TableData.removeAll()
-
-                    for i in 0 ..< list.count {
-                        if let dataBlock = list[i] as? NSDictionary {
-                            TableData.append(PurchaseData(add: dataBlock))
-                        }
-                    }
-                    self.tableView?.reloadData()
-                }
+                self.purchaseTableData = try await CheckoutDataManager.shared.fetchAllPurchases()
+                self.tableView?.reloadData()
             } catch {
                 NSLog("addPurchasesData: %@", error.localizedDescription)
                 self.presentAlert(withTitle: "Error", message: error.localizedDescription)

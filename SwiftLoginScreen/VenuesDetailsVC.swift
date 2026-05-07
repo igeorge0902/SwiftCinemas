@@ -5,84 +5,133 @@
 //  Created by Gaspar Gyorgy on 27/03/16.
 //  Copyright © 2016 George Gaspar. All rights reserved.
 
-import Contacts
-import CoreData
-
 import AVKit
 
 // import FacebookShare
 // import FacebookLogin
 // import FacebookCore
 import EventKit
-import SwiftyJSON
 import UIKit
-import WebKit
 
-var selectedCalendar: String?
 class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresentationControllerDelegate, UIViewControllerTransitioningDelegate, HasAppServices {
     var appServices: AppServices!
     deinit {
-        screeningDateId = nil
-        ScreeningDates.removeAll()
+        DatesDataManager.shared.resetNavigationContext()
         // NotificationCenter.default.post(name: NSNotification.Name(rawValue: "navigateBack"), object: nil)
-        mapview_ = nil
+        LocationsDataManager.shared.activeMapView = nil
         print(#function, "\(self)")
     }
 
     // MARK: - Properties
 
     lazy var noPicture: [String: String] = [:]
-    let pickerData: NSDictionary = ["screeningDatesId": 0, "screeningDate": "Select date", "movieId": 0]
 
     var nameTextView: UITextView?
-    var selectVenues_picture: String?
-    var selectLarge_picture: String?
+    var selectVenuesPicture: String?
+    var selectLargePicture: String?
     var selectVenueId: Int?
     var venueName: String?
     var selectAddress: String?
     var movieId: Int!
     var movieName: String?
     var movieDetails: String?
-    var screen_screenId: String?
+    var screenScreenId: String?
     var locationId: Int!
     var iMDB: String?
 
-    var startY: CGFloat!
-    var imageHeight: CGFloat!
     var popOverY: CGFloat!
 
     lazy var imageView = UIImageView()
     lazy var venueImageView = UIImageView()
     var scrollView: UIScrollView!
 
-    lazy var icons: [String: String] = [
-        "Calendar-icon": "calendar-icon",
-        "iCal-icon": "ical",
-        "FBShare": "facebook_share",
-    ]
-
-    lazy var googleCalendar = UIImageView()
-    lazy var ical = UIImageView()
-    lazy var fbShare = UIImageView()
-
     lazy var moviePicture = UIImage()
     lazy var venuePicture = UIImage()
 
-    lazy var google = UIImage()
-    lazy var ios = UIImage()
-    lazy var fb = UIImage()
-
-    var calendars: [EKCalendar]?
     let eventStore = EKEventStore()
-    var playerItemContext = 0
+    private var isLoadingDates = false
+
+    private var resolvedScreenId: String? {
+        let id = screenScreenId ?? VenuesDataManager.shared.selectedVenue?.screenId
+        guard let id, !id.isEmpty else { return nil }
+        return id
+    }
 
     // MARK: - Lifecycle Methods
 
     override func viewDidLoad() {
         super.viewDidLoad()
         injectAppServicesIfNeeded()
+        populateSelectionContext()
         setupScrollView()
         addDatesData()
+    }
+
+    private func populateSelectionContext() {
+        if movieId == nil {
+            movieId = MoviesDataManager.shared.selectedMovie?.movieId
+        }
+        if movieName == nil {
+            movieName = MoviesDataManager.shared.selectedMovie?.name
+        }
+        if movieDetails == nil {
+            movieDetails = MoviesDataManager.shared.selectedMovie?.detail
+        }
+        if selectLargePicture == nil {
+            selectLargePicture = MoviesDataManager.shared.selectedMovie?.largePicture
+        }
+        if iMDB == nil {
+            iMDB = MoviesDataManager.shared.selectedMovie?.imdbUrl
+        }
+
+        if selectVenueId == nil {
+            selectVenueId = VenuesDataManager.shared.selectedVenue?.venuesId
+        }
+        if venueName == nil {
+            venueName = VenuesDataManager.shared.selectedVenue?.name
+        }
+        if selectAddress == nil {
+            selectAddress = VenuesDataManager.shared.selectedVenue?.address
+        }
+        if selectVenuesPicture == nil {
+            selectVenuesPicture = VenuesDataManager.shared.selectedVenue?.venuesPicture
+        }
+        if screenScreenId == nil {
+            screenScreenId = VenuesDataManager.shared.selectedVenue?.screenId
+        }
+        if locationId == nil {
+            locationId = VenuesDataManager.shared.selectedVenue?.locationId ?? LocationsDataManager.shared.selectedLocationId
+        }
+
+        if let movieId,
+           let movieName,
+           let movieDetails,
+           let selectLargePicture,
+           let iMDB {
+            MoviesDataManager.shared.selectedMovie = Movie(
+                movieId: movieId,
+                movieIdString: String(movieId),
+                name: movieName,
+                detail: movieDetails,
+                largePicture: selectLargePicture,
+                imdbUrl: iMDB
+            )
+        }
+
+        if let selectVenueId,
+           let venueName,
+           let selectAddress,
+           let screenId = screenScreenId,
+           let locationId {
+            VenuesDataManager.shared.selectedVenue = Venue(
+                venuesId: selectVenueId,
+                name: venueName,
+                address: selectAddress,
+                venuesPicture: selectVenuesPicture ?? "",
+                screenId: screenId,
+                locationId: locationId
+            )
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -112,7 +161,7 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
     }
 
     private func loadMovieImage() {
-        guard let selectLargePicture = selectLarge_picture else { return }
+        guard let selectLargePicture = selectLargePicture else { return }
         let urlString = URLManager.image(selectLargePicture)
 
         Task { @MainActor [weak self] in
@@ -129,7 +178,7 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
     }
 
     private func loadVenueImage() {
-        if let selectVenuesPicture = selectVenues_picture, !selectVenuesPicture.isEmpty {
+        if let selectVenuesPicture = selectVenuesPicture, !selectVenuesPicture.isEmpty {
             let urlString = URLManager.image(selectVenuesPicture)
 
             Task { @MainActor [weak self] in
@@ -299,9 +348,9 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
 
     override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
         if segue.identifier == "goto_map2" {
-            let nextSegue = segue.destination as? MapViewController
-            nextSegue?.selectVenueId = selectVenueId
-            nextSegue?.map2 = true
+            LocationsDataManager.shared.selectedLocationId = locationId
+            LocationsDataManager.shared.selectedVenueId = selectVenueId
+            LocationsDataManager.shared.isMapFromVenueDetails = true
         }
         if segue.identifier == "goto_movie_detail2" {
             let nextSegue = segue.destination as? MovieDetailVC
@@ -331,7 +380,7 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
             }
         }
 
-        if screeningDateId == nil {
+        if DatesDataManager.shared.selectedScreeningDateId == nil {
             let alertView = UIAlertView()
 
             alertView.title = "Warning!"
@@ -341,38 +390,34 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
             alertView.show()
 
         } else {
-            SelectMovieName = movieName
-            SelectVenueForMovie = selectAddress
-            SelectVenueName = venueName
-            SelectMoviePicture = URLManager.image(selectLarge_picture!)
+            Task { @MainActor [weak self] in
+                guard let self,
+                      let selectedId = DatesDataManager.shared.selectedScreeningDateId,
+                      let parsedId = Int(selectedId) else { return }
 
-            SeatsData.addData(Int(screeningDateId!)!)
+                do {
+                    _ = try await SeatsDataManager.shared.fetchSeats(screeningDateId: parsedId)
 
-            let popOver = PopOver()
-            popOver.modalPresentationStyle = UIModalPresentationStyle.popover
-            popOver.preferredContentSize = CGSize(width: view.frame.width * 0.90, height: view.frame.height / 2)
+                    let popOver = PopOver()
+                    popOver.modalPresentationStyle = UIModalPresentationStyle.popover
+                    popOver.preferredContentSize = CGSize(width: self.view.frame.width * 0.90, height: self.view.frame.height / 2)
 
-            let popoverMenuViewController = popOver.popoverPresentationController
-            popoverMenuViewController?.permittedArrowDirections = UIPopoverArrowDirection(rawValue: 0)
+                    let popoverMenuViewController = popOver.popoverPresentationController
+                    popoverMenuViewController?.permittedArrowDirections = UIPopoverArrowDirection(rawValue: 0)
+                    popoverMenuViewController?.delegate = self
+                    popoverMenuViewController?.sourceView = self.view
+                    popoverMenuViewController!.sourceRect = CGRect(
+                        x: self.view.frame.width * 0.50,
+                        y: self.popOverY,
+                        width: 0,
+                        height: 0
+                    )
 
-            popoverMenuViewController?.delegate = self
-            popoverMenuViewController?.sourceView = view
-            popoverMenuViewController!.sourceRect = CGRect(
-                x: view.frame.width * 0.50,
-                y: popOverY,
-                width: 0,
-                height: 0
-            )
-
-            present(
-                popOver,
-                animated: true,
-                completion: {
-                    //   let frameM = CGRect(x: self.scrollView.frame.width * 0.35, y: 0, width: 44, height: 20)
-
-                    //   self.scrollView.scrollRectToVisible(frameM, animated: true)
+                    self.present(popOver, animated: true)
+                } catch {
+                    self.presentAlert(withTitle: "Error", message: error.localizedDescription)
                 }
-            )
+            }
         }
     }
 
@@ -389,31 +434,48 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
             }
         }
 
-        let popOver = PopOverDates()
-        popOver.modalPresentationStyle = UIModalPresentationStyle.popover
-        popOver.preferredContentSize = CGSize(width: view.frame.width * 0.90, height: view.frame.height / 5)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            if DatesDataManager.shared.availableDates.isEmpty {
+                do {
+                    _ = try await self.loadDatesData()
+                } catch {
+                    self.presentAlert(withTitle: "Error", message: error.localizedDescription)
+                    return
+                }
+            }
 
-        let popoverMenuViewController = popOver.popoverPresentationController
-        popoverMenuViewController?.permittedArrowDirections = UIPopoverArrowDirection(rawValue: 0)
+            guard !DatesDataManager.shared.availableDates.isEmpty else {
+                self.presentAlert(withTitle: "Info", message: "No dates available for this venue.")
+                return
+            }
 
-        popoverMenuViewController?.delegate = self
-        popoverMenuViewController?.sourceView = view
-        popoverMenuViewController!.sourceRect = CGRect(
-            x: view.frame.width * 0.50,
-            y: popOverY,
-            width: 0,
-            height: 0
-        )
+            let popOver = PopOverDates()
+            popOver.modalPresentationStyle = UIModalPresentationStyle.popover
+            popOver.preferredContentSize = CGSize(width: self.view.frame.width * 0.90, height: self.view.frame.height / 5)
 
-        present(
-            popOver,
-            animated: true,
-            completion: nil
-        )
+            let popoverMenuViewController = popOver.popoverPresentationController
+            popoverMenuViewController?.permittedArrowDirections = UIPopoverArrowDirection(rawValue: 0)
+
+            popoverMenuViewController?.delegate = self
+            popoverMenuViewController?.sourceView = self.view
+            popoverMenuViewController!.sourceRect = CGRect(
+                x: self.view.frame.width * 0.50,
+                y: self.popOverY,
+                width: 0,
+                height: 0
+            )
+
+            self.present(
+                popOver,
+                animated: true,
+                completion: nil
+            )
+        }
     }
 
     @objc func selectCalendar(_: UIButton) {
-        if screeningDateId == nil {
+        if DatesDataManager.shared.selectedScreeningDateId == nil {
             let alertView = UIAlertView()
 
             alertView.title = "Warning!"
@@ -428,9 +490,6 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
 
                 if granted, error == nil {
                     print("permission is granted")
-
-                    SelectMovieName = self.movieName
-                    SelectVenueForMovie = self.selectAddress
 
                     DispatchQueue.main.async {
                         let popOver = iOSCalendarVC()
@@ -478,23 +537,27 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let data = try await self.appServices.mbooks.dates(locationId: String(self.locationId), movieId: String(self.movieId))
-                let json = try JSON(data: data)
-                if let list = json["dates"].object as? NSArray {
-                    for i in 0 ..< list.count {
-                        if let dataBlock = list[i] as? NSDictionary {
-                            ScreeningDates.append(DatesData(add: dataBlock))
-                        }
-                    }
-                }
+                _ = try await self.loadDatesData()
             } catch {
                 NSLog("addDatesData: %@", error.localizedDescription)
             }
         }
     }
 
+    @MainActor
+    private func loadDatesData() async throws -> Bool {
+        if isLoadingDates {
+            return !DatesDataManager.shared.availableDates.isEmpty
+        }
+        isLoadingDates = true
+        defer { isLoadingDates = false }
+
+        let screenDates = try await DatesDataManager.shared.fetchDates(locationId: locationId, movieId: movieId)
+        return !screenDates.isEmpty
+    }
+
     @objc func selectCalendar_(sender _: UIButton /* , event: UIEvent */ ) {
-        if screeningDateId == nil {
+        if DatesDataManager.shared.selectedScreeningDateId == nil {
             let alertView = UIAlertView()
 
             alertView.title = "Warning!"
@@ -522,8 +585,6 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
                      }
                      }*/
 
-                    SelectMovieName = self.movieName
-                    SelectVenueForMovie = self.selectAddress
                     DispatchQueue.main.async {
                         let popOver = iOSCalendarVC()
                         popOver.modalPresentationStyle = UIModalPresentationStyle.popover
@@ -557,13 +618,3 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
     }
 }
 
-// Helper function inserted by Swift 4.2 migrator.
-private func convertFromNSAttributedStringKey(_ input: NSAttributedString.Key) -> String {
-    input.rawValue
-}
-
-// Helper function inserted by Swift 4.2 migrator.
-private func convertToOptionalNSAttributedStringKeyDictionary(_ input: [String: Any]?) -> [NSAttributedString.Key: Any]? {
-    guard let input else { return nil }
-    return Dictionary(uniqueKeysWithValues: input.map { key, value in (NSAttributedString.Key(rawValue: key), value) })
-}
