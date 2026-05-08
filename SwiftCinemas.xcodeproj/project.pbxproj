@@ -52,7 +52,6 @@
 		A420BAE32D67CBCB004C4169 /* CustomURLSessionDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A420BAE22D67CBCB004C4169 /* CustomURLSessionDelegate.swift */; };
 		A42483521D1CA42000F83E6C /* VenuesVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = A42483511D1CA42000F83E6C /* VenuesVC.swift */; };
 		A42483571D1EB75B00F83E6C /* JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = A42483561D1EB75B00F83E6C /* JSON.swift */; };
-		A424835E1D1FDD2800F83E6C /* MapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A424835D1D1FDD2800F83E6C /* MapView.swift */; };
 		A42483601D1FDDB300F83E6C /* MapViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A424835F1D1FDDB300F83E6C /* MapViewController.swift */; };
 		A4272E0A23A9841500304A2A /* garnier1.mov in Resources */ = {isa = PBXBuildFile; fileRef = A4272E0923A9841500304A2A /* garnier1.mov */; };
 		A4333017238F018E00A44212 /* AttendeesVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4333016238F018E00A44212 /* AttendeesVC.swift */; };
@@ -178,7 +177,6 @@
 		A420BAE22D67CBCB004C4169 /* CustomURLSessionDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomURLSessionDelegate.swift; sourceTree = "<group>"; };
 		A42483511D1CA42000F83E6C /* VenuesVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VenuesVC.swift; sourceTree = "<group>"; };
 		A42483561D1EB75B00F83E6C /* JSON.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = JSON.swift; sourceTree = "<group>"; };
-		A424835D1D1FDD2800F83E6C /* MapView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MapView.swift; sourceTree = "<group>"; };
 		A424835F1D1FDDB300F83E6C /* MapViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MapViewController.swift; sourceTree = "<group>"; };
 		A4272E0923A9841500304A2A /* garnier1.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = garnier1.mov; sourceTree = "<group>"; };
 		A4333016238F018E00A44212 /* AttendeesVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttendeesVC.swift; sourceTree = "<group>"; };
@@ -365,7 +363,6 @@
 			isa = PBXGroup;
 			children = (
 				A493B57D2D6A31DA00404BC0 /* GeoFence.swift */,
-				A424835D1D1FDD2800F83E6C /* MapView.swift */,
 				A424835F1D1FDDB300F83E6C /* MapViewController.swift */,
 			);
 			name = Map;
@@ -909,7 +906,6 @@
 				A420BAE32D67CBCB004C4169 /* CustomURLSessionDelegate.swift in Sources */,
 				A4ED18DB2524A4DC005820BC /* AdminVC.swift in Sources */,
 				A48301CC25FD25C6008F230C /* AdminUpdateVC.swift in Sources */,
-				A424835E1D1FDD2800F83E6C /* MapView.swift in Sources */,
 				A4BBC52D1BF0919900CDD365 /* MenuVC.swift in Sources */,
 				EA62FD561989F6AC00469896 /* AppDelegate.swift in Sources */,
 				7D3780012FACB69B00A806C4 /* VenuesDataManager.swift in Sources */,
