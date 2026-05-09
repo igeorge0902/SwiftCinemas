@@ -97,9 +97,9 @@ class WebViewController: UIViewController, WKUIDelegate, WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFinish _: WKNavigation!) {
         let path = webView.url?.relativePath ?? ""
-        if path == "/login/index.html" {
-            dismiss(animated: true, completion: nil)
-        }
+       // if path == "/login/index.html" {
+       //     dismiss(animated: true, completion: nil)
+       // }
     }
 
     func webView(_: WKWebView,

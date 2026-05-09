@@ -326,7 +326,13 @@ class HomeVC: UIViewController, UIViewControllerTransitioningDelegate, HasAppSer
                 let data = try await self.appServices.images.getData(urlString: url.absoluteString, realmCache: true)
                 if let image = UIImage(data: data) { imageView.image = image }
             } catch {
-                NSLog("HomeVC.loadImage: %@", error.localizedDescription)
+                let errorMsg: String
+                if let appError = error as? AppError {
+                    errorMsg = appError.userMessage
+                } else {
+                    errorMsg = error.localizedDescription
+                }
+                NSLog("HomeVC.loadImage: %@ url=%@", errorMsg, url.absoluteString)
             }
         }
     }
@@ -375,7 +381,8 @@ class HomeVC: UIViewController, UIViewControllerTransitioningDelegate, HasAppSer
 
     override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
         if segue.identifier == "goto_map" {
-            (segue.destination as? MapViewController)?.map2 = false
+            LocationsDataManager.shared.isVenuesFromMapFlow = true
+            LocationsDataManager.shared.isMapFromVenueDetails = false
         }
     }
 

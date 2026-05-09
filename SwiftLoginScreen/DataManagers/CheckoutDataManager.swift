@@ -37,12 +37,11 @@ final class CheckoutDataManager: SharedDataManager, HasAppServices {
             let data = try await loginGateway.getCheckOut()
             let json = try JSON(data: data)
 
-            guard let clientToken = json["clientToken"].string,
-                  let apiKey = json["APIKEY"].string else {
+            guard let clientToken = json["clientToken"].string else {
                 throw AppError.decodingFailed
             }
 
-            return ClientTokenModel(clientToken: clientToken, apiKey: apiKey)
+            return ClientTokenModel(clientToken: clientToken)
         } catch {
             throw handleError(error)
         }
@@ -191,7 +190,6 @@ final class CheckoutDataManager: SharedDataManager, HasAppServices {
 
 struct ClientTokenModel {
     let clientToken: String
-    let apiKey: String
 }
 
 struct CheckoutResultModel {

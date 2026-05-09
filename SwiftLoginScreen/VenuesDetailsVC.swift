@@ -48,10 +48,14 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
     lazy var moviePicture = UIImage()
     lazy var venuePicture = UIImage()
 
-    let eventStore = EKEventStore()
-    private var isLoadingDates = false
+     let eventStore = EKEventStore()
+     private var isLoadingDates = false
+     private var isLoadingSeats = false
+     private var hasSetupUI = false
+     private var playerViewController: AVPlayerViewController?
+     private var hasInitializedPlayer = false
 
-    private var resolvedScreenId: String? {
+     private var resolvedScreenId: String? {
         let id = screenScreenId ?? VenuesDataManager.shared.selectedVenue?.screenId
         guard let id, !id.isEmpty else { return nil }
         return id
@@ -134,15 +138,23 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
         }
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        loadMovieImage()
-        loadVenueImage()
-    }
+     override func viewWillAppear(_ animated: Bool) {
+         super.viewWillAppear(animated)
+         // Only load images if not already loaded to avoid repeated network/decoding
+         if moviePicture.size == CGSize.zero {
+             loadMovieImage()
+         }
+         if venuePicture.size == CGSize.zero {
+             loadVenueImage()
+         }
+     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        setupUI()
+        if !hasSetupUI {
+            setupUI()
+            hasSetupUI = true
+        }
     }
 
     override func viewDidLayoutSubviews() {
@@ -151,14 +163,15 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
 
     // MARK: - Setup Methods
 
-    private func setupScrollView() {
-        scrollView = UIScrollView(frame: view.bounds)
-        scrollView.delegate = self
-        scrollView.alwaysBounceVertical = true
-        scrollView.backgroundColor = .white
-        scrollView.contentSize = CGSize(width: view.frame.width, height: view.frame.height)
-        view.addSubview(scrollView)
-    }
+     private func setupScrollView() {
+         scrollView = UIScrollView(frame: view.bounds)
+         scrollView.delegate = self
+         scrollView.alwaysBounceVertical = false  // Prevent bounce observation churn
+         scrollView.backgroundColor = .white
+         scrollView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+         scrollView.contentSize = CGSize(width: view.frame.width, height: view.frame.height)
+         view.addSubview(scrollView)
+     }
 
     private func loadMovieImage() {
         guard let selectLargePicture = selectLargePicture else { return }
@@ -201,6 +214,7 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
 
     private func setupMovieImageView() {
         let (width, height, x, y) = getResizedImageDimensions(for: moviePicture, startY: view.frame.height * 0.15)
+        imageView.removeFromSuperview()
         imageView.frame = CGRect(x: x, y: y, width: width, height: height)
         imageView.image = moviePicture
         scrollView.addSubview(imageView)
@@ -208,6 +222,7 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
 
     private func setupVenueImageView() {
         let (width, height, x, y) = getResizedImageDimensions(for: venuePicture, startY: view.frame.height * 0.85)
+        venueImageView.removeFromSuperview()
         venueImageView.frame = CGRect(x: x, y: y, width: width, height: height)
         venueImageView.image = venuePicture
         scrollView.addSubview(venueImageView)
@@ -261,50 +276,68 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
         view.addSubview(btnNav)
     }
 
-    private func setupTextView() {
-        let textViewFrame = CGRect(x: view.frame.size.width * 0.1, y: imageView.frame.height + 150, width: view.frame.size.width * 0.8, height: view.frame.height / 7)
-        nameTextView = UITextView(frame: textViewFrame)
-        nameTextView?.isEditable = false
-        nameTextView?.textAlignment = .justified
-        nameTextView?.alwaysBounceVertical = true
-        nameTextView?.backgroundColor = UIColor { traitCollection in
-            traitCollection.userInterfaceStyle == .dark ? .gray : .white
-        }
-        nameTextView?.textColor = UIColor { traitCollection in
-            traitCollection.userInterfaceStyle == .dark ? .black : .black
-        }
-        nameTextView?.layer.borderWidth = 1
+     private func setupTextView() {
+         let textViewFrame = CGRect(x: view.frame.size.width * 0.1, y: imageView.frame.height + 150, width: view.frame.size.width * 0.8, height: view.frame.height / 7)
+         nameTextView = UITextView(frame: textViewFrame)
+         nameTextView?.isEditable = false
+         nameTextView?.isScrollEnabled = false  // Prevent nested scrolling in scroll view
+         nameTextView?.textAlignment = .justified
+         nameTextView?.backgroundColor = UIColor { traitCollection in
+             traitCollection.userInterfaceStyle == .dark ? .gray : .white
+         }
+         nameTextView?.textColor = UIColor { traitCollection in
+             traitCollection.userInterfaceStyle == .dark ? .black : .black
+         }
+         nameTextView?.layer.borderWidth = 1
 
-        if let movieDetails {
-            let textAttributes: [NSAttributedString.Key: Any] = [.font: UIFont(name: "Courier New", size: 13.0)!]
-            nameTextView?.attributedText = NSAttributedString(string: movieDetails, attributes: textAttributes)
-        }
+         if let movieDetails {
+             let textAttributes: [NSAttributedString.Key: Any] = [.font: UIFont(name: "Courier New", size: 13.0)!]
+             nameTextView?.attributedText = NSAttributedString(string: movieDetails, attributes: textAttributes)
+         }
 
-        scrollView.addSubview(nameTextView!)
-    }
+         scrollView.addSubview(nameTextView!)
+     }
 
-    private func setupPlayer() {
-        guard let fileURL = Bundle.main.path(forResource: "garnier1", ofType: "mov") else {
-            print("File not found")
-            return
-        }
+     private func setupPlayer() {
+         // Skip if already initialized to avoid audio subsystem churn
+         if hasInitializedPlayer {
+             return
+         }
+         hasInitializedPlayer = true
 
-        let url = NSURL.fileURL(withPath: fileURL)
-        let playerItem = AVPlayerItem(asset: AVAsset(url: url), automaticallyLoadedAssetKeys: ["playable"])
-        let player = AVPlayer(playerItem: playerItem)
+         guard let fileURL = Bundle.main.path(forResource: "garnier1", ofType: "mov") else {
+             print("Player setup: File not found")
+             return
+         }
 
-        let playerFrame = CGRect(x: 20, y: view.frame.height * 1.2, width: view.frame.width * 0.9, height: 300)
-        let playerViewController = AVPlayerViewController()
-        playerViewController.player = player
-        playerViewController.view.frame = playerFrame
-        addChild(playerViewController)
+         // Lazy-load player: only set up once and reuse
+         let url = NSURL.fileURL(withPath: fileURL)
+         let playerItem = AVPlayerItem(asset: AVAsset(url: url), automaticallyLoadedAssetKeys: ["playable"])
+         let player = AVPlayer(playerItem: playerItem)
 
-        scrollView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 55, right: 0)
-        scrollView.contentSize.height = view.frame.height * 1.2 + 300
-
-        scrollView.addSubview(playerViewController.view)
-        playerViewController.didMove(toParent: self)
-    }
+         let pvc = AVPlayerViewController()
+         pvc.player = player
+         
+         // Create a container view with proper layout instead of adding frame-based view to scrollView
+         let playerContainerView = UIView()
+         playerContainerView.frame = CGRect(x: 20, y: view.frame.height * 1.2, width: view.frame.width * 0.9, height: 300)
+         playerContainerView.backgroundColor = .black
+         playerContainerView.clipsToBounds = true
+         
+         // Add player view to container with autoresizing
+         pvc.view.frame = playerContainerView.bounds
+         pvc.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+         playerContainerView.addSubview(pvc.view)
+         
+         addChild(pvc)
+         scrollView.addSubview(playerContainerView)
+         pvc.didMove(toParent: self)
+         
+         scrollView.contentInset = UIEdgeInsets(top: 0, left: 0, bottom: 55, right: 0)
+         scrollView.contentSize.height = view.frame.height * 1.2 + 300
+         
+         playerViewController = pvc
+     }
 
     // MARK: - Helper Methods
 
@@ -372,6 +405,10 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
     }
 
     @objc func book(_: UIButton, event: UIEvent) {
+        if isLoadingSeats {
+            return
+        }
+
         if event.type == .touches {
             let touches: Set<UITouch> = event.allTouches!
 
@@ -395,6 +432,9 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
                       let selectedId = DatesDataManager.shared.selectedScreeningDateId,
                       let parsedId = Int(selectedId) else { return }
 
+                self.isLoadingSeats = true
+                defer { self.isLoadingSeats = false }
+
                 do {
                     _ = try await SeatsDataManager.shared.fetchSeats(screeningDateId: parsedId)
 
@@ -415,7 +455,7 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
 
                     self.present(popOver, animated: true)
                 } catch {
-                    self.presentAlert(withTitle: "Error", message: error.localizedDescription)
+                    self.presentAlert(withTitle: "Error", message: error.userMessage)
                 }
             }
         }
@@ -615,6 +655,12 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        // Avoid repeated audio-stack churn while this screen is not visible.
+        playerViewController?.player?.pause()
     }
 }
 

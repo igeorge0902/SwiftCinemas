@@ -138,11 +138,11 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
 
 
     func addLocation() {
-        if isMapFlow, !LocationsDataManager.shared.locationsToDisplay.isEmpty {
-            LocationsDataManager.shared.locationsForMapPicker = LocationsDataManager.shared.locationsToDisplay
-            tableView?.reloadData()
-            return
-        }
+      //  if isMapFlow, !LocationsDataManager.shared.locationsToDisplay.isEmpty {
+      //      LocationsDataManager.shared.locationsForMapPicker = LocationsDataManager.shared.locationsToDisplay
+      //      tableView?.reloadData()
+      //      return
+      //  }
 
         Task { @MainActor [weak self] in
             guard let self else { return }

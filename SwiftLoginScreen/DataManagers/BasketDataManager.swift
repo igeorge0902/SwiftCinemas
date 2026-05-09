@@ -48,12 +48,11 @@ final class BasketDataManager: SharedDataManager, HasAppServices {
             let data = try await loginGateway.getCheckOut()
             let json = try JSON(data: data)
 
-            guard let clientToken = json["clientToken"].string,
-                  let apiKey = json["APIKEY"].string else {
+            guard let clientToken = json["clientToken"].string else {
                 throw AppError.decodingFailed
             }
 
-            return ClientTokenModel(clientToken: clientToken, apiKey: apiKey)
+            return ClientTokenModel(clientToken: clientToken)
         } catch {
             throw handleError(error)
         }

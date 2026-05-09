@@ -431,7 +431,13 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
                     cell.setNeedsLayout()
                 }
             } catch {
-                NSLog("loadImage: %@", error.localizedDescription)
+                let errorMsg: String
+                if let appError = error as? AppError {
+                    errorMsg = appError.userMessage
+                } else {
+                    errorMsg = error.localizedDescription
+                }
+                NSLog("loadImage: %@ url=%@", errorMsg, url.absoluteString)
             }
         }
     }

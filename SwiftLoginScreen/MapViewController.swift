@@ -25,7 +25,6 @@ class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerD
     var locationManager: CLLocationManager!
     var locationId_: Int!
     var selectVenueId: Int!
-    var map2: Bool = false
 
     @IBOutlet var mapView: MKMapView!
 
@@ -149,26 +148,27 @@ class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerD
     func addData() {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            let mgr = LocationsDataManager.shared
+            let locationsManager = LocationsDataManager.shared
             do {
-                // Load the relevant location(s)
-                if let venueId = self.selectVenueId ?? mgr.selectedVenueId {
-                    mgr.locationsToDisplay = [try await mgr.fetchLocationForVenue(venuesId: String(venueId))]
-                } else {
-                    let all = try await mgr.fetchLocations()
-                    mgr.locationsToDisplay = mgr.isMapFromVenueDetails ? all.filter { $0.locationId == mgr.selectedLocationId } : all
+   
+                if locationsManager.isVenuesFromMapFlow {
+                    let all = try await locationsManager.fetchLocations()
+                    locationsManager.locationsToDisplay = locationsManager.isMapFromVenueDetails ? all.filter { $0.locationId == locationsManager.selectedLocationId } : all
+                    locationsManager.locationsForMapPicker = locationsManager.locationsToDisplay
                 }
-
-                if mgr.isVenuesFromMapFlow {
-                    mgr.locationsForMapPicker = mgr.locationsToDisplay
+                
+                if locationsManager.isMapFromVenueDetails {
+                    if let venueId = self.selectVenueId ?? locationsManager.selectedVenueId {
+                        locationsManager.locationsToDisplay = [try await locationsManager.fetchLocationForVenue(venuesId: String(venueId))]
+                    }
                 }
 
                 // Update pins
                 mapView.removeAnnotations(mapView.annotations.filter { !($0 is MKUserLocation) })
-                mapView.addAnnotations(mgr.locationsToDisplay)
+                mapView.addAnnotations(locationsManager.locationsToDisplay)
 
                 // Focus on venue when coming from details
-                if mgr.isMapFromVenueDetails, let pin = mgr.locationsToDisplay.first {
+                if locationsManager.isMapFromVenueDetails, let pin = locationsManager.locationsToDisplay.first {
                     mapView.setRegion(MKCoordinateRegion(
                         center: pin.coordinate,
                         span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
