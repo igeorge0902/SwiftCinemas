@@ -3,7 +3,10 @@ import UIKit
 class MovieCollectionViewCell: UICollectionViewCell {
     var imageView: UIImageView!
     var textLabel: UILabel!
-    var dividerView: UIView!
+    var categoryLabel: UILabel!
+    var screeningDateLabel: UILabel!
+    var chevronLabel: UILabel!
+    var representedImagePath: String?
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -15,48 +18,96 @@ class MovieCollectionViewCell: UICollectionViewCell {
     }
 
     private func setupViews() {
+        contentView.backgroundColor = .white
+        contentView.layer.cornerRadius = 12
+        contentView.layer.borderWidth = 1
+        contentView.layer.borderColor = UIColor.black.withAlphaComponent(0.12).cgColor
+        contentView.layer.masksToBounds = true
+
         imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
+        imageView.layer.cornerRadius = 8
+        imageView.backgroundColor = UIColor(white: 0.93, alpha: 1)
         contentView.addSubview(imageView)
 
         textLabel = UILabel()
-        textLabel.numberOfLines = 0
+        textLabel.numberOfLines = 1
+        textLabel.textColor = .black
         contentView.addSubview(textLabel)
 
-        // Divider view
-        dividerView = UIView()
-        dividerView.backgroundColor = .lightGray // Set the color for the divider
-        contentView.addSubview(dividerView)
+        categoryLabel = UILabel()
+        categoryLabel.numberOfLines = 1
+        categoryLabel.textColor = UIColor(white: 0.50, alpha: 1)
+        contentView.addSubview(categoryLabel)
 
-        // Set up constraints
+        screeningDateLabel = UILabel()
+        screeningDateLabel.numberOfLines = 1
+        screeningDateLabel.textColor = UIColor(white: 0.50, alpha: 1)
+        contentView.addSubview(screeningDateLabel)
+
+        chevronLabel = UILabel()
+        chevronLabel.text = "›"
+        chevronLabel.textColor = UIColor(red: 0.76, green: 0.80, blue: 0.88, alpha: 1)
+        chevronLabel.font = .systemFont(ofSize: 18, weight: .medium)
+        contentView.addSubview(chevronLabel)
+
         imageView.translatesAutoresizingMaskIntoConstraints = false
         textLabel.translatesAutoresizingMaskIntoConstraints = false
-        dividerView.translatesAutoresizingMaskIntoConstraints = false
+        categoryLabel.translatesAutoresizingMaskIntoConstraints = false
+        screeningDateLabel.translatesAutoresizingMaskIntoConstraints = false
+        chevronLabel.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
-            imageView.topAnchor.constraint(equalTo: contentView.topAnchor),
-            imageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            imageView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            imageView.heightAnchor.constraint(equalTo: contentView.heightAnchor, multiplier: 0.6),
+            imageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 12),
+            imageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            imageView.widthAnchor.constraint(equalToConstant: 52),
+            imageView.heightAnchor.constraint(equalToConstant: 52),
 
-            textLabel.topAnchor.constraint(equalTo: imageView.bottomAnchor),
-            textLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            textLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
+            chevronLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -12),
+            chevronLabel.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            chevronLabel.widthAnchor.constraint(equalToConstant: 12),
 
-            dividerView.topAnchor.constraint(equalTo: textLabel.bottomAnchor, constant: 8),
-            dividerView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: -50),
-            dividerView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: 50),
-            dividerView.heightAnchor.constraint(equalToConstant: 1),
-            dividerView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
+            textLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 14),
+            textLabel.leadingAnchor.constraint(equalTo: imageView.trailingAnchor, constant: 12),
+            textLabel.trailingAnchor.constraint(equalTo: chevronLabel.leadingAnchor, constant: -8),
+
+            categoryLabel.topAnchor.constraint(equalTo: textLabel.bottomAnchor, constant: 6),
+            categoryLabel.leadingAnchor.constraint(equalTo: textLabel.leadingAnchor),
+            categoryLabel.trailingAnchor.constraint(equalTo: textLabel.trailingAnchor),
+
+            screeningDateLabel.topAnchor.constraint(equalTo: categoryLabel.bottomAnchor, constant: 3),
+            screeningDateLabel.leadingAnchor.constraint(equalTo: textLabel.leadingAnchor),
+            screeningDateLabel.trailingAnchor.constraint(equalTo: textLabel.trailingAnchor),
+            screeningDateLabel.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -12),
+        ])
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        representedImagePath = nil
+        imageView.image = nil
+        textLabel.attributedText = nil
+        categoryLabel.attributedText = nil
+        screeningDateLabel.attributedText = nil
+    }
+
+    func configureRedesign(title: String, category: String, screeningDate: String, fontName: String = "HelveticaNeue-Medium", fontSize: CGFloat = 14) {
+        let titleFont = UIFont(name: fontName, size: fontSize) ?? .systemFont(ofSize: fontSize, weight: .semibold)
+        textLabel.attributedText = NSAttributedString(string: title, attributes: [
+            .font: titleFont,
+            .foregroundColor: UIColor.black,
         ])
 
-        // Add shadow to the cell
-        contentView.layer.shadowColor = UIColor.black.cgColor
-        contentView.layer.shadowOpacity = 0.5
-        contentView.layer.shadowOffset = CGSize(width: 0, height: 2)
-        contentView.layer.shadowRadius = 4
-        contentView.layer.masksToBounds = false // Important to show shadow
+        let metadataFont = UIFont(name: fontName, size: 12) ?? .systemFont(ofSize: 12, weight: .regular)
+        categoryLabel.attributedText = NSAttributedString(string: category, attributes: [
+            .font: metadataFont,
+            .foregroundColor: UIColor(white: 0.5, alpha: 1),
+        ])
+        screeningDateLabel.attributedText = NSAttributedString(string: screeningDate, attributes: [
+            .font: metadataFont,
+            .foregroundColor: UIColor(white: 0.5, alpha: 1),
+        ])
     }
 }
 

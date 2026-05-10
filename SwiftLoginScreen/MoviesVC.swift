@@ -33,9 +33,16 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
     var CategoryData = [String]()
     var searchController: UISearchController?
     var tableView: UITableView?
+    var searchBarFrame: UIView?
+    var categoryScrollView: UIScrollView?
+    var categoryStack: UIStackView?
     lazy var section_: Int = 0
     var category_: String?
     var searchString: String?
+    var categoryChips: [String] = []
+    var favoritesByMovieId: [Int: Bool] = [:]
+    var ratingsByMovieId: [Int: String] = [:]
+    let fallbackCategories = ["All", "Action", "Drama", "Crime", "Romance", "Troll"]
 
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "goto_venues",
@@ -64,31 +71,47 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         searchController?.searchBar.placeholder = "Search in Title and Description..."
         searchController?.searchBar.autocapitalizationType = .none
         searchController?.searchBar.searchBarStyle = .minimal
+        searchController?.searchBar.barTintColor = .white
+        searchController?.searchBar.backgroundColor = .white
+        searchController?.searchBar.isUserInteractionEnabled = true
         definesPresentationContext = true
+        category_ = "nil"
 
         searchController?.searchBar.sizeToFit()
 
-        let searchBarFrame = UIView(frame: CGRect(x: 0.0, y: 50, width: view.frame.width, height: 44))
-        searchBarFrame.addSubview(searchController!.searchBar)
-        view.addSubview(searchBarFrame)
+        view.backgroundColor = .white
+
+        loadRatingsFixture()
+
+        let sbFrame = UIView(frame: CGRect(x: 0.0, y: 50, width: view.frame.width, height: 44))
+        sbFrame.backgroundColor = .white
+        sbFrame.addSubview(searchController!.searchBar)
+        let tap = UITapGestureRecognizer(target: self, action: #selector(focusSearchBar))
+        sbFrame.addGestureRecognizer(tap)
+        view.addSubview(sbFrame)
+        searchBarFrame = sbFrame
+
+        buildCategoryChipsBar()
 
         NotificationCenter.default.addObserver(self, selector: #selector(navigateBack), name: NSNotification.Name(rawValue: "navigateBack"), object: nil)
     }
 
     override func viewWillAppear(_: Bool) {
-        let frame = CGRect(x: 0, y: 100, width: view.frame.width, height: view.frame.height - 100)
+        tableView?.removeFromSuperview()
+        let frame = CGRect(x: 0, y: 140, width: view.frame.width, height: view.frame.height - 140)
         tableView = UITableView(frame: frame)
         tableView?.dataSource = self
         tableView?.delegate = self
+        tableView?.backgroundColor = .white
+        tableView?.separatorStyle = .none
         view.addSubview(tableView!)
 
-        let btnNav = UIButton(frame: CGRect(x: 0, y: 25, width: view.frame.width / 2, height: 20))
-        btnNav.backgroundColor = UIColor.black
-        btnNav.setTitle("Back", for: UIControl.State())
-        btnNav.showsTouchWhenHighlighted = true
-        btnNav.addTarget(self, action: #selector(MoviesVC.navigateBack), for: UIControl.Event.touchUpInside)
+        addTopNavigationButtons([
+            (title: "Back", action: #selector(MoviesVC.navigateBack)),
+        ])
 
-        view.addSubview(btnNav)
+        resolveCategories(from: TableData)
+        renderCategoryChips()
 
         if adminUpdatePage == true {
             TableData.removeAll()
@@ -96,6 +119,13 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         } else {
             addData(category: "nil")
         }
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+     //   DispatchQueue.main.async { [weak self] in
+     //       self?.searchController?.searchBar.becomeFirstResponder()
+     //   }
     }
 
     @objc func navigateBack() {
@@ -130,6 +160,8 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
             do {
                 let movies = try await MoviesDataManager.shared.fetchPaging(query: query)
                 self.TableData.append(contentsOf: movies)
+                self.resolveCategories(from: self.TableData)
+                self.renderCategoryChips()
                 endOfFile = movies.isEmpty
                 self.tableView?.reloadData()
             } catch {
@@ -194,6 +226,8 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
             do {
                 self.SearchData = try await MoviesDataManager.shared.search(query: query)
                 shouldShowSearchResults = true
+                self.resolveCategories(from: self.SearchData)
+                self.renderCategoryChips()
                 endOfFile = self.SearchData.isEmpty
                 self.tableView?.reloadData()
             } catch {
@@ -224,6 +258,17 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         // self.tableView!.reloadData()
     }
 
+    func searchBarShouldBeginEditing(_: UISearchBar) -> Bool {
+        DispatchQueue.main.async { [weak self] in
+            self?.searchController?.searchBar.becomeFirstResponder()
+        }
+        return true
+    }
+
+    @objc private func focusSearchBar() {
+        searchController?.searchBar.becomeFirstResponder()
+    }
+
     func searchBarShouldEndEditing(_: UISearchBar) -> Bool {
         // self.searchController!.searchBar.isHidden = true;
         searchController?.searchBar.resignFirstResponder()
@@ -248,11 +293,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
                 let backgroundQueue = DispatchQueue.global()
                 let deadline = DispatchTime.now() + .milliseconds(100)
                 backgroundQueue.asyncAfter(deadline: deadline, qos: .background) {
-                    if self.section_ == 0 {
-                        self.addData_(searchText, category: "nil")
-                    } else if self.section_ == 1 {
-                        self.addData_(searchText, category: self.category_!)
-                    }
+                    self.addData_(searchText, category: self.category_ ?? "nil")
                 }
             }
             if adminUpdatePage {
@@ -286,17 +327,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         print(searchString!)
     }
 
-    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        let headerView = UIView(frame: CGRect(x: 0, y: 0, width: tableView.frame.width, height: 50)) // Set header height
-
-        let control = UISegmentedControl(items: ["Reset", "Categories", "NA"])
-        control.frame = CGRect(x: 10, y: -20, width: headerView.frame.width - 20, height: 36) // Adjust control height
-        control.backgroundColor = UIColor.darkGray
-        control.addTarget(self, action: #selector(valueChanged(_:)), for: .valueChanged)
-
-        headerView.addSubview(control)
-        return section == 0 ? headerView : nil
-    }
+    func tableView(_: UITableView, viewForHeaderInSection _: Int) -> UIView? { nil }
 
     @objc func valueChanged(_ segmentedControl: UISegmentedControl) {
         print("Coming in : \(segmentedControl.selectedSegmentIndex)")
@@ -327,19 +358,10 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         if adminUpdatePage {
             return 60
         }
-        if CategoryData.count > 0 {
-            return 60
-        }
         return 180.0
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        if CategoryData.count > 0 {
-            let cell = UITableViewCell(style: .default, reuseIdentifier: "CELL")
-            cell.textLabel?.text = CategoryData[indexPath.row]
-            return cell
-        }
-
         var cell = tableView.dequeueReusableCell(withIdentifier: "CELL") as? ListViewCell
 
         if cell == nil {
@@ -359,23 +381,19 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
                 movieData = TableData[indexPath.row]
             } else if SearchData.count > 0 {
                 movieData = SearchData[indexPath.row]
-            } else if CategoryData.count > 0 {
-                categories = CategoryData[indexPath.row]
             }
         } else {
             if ScreenData_2.count > 0 {
-                adminRow = ScreenData_2[indexPath.section]
+                adminRow = ScreenData_2[indexPath.row]
             } else if TableData.count > 0 {
-                movieData = TableData[indexPath.section]
+                movieData = TableData[indexPath.row]
             } else if SearchData.count > 0 {
-                movieData = SearchData[indexPath.section]
-            } else if CategoryData.count > 0 {
-                categories = CategoryData[indexPath.row]
+                movieData = SearchData[indexPath.row]
             }
         }
 
         // Pass the information about whether to load image or not
-        configureCell(cell: cell, with: movieData, adminRow, categories: categories, indexPath: indexPath, shouldLoadImage: section_ != 1)
+        configureCell(cell: cell, with: movieData, adminRow, categories: categories, indexPath: indexPath, shouldLoadImage: !adminUpdatePage)
 
         return cell!
     }
@@ -384,8 +402,12 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         guard let cell else { return }
 
         let textAttr: [NSAttributedString.Key: Any] = [
-            .font: UIFont(name: "Courier New", size: 13.0)!,
-            .foregroundColor: UIColor.label,
+            .font: UIFont(name: "Courier New", size: 14.0)!,
+            .foregroundColor: UIColor.black,
+        ]
+        let ratingAttr: [NSAttributedString.Key: Any] = [
+            .font: UIFont(name: "Courier New", size: 12.0)!,
+            .foregroundColor: UIColor.darkGray,
         ]
 
         // ── Admin/update mode: show venue › movie rows from ScreenData_2 ──
@@ -409,7 +431,20 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         guard let data else { return }
 
         cell.configureLayout(compact: false)
-        cell.titleText.attributedText = NSAttributedString(string: data.name, attributes: textAttr)
+        let movieId = data.movieId
+        let rating = ratingsByMovieId[movieId] ?? "N/A"
+        let isFavorite = favoritesByMovieId[movieId] ?? false
+        cell.configureRedesign(
+            title: NSAttributedString(string: data.name, attributes: textAttr),
+            rating: NSAttributedString(string: "Rating: \(rating)", attributes: ratingAttr),
+            isFavorite: isFavorite,
+            onFavoriteTap: { [weak self] in
+                guard let self else { return }
+                let current = self.favoritesByMovieId[movieId] ?? false
+                self.favoritesByMovieId[movieId] = !current
+                self.tableView?.reloadData()
+            }
+        )
 
         if shouldLoadImage {
             let urlString = URLManager.image(data.largePicture)
@@ -445,19 +480,8 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
     func numberOfSections(in _: UITableView) -> Int {
         if adminUpdatePage {
             return 1
-
-        } else {
-            if SearchData.count > 0 {
-                return SearchData.count
-            }
-            if CategoryData.count > 0 {
-                return 1
-            }
-            if ScreenData_2.count > 0 {
-                return ScreenData_2.count
-            }
-            return TableData.count
         }
+        return 1
     }
 
     func tableView(_: UITableView, numberOfRowsInSection _: Int) -> Int {
@@ -465,40 +489,33 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
             if SearchData.count > 0 {
                 return SearchData.count
             }
-            if CategoryData.count > 0 {
-                return CategoryData.count
-            }
             if ScreenData_2.count > 0 {
                 return ScreenData_2.count
             }
             return TableData.count
-        } else if section_ == 1 {
-            if CategoryData.count > 0 {
-                return CategoryData.count
-            }
-        } else {
-            return 1
         }
-        return 1
+        if SearchData.count > 0 {
+            return SearchData.count
+        }
+        return TableData.count
     }
 
     func tableView(_: UITableView, heightForFooterInSection _: Int) -> CGFloat {
-        30
+        0.01
     }
 
     func tableView(_: UITableView, heightForHeaderInSection _: Int) -> CGFloat {
-        15
+        0.01
     }
 
     func tableView(_: UITableView, didSelectRowAt indexPath: IndexPath) {
         searchController!.searchBar.isHidden = false
-        section_ = 0
 
         if adminPage, CategoryData.count == 0 {
             if TableData.count > 0 {
-                addMovie = TableData[indexPath.section].name
+                addMovie = TableData[indexPath.row].name
             } else {
-                addMovie = SearchData[indexPath.section].name
+                addMovie = SearchData[indexPath.row].name
             }
             NotificationCenter.default.post(name: NSNotification.Name(rawValue: "newScreenMovieSelected"), object: nil)
         }
@@ -518,19 +535,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
             NotificationCenter.default.post(name: NSNotification.Name(rawValue: "movieSelected"), object: nil)
         }
 
-        if CategoryData.count > 0 {
-            // select category
-            category_ = CategoryData[indexPath.row]
-            CategoryData.removeAll()
-            TableData.removeAll()
-            if !adminUpdatePage {
-                addData(category: category_!)
-            }
-            if adminUpdatePage {
-                // add admin movie:venue with category
-                addLoadMoviesonVenue(category: category_!)
-            }
-        } else {
+        
             if adminPage || adminUpdatePage {} else {
                 if veil, shouldShowSearchResults {
                     dismiss(animated: true, completion: nil)
@@ -546,15 +551,15 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
                     performSegue(withIdentifier: "goto_venues", sender: self)
                 }
             }
-        }
+        
     }
 
     private func selectedMovie(at indexPath: IndexPath) -> MovieDataModel? {
         if TableData.count > 0 {
-            return TableData[indexPath.section]
+            return TableData[indexPath.row]
         }
         if SearchData.count > 0 {
-            return SearchData[indexPath.section]
+            return SearchData[indexPath.row]
         }
         return nil
     }
@@ -580,14 +585,12 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         searchController!.searchBar.isHidden = false
 
         if TableData.count > 10 || SearchData.count > 10 {
-            if indexPath.section == TableData.count - 3 {
+            if indexPath.row == TableData.count - 3 {
                 if endOfFile == false {
-                    addData(category: "nil")
+                    addData(category: category_ ?? "nil")
                 }
-                if indexPath.section == SearchData.count - 3, section_ == 0, endOfFile == false {
-                    addData_(searchString!, category: "nil")
-                } else if indexPath.section == SearchData.count - 3, section_ == 1, endOfFile == false {
-                    addData_(searchString!, category: category_!)
+                if indexPath.row == SearchData.count - 3, endOfFile == false {
+                    addData_(searchString ?? "", category: category_ ?? "nil")
                 }
             }
         }
@@ -595,12 +598,10 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
             if TableData.count > 10 || SearchData.count > 10 {
                 if indexPath.row == TableData.count - 3 {
                     if endOfFile == false {
-                        addData(category: "nil")
+                        addData(category: category_ ?? "nil")
                     }
-                    if indexPath.row == SearchData.count - 3, section_ == 0, endOfFile == false {
-                        addData_(searchString!, category: "nil")
-                    } else if indexPath.row == SearchData.count - 3, section_ == 1, endOfFile == false {
-                        addData_(searchString!, category: category_!)
+                    if indexPath.row == SearchData.count - 3, endOfFile == false {
+                        addData_(searchString ?? "", category: category_ ?? "nil")
                     }
                 }
             }
@@ -615,5 +616,111 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         shouldShowSearchResults = false
         performSegue(withIdentifier: "goto_movie_detail", sender: button)
     }
+
+    private func buildCategoryChipsBar() {
+        categoryScrollView?.removeFromSuperview()
+        let scroll = UIScrollView(frame: CGRect(x: 0, y: 96, width: view.frame.width, height: 40))
+        scroll.showsHorizontalScrollIndicator = false
+        scroll.backgroundColor = .white
+        scroll.alwaysBounceHorizontal = true
+        scroll.alwaysBounceVertical = false
+
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.spacing = 8
+        stack.alignment = .fill
+        stack.translatesAutoresizingMaskIntoConstraints = false
+
+        scroll.addSubview(stack)
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: scroll.contentLayoutGuide.leadingAnchor, constant: 12),
+            stack.trailingAnchor.constraint(equalTo: scroll.contentLayoutGuide.trailingAnchor, constant: -12),
+            stack.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor, constant: 4),
+            stack.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor, constant: -4),
+            stack.heightAnchor.constraint(equalTo: scroll.frameLayoutGuide.heightAnchor, constant: -8),
+            stack.widthAnchor.constraint(greaterThanOrEqualTo: scroll.frameLayoutGuide.widthAnchor, constant: -24),
+        ])
+
+        view.addSubview(scroll)
+        categoryScrollView = scroll
+        categoryStack = stack
+    }
+
+    private func renderCategoryChips() {
+        guard let stack = categoryStack else { return }
+        stack.arrangedSubviews.forEach { v in
+            stack.removeArrangedSubview(v)
+            v.removeFromSuperview()
+        }
+
+        let chips = categoryChips.isEmpty ? fallbackCategories : categoryChips
+        for chip in chips {
+            let button = UIButton(type: .system)
+            button.setTitle(chip, for: .normal)
+            button.setTitleColor(.black, for: .normal)
+            button.backgroundColor = (category_ == chip || (chip == "All" && (category_ == nil || category_ == "nil"))) ? .lightGray : .white
+            button.layer.borderColor = UIColor.black.cgColor
+            button.layer.borderWidth = 1
+            button.layer.cornerRadius = 14
+            button.contentEdgeInsets = UIEdgeInsets(top: 4, left: 12, bottom: 4, right: 12)
+            button.setContentCompressionResistancePriority(.required, for: .horizontal)
+            button.setContentHuggingPriority(.required, for: .horizontal)
+            button.titleLabel?.font = UIFont(name: "Courier New", size: 12)
+            button.addTarget(self, action: #selector(didTapCategoryChip(_:)), for: .touchUpInside)
+            stack.addArrangedSubview(button)
+        }
+    }
+
+    @objc private func didTapCategoryChip(_ sender: UIButton) {
+        let title = sender.currentTitle ?? "All"
+        category_ = (title == "All") ? "nil" : title
+        searchController?.searchBar.text = ""
+        SearchData.removeAll()
+        TableData.removeAll()
+        addData(category: category_ ?? "nil")
+        renderCategoryChips()
+    }
+
+    private func resolveCategories(from movies: [MovieDataModel]) {
+        let extracted = Set(movies.compactMap { extractedCategory(from: $0) })
+        if extracted.isEmpty {
+            categoryChips = fallbackCategories
+            NSLog("MoviesVC categories source=fallback count=%d", categoryChips.count)
+        } else {
+            categoryChips = ["All"] + extracted.sorted()
+            NSLog("MoviesVC categories source=backend count=%d", categoryChips.count)
+        }
+    }
+
+    private func extractedCategory(from _: MovieDataModel) -> String? {
+        nil
+    }
+
+    private func loadRatingsFixture() {
+        guard let url = Bundle.main.url(forResource: "ratings-mock", withExtension: "json") else {
+            ratingsByMovieId = [:]
+            NSLog("MoviesVC ratings source=fallback count=0")
+            return
+        }
+
+        do {
+            let data = try Data(contentsOf: url)
+            let payload = try JSONDecoder().decode(RatingsPayload.self, from: data)
+            ratingsByMovieId = Dictionary(uniqueKeysWithValues: payload.ratings.map { ($0.movieId, $0.rating) })
+            NSLog("MoviesVC ratings source=fixture count=%d", ratingsByMovieId.count)
+        } catch {
+            ratingsByMovieId = [:]
+            NSLog("MoviesVC ratings source=fallback error=%@", error.localizedDescription)
+        }
+    }
+}
+
+private struct RatingsPayload: Codable {
+    let ratings: [RatingItem]
+}
+
+private struct RatingItem: Codable {
+    let movieId: Int
+    let rating: String
 }
 

@@ -20,6 +20,25 @@ class ListViewCell: UITableViewCell {
         return label
     }()
 
+    let ratingLabel: UILabel = {
+        let label = UILabel()
+        label.textColor = .darkGray
+        label.textAlignment = .center
+        label.numberOfLines = 1
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+
+    let favoriteButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.tintColor = .black
+        button.setTitle("☆", for: .normal)
+        return button
+    }()
+
+    var favoriteTapHandler: (() -> Void)?
+
     // Constraints that differ between compact (text-only) and full (image+text) layouts
     private var compactConstraints: [NSLayoutConstraint] = []
     private var fullConstraints: [NSLayoutConstraint] = []
@@ -27,10 +46,21 @@ class ListViewCell: UITableViewCell {
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        backgroundColor = .systemBackground
+        backgroundColor = .white
+        contentView.backgroundColor = .white
+        selectionStyle = .none
+
+        layer.cornerRadius = 14
+        layer.borderWidth = 1
+        layer.borderColor = UIColor(white: 0.85, alpha: 1.0).cgColor
+        layer.masksToBounds = true
 
         contentView.addSubview(movieImageView)
         contentView.addSubview(titleText)
+        contentView.addSubview(ratingLabel)
+        contentView.addSubview(favoriteButton)
+
+        favoriteButton.addTarget(self, action: #selector(didTapFavorite), for: .touchUpInside)
 
         buildConstraints()
         // Default: full layout
@@ -48,6 +78,10 @@ class ListViewCell: UITableViewCell {
             movieImageView.widthAnchor.constraint(equalTo: contentView.widthAnchor, multiplier: 0.8),
         ]
 
+        movieImageView.layer.cornerRadius = 12
+        movieImageView.layer.masksToBounds = true
+        movieImageView.backgroundColor = UIColor(white: 0.94, alpha: 1.0)
+
         // ── Full (180pt, image on top, label below) ──
         fullConstraints = [
             contentView.heightAnchor.constraint(equalToConstant: 180),
@@ -57,7 +91,14 @@ class ListViewCell: UITableViewCell {
             titleText.topAnchor.constraint(equalTo: movieImageView.bottomAnchor, constant: 8),
             titleText.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
             titleText.widthAnchor.constraint(equalTo: movieImageView.widthAnchor),
-            titleText.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10),
+            ratingLabel.topAnchor.constraint(equalTo: titleText.bottomAnchor, constant: 4),
+            ratingLabel.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+            ratingLabel.widthAnchor.constraint(equalTo: movieImageView.widthAnchor),
+            ratingLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
+            favoriteButton.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
+            favoriteButton.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -12),
+            favoriteButton.widthAnchor.constraint(equalToConstant: 32),
+            favoriteButton.heightAnchor.constraint(equalToConstant: 32),
         ]
 
         // ── Compact (60pt, label only, image hidden) ──
@@ -76,12 +117,21 @@ class ListViewCell: UITableViewCell {
             NSLayoutConstraint.deactivate(fullConstraints)
             NSLayoutConstraint.activate(compactConstraints)
             movieImageView.isHidden = true
+            ratingLabel.isHidden = true
+            favoriteButton.isHidden = true
             titleText.textAlignment = .left
+            layer.cornerRadius = 0
+            layer.borderWidth = 0
         } else {
             NSLayoutConstraint.deactivate(compactConstraints)
             NSLayoutConstraint.activate(fullConstraints)
             movieImageView.isHidden = false
+            ratingLabel.isHidden = false
+            favoriteButton.isHidden = false
             titleText.textAlignment = .center
+            layer.cornerRadius = 14
+            layer.borderWidth = 1
+            layer.borderColor = UIColor(white: 0.85, alpha: 1.0).cgColor
         }
         setNeedsLayout()
     }
@@ -93,6 +143,22 @@ class ListViewCell: UITableViewCell {
     func configureCell(with image: UIImage?, title: String) {
         movieImageView.image = image
         titleText.text = title
+    }
+
+    func configureRedesign(title: NSAttributedString, rating: NSAttributedString, isFavorite: Bool, onFavoriteTap: (() -> Void)?) {
+        titleText.attributedText = title
+        ratingLabel.attributedText = rating
+        favoriteTapHandler = onFavoriteTap
+        favoriteButton.setTitle(isFavorite ? "★" : "☆", for: .normal)
+    }
+
+    @objc private func didTapFavorite() {
+        favoriteTapHandler?()
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        favoriteTapHandler = nil
     }
 
     private func addShadow() {

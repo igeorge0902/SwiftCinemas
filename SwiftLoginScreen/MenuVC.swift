@@ -31,14 +31,10 @@ class MenuVC: UIViewController, HasAppServices {
     private func setupUI() {
         view.backgroundColor = .white
 
-        let buttonTitles = ["Purchases", "Back"]
-        let buttonActions: [Selector] = [#selector(navigateToPurchases), #selector(navigateBack)]
-
-        for (index, title) in buttonTitles.enumerated() {
-            let button = createButton(title: title, action: buttonActions[index])
-            button.frame.origin.x = index == 0 ? view.frame.width / 2 : 0
-            view.addSubview(button)
-        }
+        addTopNavigationButtons([
+            (title: "Back", action: #selector(navigateBack)),
+            (title: "Purchases", action: #selector(navigateToPurchases)),
+        ])
 
         let textViews = [nameTextView, sessionCookieTextView, xsrfCookieTextView]
         for (index, textView) in textViews.enumerated() {

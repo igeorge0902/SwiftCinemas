@@ -256,23 +256,27 @@ struct VenuesMigrationView: View {
 
     private var topBar: some View {
         HStack {
-            Button("Back") {
+            Button("‹ Back") {
                 viewModel.onDismiss?()
             }
+            .font(.system(size: 13, weight: .semibold))
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(Color.black)
             .foregroundColor(.white)
-            .cornerRadius(6)
+            .cornerRadius(14)
 
             Spacer()
             Text(viewModel.input.movieName)
                 .lineLimit(1)
                 .font(.headline)
+                .foregroundColor(.black)
             Spacer()
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 16)
+        .padding(.top, 12)
+        .padding(.bottom, 8)
+        .background(Color.white)
     }
 
     // MARK: - Standard Mode
@@ -291,38 +295,54 @@ struct VenuesMigrationView: View {
                     )
                 }
                 .buttonStyle(.plain)
+                .listRowInsets(EdgeInsets(top: 6, leading: 12, bottom: 6, trailing: 12))
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.white)
             }
             .listStyle(.plain)
+            .background(Color.white)
 
             Divider()
 
             // Details panel pinned at the bottom
             VStack(alignment: .leading, spacing: 6) {
+                Text("Selected Venue Details")
+                    .font(.caption)
+                    .foregroundColor(.black.opacity(0.65))
                 if let venue = viewModel.selectedVenue {
                     Text(venue.name)
                         .font(.headline)
+                        .foregroundColor(.black)
                         .lineLimit(1)
                     Text(venue.address)
                         .font(.caption)
-                        .foregroundColor(.secondary)
-                    Button("View Details") {
-                        viewModel.onNavigateToDetails?(venue)
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(Color.accentColor)
-                    .foregroundColor(.white)
-                    .cornerRadius(8)
-                    .padding(.top, 4)
+                        .foregroundColor(.black.opacity(0.7))
                 } else {
                     Text("📍 Select a venue to see details")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.black.opacity(0.65))
                 }
+
+                Button {
+                    if let venue = viewModel.selectedVenue {
+                        viewModel.onNavigateToDetails?(venue)
+                    }
+                } label: {
+                    Text("Continue to Venue Details")
+                        .font(.system(size: 14, weight: .bold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                }
+                .buttonStyle(.plain)
+                .background(viewModel.selectedVenue == nil ? Color.gray.opacity(0.6) : Color.black)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+                .disabled(viewModel.selectedVenue == nil)
+                .padding(.top, 6)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14)
-            .background(Color(UIColor.secondarySystemBackground))
+            .background(Color(UIColor(white: 0.96, alpha: 1)))
         }
     }
 
@@ -434,20 +454,27 @@ private struct VenuePictureRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(venue.name)
                     .font(.system(size: 13, design: .monospaced))
-                    .foregroundColor(isSelected ? .red : .primary)
+                    .foregroundColor(.black)
                 if !venue.address.isEmpty {
                     Text(venue.address)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.black.opacity(0.68))
                         .lineLimit(2)
                 }
             }
             Spacer()
             Image(systemName: "chevron.right")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Color(red: 0.72, green: 0.75, blue: 0.82))
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 10)
+        .padding(.horizontal, 10)
+        .background(isSelected ? Color.black.opacity(0.06) : Color.white)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(isSelected ? Color.black.opacity(0.28) : Color.black.opacity(0.1), lineWidth: 1)
+        )
+        .cornerRadius(12)
         .contentShape(Rectangle())
         .task(id: venue.venuesPicture) {
             guard let pic = venue.venuesPicture, !pic.isEmpty else { return }

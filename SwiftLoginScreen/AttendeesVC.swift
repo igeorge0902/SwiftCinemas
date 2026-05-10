@@ -44,20 +44,10 @@ class AttendeesVC: UIViewController, UITableViewDataSource, UITableViewDelegate 
 
         view.addSubview(tableView!)
 
-        let btnData = UIButton(frame: CGRect(x: view.frame.width / 2, y: 25, width: view.frame.width / 2, height: 20))
-        btnData.backgroundColor = UIColor.black
-        btnData.showsTouchWhenHighlighted = true
-        btnData.setTitle("Clear", for: UIControl.State.normal)
-        btnData.addTarget(self, action: #selector(AttendeesVC.clearAttendees), for: UIControl.Event.touchUpInside)
-
-        let btnNav = UIButton(frame: CGRect(x: 0, y: 25, width: view.frame.width / 2, height: 20))
-        btnNav.backgroundColor = UIColor.black
-        btnNav.showsTouchWhenHighlighted = true
-        btnNav.setTitle("Back", for: UIControl.State.normal)
-        btnNav.addTarget(self, action: #selector(AttendeesVC.navigateBack), for: UIControl.Event.touchUpInside)
-
-        view.addSubview(btnData)
-        view.addSubview(btnNav)
+        addTopNavigationButtons([
+            (title: "Back", action: #selector(AttendeesVC.navigateBack)),
+            (title: "Clear", action: #selector(AttendeesVC.clearAttendees)),
+        ])
 
         contactS()
 

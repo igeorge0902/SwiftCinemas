@@ -59,17 +59,10 @@ class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIVi
     }
 
     override func viewWillAppear(_: Bool) {
-        let btnNav = UIButton(frame: CGRect(x: 0, y: 25, width: view.frame.width / 2, height: 20))
-        btnNav.backgroundColor = UIColor.black
-        btnNav.setTitle("Back", for: UIControl.State())
-        btnNav.showsTouchWhenHighlighted = true
-        btnNav.addTarget(self, action: #selector(AdminVC.navigateBack), for: UIControl.Event.touchUpInside)
-
-        let btnUpdate = UIButton(frame: CGRect(x: view.frame.width / 2, y: 25, width: view.frame.width / 2, height: 20))
-        btnUpdate.backgroundColor = UIColor.black
-        btnUpdate.setTitle("Update", for: UIControl.State())
-        btnUpdate.showsTouchWhenHighlighted = true
-        btnUpdate.addTarget(self, action: #selector(AdminVC.adminUpdate), for: UIControl.Event.touchUpInside)
+        addTopNavigationButtons([
+            (title: "Back", action: #selector(AdminVC.navigateBack)),
+            (title: "Update", action: #selector(AdminVC.adminUpdate)),
+        ])
 
         let btnAdd = UIButton(frame: CGRect(x: 0, y: view.frame.height * 0.9, width: view.frame.width / 2, height: 20))
         btnAdd.backgroundColor = UIColor.black
@@ -78,8 +71,7 @@ class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIVi
         btnAdd.addTarget(self, action: #selector(AdminVC.addNewScreen), for: UIControl.Event.touchUpInside)
 
         view.addSubview(btnAdd)
-        view.addSubview(btnUpdate)
-        view.addSubview(btnNav)
+
     }
 
     @objc func refresh() {

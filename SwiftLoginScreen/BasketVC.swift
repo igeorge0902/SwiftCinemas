@@ -26,31 +26,17 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
         [BasketItem](BasketDataManager.shared.basketItemsBySeatId.values.sorted { $0.movieName < $1.movieName })
     }
     lazy var layout = UICollectionViewFlowLayout()
+    private var topNavigationButtons: [UIButton] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
         injectAppServicesIfNeeded()
 
-        let btnNav = UIButton(frame: CGRect(x: 0, y: 50, width: view.frame.width / 2, height: 20))
-        btnNav.backgroundColor = UIColor.black
-        btnNav.showsTouchWhenHighlighted = true
-        btnNav.setTitle("Back", for: UIControl.State.normal)
-        btnNav.addTarget(self, action: #selector(BasketVC.navigateBack), for: UIControl.Event.touchUpInside)
-
-        let btnData = UIButton(frame: CGRect(x: view.frame.width / 2, y: 50, width: view.frame.width / 2, height: 20))
-        btnData.backgroundColor = UIColor.black
-        btnData.setTitle("CheckOut", for: UIControl.State())
-        btnData.showsTouchWhenHighlighted = true
-        btnData.addTarget(self, action: #selector(BasketVC.book), for: UIControl.Event.touchUpInside)
-
-        view.addSubview(btnNav)
-        view.addSubview(btnData)
-
-        layout.sectionInset = UIEdgeInsets(top: 75, left: 10, bottom: 10, right: 10)
+        layout.sectionInset = UIEdgeInsets(top: 12, left: 10, bottom: 10, right: 10)
         layout.itemSize = CGSize(width: view.frame.width * 0.9, height: view.frame.width * 0.5)
 
-        collectionView = UICollectionView(frame: view.frame, collectionViewLayout: layout)
+        collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: layout)
 
         collectionView.delegate = self
         collectionView.dataSource = self
@@ -60,6 +46,29 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
 
         view.addSubview(collectionView)
         view.sendSubviewToBack(collectionView)
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        topNavigationButtons = addTopNavigationButtons([
+            (title: "‹ Back", action: #selector(BasketVC.navigateBack)),
+            (title: "CheckOut", action: #selector(BasketVC.book)),
+        ], topOffset: 12)
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+
+        layoutTopNavigationButtons(topNavigationButtons, topOffset: 12)
+
+        let topContentY = (topNavigationButtons.first?.frame.maxY ?? (view.safeAreaInsets.top + 46)) + 10
+        collectionView.frame = CGRect(
+            x: 0,
+            y: topContentY,
+            width: view.bounds.width,
+            height: max(0, view.bounds.height - topContentY)
+        )
+        layout.itemSize = CGSize(width: view.bounds.width * 0.9, height: view.bounds.width * 0.5)
     }
 
     override func viewDidAppear(_: Bool) {

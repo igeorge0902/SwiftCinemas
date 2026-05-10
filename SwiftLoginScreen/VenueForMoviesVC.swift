@@ -8,7 +8,7 @@
 
 import UIKit
 
-class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UISearchResultsUpdating, UISearchBarDelegate, HasAppServices {
+class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, UISearchResultsUpdating, UISearchBarDelegate, HasAppServices {
     var appServices: AppServices!
     deinit {
         print(#function, "\(self)")
@@ -24,6 +24,14 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
 
     var refreshControl: UIRefreshControl!
     var collectionView: UICollectionView!
+    private var backButton: UIButton!
+
+    private struct VenueMovieRowDisplay {
+        let title: String
+        let imagePath: String
+        let categoryText: String
+        let screeningDateText: String
+    }
 
     override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
         if segue.identifier == "goto_venues_details2" {
@@ -48,14 +56,10 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
         super.viewDidLoad()
 
         injectAppServicesIfNeeded()
+        view.backgroundColor = .white
 
-        let btnNav = UIButton(frame: CGRect(x: 0, y: 25, width: view.frame.width / 2, height: 20))
-        btnNav.backgroundColor = UIColor.black
-        btnNav.setTitle("Back", for: UIControl.State())
-        btnNav.showsTouchWhenHighlighted = true
-        btnNav.addTarget(self, action: #selector(VenueForMoviesVC.navigateBack), for: UIControl.Event.touchUpInside)
-
-        view.addSubview(btnNav)
+        backButton = makeTopNavigationButton(title: "‹ Back", action: #selector(VenueForMoviesVC.navigateBack))
+        view.addSubview(backButton)
 
         // Initialize and set up the search controller
         searchController = UISearchController(searchResultsController: nil)
@@ -65,26 +69,46 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
         searchController.searchBar.placeholder = "Search in Title and Description..."
         searchController.searchBar.autocapitalizationType = .none
         searchController.searchBar.searchBarStyle = .minimal
+        searchController.searchBar.backgroundColor = .white
         definesPresentationContext = true
         searchController.searchBar.sizeToFit()
 
-        let searchBarFrame = UIView(frame: CGRect(x: 0.0, y: 50, width: view.frame.width, height: 44))
+        let searchBarFrame = UIView(frame: .zero)
+        searchBarFrame.backgroundColor = .white
+        searchBarFrame.translatesAutoresizingMaskIntoConstraints = false
         searchBarFrame.addSubview(searchController.searchBar)
         view.addSubview(searchBarFrame)
 
         let layout = UICollectionViewFlowLayout()
-        layout.itemSize = CGSize(width: view.frame.size.width / 2 - 10, height: view.frame.size.width / 2)
-        layout.sectionInset = UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10)
+        layout.minimumLineSpacing = 10
+        layout.sectionInset = UIEdgeInsets(top: 10, left: 12, bottom: 10, right: 12)
 
         collectionView = UICollectionView(frame: CGRect.zero, collectionViewLayout: layout)
         collectionView.delegate = self
         collectionView.dataSource = self
         collectionView.register(MovieCollectionViewCell.self, forCellWithReuseIdentifier: "CELL")
+        collectionView.backgroundColor = .white
+        collectionView.alwaysBounceVertical = true
 
         view.addSubview(collectionView)
+        backButton.translatesAutoresizingMaskIntoConstraints = false
         collectionView.translatesAutoresizingMaskIntoConstraints = false
+        searchController.searchBar.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            collectionView.topAnchor.constraint(equalTo: view.topAnchor, constant: 100),
+            backButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            backButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+
+            searchBarFrame.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            searchBarFrame.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            searchBarFrame.topAnchor.constraint(equalTo: backButton.bottomAnchor, constant: 8),
+            searchBarFrame.heightAnchor.constraint(equalToConstant: 44),
+
+            searchController.searchBar.leadingAnchor.constraint(equalTo: searchBarFrame.leadingAnchor),
+            searchController.searchBar.trailingAnchor.constraint(equalTo: searchBarFrame.trailingAnchor),
+            searchController.searchBar.topAnchor.constraint(equalTo: searchBarFrame.topAnchor),
+            searchController.searchBar.bottomAnchor.constraint(equalTo: searchBarFrame.bottomAnchor),
+
+            collectionView.topAnchor.constraint(equalTo: searchBarFrame.bottomAnchor, constant: 6),
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -147,21 +171,52 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
         tableData.count
     }
 
+    func collectionView(_: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt _: IndexPath) -> CGSize {
+        guard let layout = collectionViewLayout as? UICollectionViewFlowLayout else {
+            return CGSize(width: view.bounds.width - 24, height: 92)
+        }
+        let horizontalInsets = layout.sectionInset.left + layout.sectionInset.right
+        return CGSize(width: max(0, collectionView.bounds.width - horizontalInsets), height: 92)
+    }
+
+    private func makeDisplayRow(from selection: VenueMovieSelection) -> VenueMovieRowDisplay {
+        let category = (selection.category?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false)
+            ? selection.category!
+            : "N/A"
+        let screeningDate = (selection.screeningDate?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false)
+            ? selection.screeningDate!
+            : "TBA"
+
+        return VenueMovieRowDisplay(
+            title: selection.movie.name,
+            imagePath: selection.movie.largePicture,
+            categoryText: "Category: \(category)",
+            screeningDateText: "Date: \(screeningDate)"
+        )
+    }
+
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CELL", for: indexPath) as! MovieCollectionViewCell
 
-        let data = tableData[indexPath.row].movie
+        let display = makeDisplayRow(from: tableData[indexPath.row])
+        cell.configureRedesign(
+            title: display.title,
+            category: display.categoryText,
+            screeningDate: display.screeningDateText
+        )
+        cell.representedImagePath = display.imagePath
+        cell.imageView.image = UIImage(systemName: "film")
 
-        // Add text into the cell
-        cell.textLabel.text = data.name
-
-        let urlString = URLManager.image(data.largePicture)
+        let imagePath = display.imagePath
+        let urlString = URLManager.image(imagePath)
 
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
                 let imgData = try await self.appServices.images.getData(urlString: urlString, realmCache: true)
-                cell.imageView.image = UIImage(data: imgData)
+                guard let updatedCell = collectionView.cellForItem(at: indexPath) as? MovieCollectionViewCell,
+                      updatedCell.representedImagePath == imagePath else { return }
+                updatedCell.imageView.image = UIImage(data: imgData)
             } catch {
                 NSLog("VenueForMoviesVC image: %@", error.localizedDescription)
             }

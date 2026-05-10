@@ -50,20 +50,10 @@ class iOSCalendarVC: UIViewController, UITableViewDataSource, UITableViewDelegat
 
         view.addSubview(tableView!)
 
-        let btnNav = UIButton(frame: CGRect(x: 0, y: 25, width: view.frame.width / 2, height: 20))
-        btnNav.backgroundColor = UIColor.black
-        btnNav.setTitle("Back", for: UIControl.State.normal)
-        btnNav.showsTouchWhenHighlighted = true
-        btnNav.addTarget(self, action: #selector(iOSCalendarVC.navigateBack), for: UIControl.Event.touchUpInside)
-
-        let btnAttendees = UIButton(frame: CGRect(x: view.frame.width / 2, y: 25, width: view.frame.width / 2, height: 20))
-        btnAttendees.backgroundColor = UIColor.black
-        btnAttendees.setTitle("Save", for: UIControl.State())
-        btnAttendees.showsTouchWhenHighlighted = true
-        btnAttendees.addTarget(self, action: #selector(iOSCalendarVC.calendar), for: UIControl.Event.touchUpInside)
-
-        view.addSubview(btnAttendees)
-        view.addSubview(btnNav)
+        addTopNavigationButtons([
+            (title: "Back", action: #selector(iOSCalendarVC.navigateBack)),
+            (title: "Save", action: #selector(iOSCalendarVC.calendar)),
+        ])
     }
 
     override func viewDidAppear(_: Bool) {

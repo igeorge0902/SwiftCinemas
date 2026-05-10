@@ -161,25 +161,102 @@ final class VenuesDataManager: SharedDataManager, HasAppServices {
         do {
             let data = try await mbooks.venueMovies(locationId: locationId)
             let json = try JSON(data: data)
-            let movies = json["movies"].arrayValue.compactMap { MovieDataModel(json: $0) }
+            let movieEntries = json["movies"].arrayValue.compactMap { raw -> (movie: MovieDataModel, raw: JSON)? in
+                guard let movie = MovieDataModel(json: raw) else { return nil }
+                return (movie, raw)
+            }
             let venues = json["venue"].arrayValue.compactMap { VenueSelectionVenue(json: $0) }
-            guard !movies.isEmpty else {
+            guard !movieEntries.isEmpty else {
                 moviesForSelectedLocation = []
                 return []
             }
 
+            let locationInt = Int(locationId)
+            let screeningDateByMovieId = await fetchScreeningDatesByMovieId(
+                movies: movieEntries.map(\.movie),
+                locationId: locationInt
+            )
+
             let fallbackVenue = venues.first
-            let selections: [VenueMovieSelection] = movies.compactMap { movie -> VenueMovieSelection? in
+            let selections: [VenueMovieSelection] = movieEntries.compactMap { entry -> VenueMovieSelection? in
+                let movie = entry.movie
                 let matchingVenue = venues.first(where: { $0.name == movie.name })
                     ?? fallbackVenue
                 guard let matchingVenue else { return nil }
-                return VenueMovieSelection(movie: movie, venue: matchingVenue)
+
+                let category = extractCategoryText(from: entry.raw)
+                let payloadDate = extractScreeningDateText(from: entry.raw)
+                let endpointDate = screeningDateByMovieId[movie.movieId]
+
+                return VenueMovieSelection(
+                    movie: movie,
+                    venue: matchingVenue,
+                    category: category,
+                    screeningDate: payloadDate ?? endpointDate
+                )
             }
             moviesForSelectedLocation = selections
             return selections
         } catch {
             throw handleError(error)
         }
+    }
+
+    private func extractCategoryText(from json: JSON) -> String? {
+        let direct = json["category"].string
+            ?? json["genre"].string
+            ?? json["movie_category"].string
+        if let direct, !direct.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return direct
+        }
+
+        let fromArray = json["categories"].arrayValue
+            .compactMap { $0.string }
+            .first
+        if let fromArray, !fromArray.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return fromArray
+        }
+        return nil
+    }
+
+    private func extractScreeningDateText(from json: JSON) -> String? {
+        let raw = json["screeningDate"].string
+            ?? json["screening_date"].string
+            ?? json["date"].string
+        guard let raw, !raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return nil
+        }
+        return raw
+    }
+
+    private func fetchScreeningDatesByMovieId(movies: [MovieDataModel], locationId: Int?) async -> [Int: String] {
+        guard let locationId else { return [:] }
+        var result: [Int: String] = [:]
+        let service = mbooks
+
+        await withTaskGroup(of: (Int, String?).self) { group in
+            for movie in movies {
+                let movieId = movie.movieId
+                group.addTask {
+                    do {
+                        let data = try await service.dates(locationId: locationId, movieId: movieId)
+                        let json = try JSON(data: data)
+                        let firstDate = json["dates"].arrayValue
+                            .compactMap { ScreeningDateModel(json: $0)?.date }
+                            .first
+                        return (movieId, firstDate)
+                    } catch {
+                        return (movieId, nil)
+                    }
+                }
+            }
+
+            for await (movieId, dateText) in group {
+                guard let dateText, !dateText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }
+                result[movieId] = dateText
+            }
+        }
+        return result
     }
 
     private func parseScreenIds(from raw: String) -> [String] {
@@ -314,6 +391,8 @@ struct VenueSelectionVenue {
 struct VenueMovieSelection {
     let movie: MovieDataModel
     let venue: VenueSelectionVenue
+    let category: String?
+    let screeningDate: String?
 }
 
 typealias VenueModel = Venue

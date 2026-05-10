@@ -54,22 +54,16 @@ class MovieDetailVC: UIViewController, UIViewControllerTransitioningDelegate, UI
             iMDB = selectedMovie.imdbUrl
         }
 
-        let btnNav = UIButton(frame: CGRect(x: 0, y: 25, width: view.frame.width / 2, height: 20))
-        btnNav.backgroundColor = UIColor.black
-        btnNav.showsTouchWhenHighlighted = true
-        btnNav.setTitle("Back", for: UIControl.State())
-        btnNav.addTarget(self, action: #selector(MovieDetailVC.navigateBack), for: UIControl.Event.touchUpInside)
-
-        let btnVenue = UIButton(frame: CGRect(x: view.frame.width / 2, y: 25, width: view.frame.width / 2, height: 20))
-        btnVenue.backgroundColor = UIColor.black
-        btnVenue.setTitle("Venues", for: UIControl.State())
-        btnVenue.showsTouchWhenHighlighted = true
-        btnVenue.addTarget(self, action: #selector(MovieDetailVC.Venues), for: UIControl.Event.touchUpInside)
-
         if origin != "VenuesDetailsVC" {
-            view.addSubview(btnVenue)
+            addTopNavigationButtons([
+                (title: "Back", action: #selector(MovieDetailVC.navigateBack)),
+                (title: "Venues", action: #selector(MovieDetailVC.Venues)),
+            ])
+        } else {
+            addTopNavigationButtons([
+                (title: "Back", action: #selector(MovieDetailVC.navigateBack)),
+            ])
         }
-        view.addSubview(btnNav)
 
         scrollView = UIScrollView()
         scrollView.delegate = self
