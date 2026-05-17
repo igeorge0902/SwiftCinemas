@@ -1,0 +1,88 @@
+SwiftLoginScreen/Storyboard.storyboard
+  s_be623d5f196e2d::t_1564bd49302bf3 259-260,266,271,276,282,330-331,350,375-378,381-382
+  s_be623d5f196e2d::t_dc91f0ec69d9fd 294,450
+SwiftLoginScreen/DataManagers/LocationsDataManager.swift
+  s_be623d5f196e2d::t_6b5fb303341db9 148,159,172
+SwiftLoginScreen/admin-update-screen.svg
+  s_79804baceb9b12::t_d38a64ad8aba0c 1-49
+SwiftLoginScreen/TicketsVC.swift
+  s_be623d5f196e2d::t_64a2f5c2399ad7 50-51,60-61,63,67,81-83,89-100,109-113,115,229-232,372
+  s_be623d5f196e2d::t_72807d4dabc72d 52,65,120,139,142,145,152,162-164,166,174,201,243-245
+  s_be623d5f196e2d::t_ef6286320632d4 366
+  s_be623d5f196e2d::t_da2efc811904be 147,154,290-296
+  s_be623d5f196e2d::t_6640700bb5ea67 17-20,53,62,84-85,167-173,246-253,259,261-289
+SwiftLoginScreen/PurchasesVC.swift
+  s_be623d5f196e2d::t_1f783bb379ed84 28-30,32-59,74,84-85,97-104,106-130,133-177,179-194,316-319,363,365-378,399
+  s_be623d5f196e2d::t_9b2a95d5d24fee 31,195-197,320-336,339,341,343-354,356-359,361-362,364,379-390,392-398
+SwiftLoginScreen/FeedCells.swift
+  s_be623d5f196e2d::t_28b94c2ee06157 55,58
+SwiftLoginScreen/admin-screen.svg
+  s_79804baceb9b12::t_91f5b074fab3f2 1-51
+SwiftLoginScreen/AdminVC.swift
+  s_be623d5f196e2d::t_8cb4d642376d68 361-364,369,372-383
+  s_be623d5f196e2d::t_8a6f1a3ca79d69 43,58,312-333,465
+  s_be623d5f196e2d::t_20e9b27b195c82 40-41,62-63,72,77-79,82-83,92-101
+  s_be623d5f196e2d::t_cb7d335b944721 44-46,59,297,334-357,365-368,370-371,384-464,466-487
+  s_be623d5f196e2d::t_7ef5a2ecea0215 42,81,84-91,102-104,106-110
+SwiftLoginScreen/AdminUIStyle.swift
+  s_be623d5f196e2d::t_5daaf3c64318c4 1-25
+SwiftLoginScreen/MoviesVC.swift
+  s_be623d5f196e2d::t_13a4e6606c1038 456
+  s_be623d5f196e2d::t_c201360e116013 85,102,106-108,387,394-400,520-528,530,532,574-580,582-593,595-596,788
+  s_be623d5f196e2d::t_8bd4aa05e076ad 57,98,100,119,434,436-437,597
+  s_be623d5f196e2d::t_c98406a7542738 22-32,105,435,470,529,531,544,560,594,640,650,787,789-791
+  s_be623d5f196e2d::t_f44e32aa2d9a25 533-543,545-559,561-573,581,598-602,754,793-794,797
+SwiftLoginScreen/MenuVC.swift
+  s_be623d5f196e2d::t_bfcb1fd2ae9ce0 9-13,15,19,36,43-46,49-52,54-85,101-107,109-125,129,131-133,163-164,176,180,253-255
+  s_be623d5f196e2d::t_3d6c7a1d33eb65 91,96-100
+SwiftLoginScreen/menu-screen.svg
+  s_be623d5f196e2d::t_c507a7a2494d55 6-19
+SwiftLoginScreen/AdminUpdateVC.swift
+  s_be623d5f196e2d::t_9b2c5971012f05 43,59,434-455,543,546,557,559
+  s_be623d5f196e2d::t_780bf0605e0452 36-38,62-66,79-91,93-98,101-102,104-109,112-113,115,130-132,141,149,165,209
+  s_be623d5f196e2d::t_30130b5ce18a38 216
+  s_be623d5f196e2d::t_4b437956026dc2 477-479
+  s_be623d5f196e2d::t_bbbc3c32ee2002 44-46,60,412,456-476,484-487,489-490,503-542,544-545,547-556,558,560-581
+  s_be623d5f196e2d::t_18fbb2fb79c0f4 41,118-129
+SwiftLoginScreen/VenuesVC.swift
+  s_be623d5f196e2d::t_ea6bbd8c1e5bdb 309-314
+  s_be623d5f196e2d::t_f3e2c8199f4840 364,462,464,469-470
+  s_be623d5f196e2d::t_ef93bf3118f52f 18-27,185,229,363,365,453-454,456,463
+  s_be623d5f196e2d::t_64b176187402ab 351,356,358-359,361-362
+  s_be623d5f196e2d::t_661d08259d140a 60,340-348,350,426,428
+  s_be623d5f196e2d::t_c1a172ac6ada6c 14-17,143-144,296-306,318,320-321,327,413-420
+  s_be623d5f196e2d::t_3fb9a91f5a0b7b 352
+  s_be623d5f196e2d::t_38bfda48f9a779 353,366-367,448-452,455,457-461,465-468,471-473
+SwiftLoginScreen/tickets-screen.svg
+  s_be623d5f196e2d::t_0a95c802ed55e3 1-6,8,43-44
+  s_be623d5f196e2d::t_be086c9fa4e4d3 7,15-16,33-42
+  s_be623d5f196e2d::t_8f3ca4f7b3a715 9-14,17-32
+SwiftLoginScreen/purchases-screen.svg
+  s_be623d5f196e2d::t_0324b72d3756b7 9-17,19,21,31,41
+  s_be623d5f196e2d::t_9b726c400cf2ca 18,22-26,29-30,32-36,39-40,42-46,49-50
+  s_be623d5f196e2d::t_8923554e7d2ae2 20,27-28,37-38,47-48,51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "3d9befc02937452029a2b84eae68f061c95d71e9",
+  "prompts": {},
+  "sessions": {
+    "s_79804baceb9b12": {
+      "agent_id": {
+        "tool": "github-copilot-jetbrains",
+        "id": "1778928201060",
+        "model": "unknown"
+      },
+      "human_author": "GASPAR, GYORGY <gyorgy.gaspar@lhsystems.com>"
+    },
+    "s_be623d5f196e2d": {
+      "agent_id": {
+        "tool": "github-copilot-jetbrains",
+        "id": "1778933385577",
+        "model": "unknown"
+      },
+      "human_author": "GASPAR, GYORGY <gyorgy.gaspar@lhsystems.com>"
+    }
+  }
+}
