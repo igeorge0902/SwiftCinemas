@@ -11,6 +11,20 @@ import SwiftyJSON
 import UIKit
 
 class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, HasAppServices {
+    private let compactRowHeight: CGFloat = 60
+    private let expandedAdminRowHeight: CGFloat = 94
+    private let standardVenueRowHeight: CGFloat = 94
+
+    private enum VenueUIStyle {
+        static let selectedRowBackground = UIColor(white: 0.95, alpha: 1)
+        static let defaultRowBackground = UIColor.white
+        static let accessoryChipBackground = UIColor(white: 0.94, alpha: 1)
+        static let accessoryChipBorder = UIColor(white: 0.85, alpha: 1)
+        static let accessoryText = UIColor(white: 0.35, alpha: 1)
+        static let detailText = UIColor(white: 0.40, alpha: 1)
+        static let disabledButtonBackground = UIColor(white: 0.70, alpha: 1)
+    }
+
     var appServices: AppServices!
     var movieId: Int!
     var movieName: String!
@@ -43,6 +57,8 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
     var continueButton: UIButton!
     private var backButton: UIButton!
     private var selectedVenueIndex: Int?
+    private var adminSelectedVenueTitle: String?
+    private var expandedAdminVenueIds = Set<Int>()
     private var hasConfiguredStaticUI = false
 
     override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
@@ -123,9 +139,30 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
         tableView.clipsToBounds = true
         tableView.separatorStyle = .none
         tableView.backgroundColor = .white
-        tableView.contentInset = UIEdgeInsets(top: 6, left: 0, bottom: 8, right: 0)
-        tableView.rowHeight = 82
+        tableView.contentInset = UIEdgeInsets(top: 6, left: 0, bottom: 2, right: 0)
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = compactRowHeight
+        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleAdminVenueLongPress(_:)))
+        longPress.minimumPressDuration = 0.35
+        tableView.addGestureRecognizer(longPress)
         view.addSubview(tableView)
+    }
+
+    @objc private func handleAdminVenueLongPress(_ gesture: UILongPressGestureRecognizer) {
+        guard gesture.state == .began,
+              adminPage,
+              let tableView,
+              let indexPath = tableView.indexPathForRow(at: gesture.location(in: tableView)),
+              indexPath.row < LocationsDataManager.shared.locationsToDisplay.count else { return }
+
+        let location = LocationsDataManager.shared.locationsToDisplay[indexPath.row]
+        if expandedAdminVenueIds.contains(location.locationId) {
+            expandedAdminVenueIds.remove(location.locationId)
+        } else {
+            expandedAdminVenueIds.insert(location.locationId)
+        }
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        tableView.reloadRows(at: [indexPath], with: .none)
     }
 
     private func setupDetailsView() {
@@ -145,7 +182,7 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
         continueButton.setTitle("Continue to Venue Details", for: .normal)
         continueButton.titleLabel?.font = .systemFont(ofSize: 14, weight: .bold)
         continueButton.setTitleColor(.white, for: .normal)
-        continueButton.backgroundColor = UIColor(white: 0.70, alpha: 1)
+        continueButton.backgroundColor = VenueUIStyle.disabledButtonBackground
         continueButton.layer.cornerRadius = 12
         continueButton.isEnabled = false
         continueButton.addTarget(self, action: #selector(continueToVenueDetails), for: .touchUpInside)
@@ -156,7 +193,6 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
     }
 
     private func layoutStaticUI() {
-        let safeTop = view.safeAreaInsets.top
         let safeBottom = max(view.safeAreaInsets.bottom, 12)
         layoutTopNavigationButtons([backButton].compactMap { $0 }, topOffset: 12)
 
@@ -190,7 +226,7 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
         selectedVenueIndex = nil
         detailsLabel.text = "Select a venue to see details here."
         continueButton?.isEnabled = false
-        continueButton?.backgroundColor = UIColor(white: 0.70, alpha: 1)
+        continueButton?.backgroundColor = VenueUIStyle.disabledButtonBackground
         tableView?.indexPathForSelectedRow.map { tableView?.deselectRow(at: $0, animated: false) }
     }
 
@@ -257,20 +293,38 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
         return LocationsDataManager.shared.locationsToDisplay
     }
 
+    private func sortVenueRowsForAdminFlows() {
+        LocationsDataManager.shared.locationsToDisplay.sort { ($0.title ?? "") < ($1.title ?? "") }
+        LocationsDataManager.shared.locationsForMapPicker.sort { ($0.title ?? "") < ($1.title ?? "") }
+    }
+
+    private func isExpandedAdminRow(_ indexPath: IndexPath) -> Bool {
+        guard adminPage else { return false }
+        sortVenueRowsForAdminFlows()
+        guard indexPath.row < LocationsDataManager.shared.locationsToDisplay.count else { return false }
+        let location = LocationsDataManager.shared.locationsToDisplay[indexPath.row]
+        return expandedAdminVenueIds.contains(location.locationId)
+    }
+
+    private func applyRowSelectionBackground(_ cell: UITableViewCell, isSelected: Bool) {
+        let background = isSelected ? VenueUIStyle.selectedRowBackground : VenueUIStyle.defaultRowBackground
+        cell.backgroundColor = background
+        cell.contentView.backgroundColor = background
+    }
+
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "CELL") ?? UITableViewCell(style: .subtitle, reuseIdentifier: "CELL")
         cell.selectionStyle = .none
-        cell.backgroundColor = .clear
+        cell.backgroundColor = .white
         cell.contentView.backgroundColor = .white
-        cell.contentView.layer.cornerRadius = 12
-        cell.contentView.layer.masksToBounds = true
+        cell.contentView.layer.cornerRadius = 0
+        cell.contentView.layer.masksToBounds = false
         cell.tag = indexPath.row
         cell.imageView?.layer.cornerRadius = 8
         cell.imageView?.clipsToBounds = true
 
         if adminPage || isMapFlow {
-            LocationsDataManager.shared.locationsToDisplay.sort { ($0.title ?? "") < ($1.title ?? "") }
-            LocationsDataManager.shared.locationsForMapPicker.sort { ($0.title ?? "") < ($1.title ?? "") }
+            sortVenueRowsForAdminFlows()
 
             let data_: Location? = if isMapFlow {
                 mapFlowRows[indexPath.row]
@@ -283,20 +337,34 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
                 s = (originalVenueName.string as NSString) as String
             }
 
-            if data_?.title! == s as String {
-                let range = (s as NSString).range(of: s as String)
-                let mutableAttributedString = NSMutableAttributedString(string: s as String)
-                mutableAttributedString.addAttribute(NSAttributedString.Key.foregroundColor, value: UIColor.red, range: range)
-                cell.textLabel?.attributedText = mutableAttributedString
-                cell.detailTextLabel?.text = data_?.address
+            let currentTitle = data_?.title ?? ""
+            let isOriginal = currentTitle == s
+            let isSelected = currentTitle == adminSelectedVenueTitle
+            let font = UIFont(name: "Courier New", size: 13.0) ?? .monospacedSystemFont(ofSize: 13, weight: .regular)
+            let selectedFont = UIFont(name: "Courier New", size: 13.0) ?? .monospacedSystemFont(ofSize: 13, weight: .semibold)
+            let mutableAttributedString = NSMutableAttributedString(
+                string: currentTitle,
+                attributes: [.font: isSelected ? selectedFont : font, .foregroundColor: isSelected ? UIColor.black : UIColor.darkGray]
+            )
 
+            cell.textLabel?.attributedText = mutableAttributedString
+            cell.textLabel?.font = UIFont(name: "Courier New", size: 12.0) ?? .monospacedSystemFont(ofSize: 12, weight: .regular)
+            let marker = isOriginal ? "(original)" : (isSelected ? "(new selection)" : "")
+            let statusLine = marker.isEmpty ? "" : "\(marker) |"
+            if let data_, expandedAdminVenueIds.contains(data_.locationId) {
+                cell.detailTextLabel?.text = "\(statusLine)\ninfo: \(data_.address)"
+                cell.detailTextLabel?.numberOfLines = 3
             } else {
-                let myTextAttribute = [convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 13.0)!]
-                let detailText = NSMutableAttributedString(string: (data_?.title!)!, attributes: convertToOptionalNSAttributedStringKeyDictionary(myTextAttribute))
-
-                cell.textLabel?.attributedText = detailText
-                //   cell!.detailTextLabel?.text = data_?.address
+                cell.detailTextLabel?.text = statusLine
+                cell.detailTextLabel?.numberOfLines = 1
             }
+            cell.detailTextLabel?.font = .systemFont(ofSize: 10, weight: .regular)
+            cell.detailTextLabel?.lineBreakMode = .byTruncatingTail
+            cell.detailTextLabel?.textColor = VenueUIStyle.detailText
+            // Keep selection highlight on the whole row, including accessory area.
+            applyRowSelectionBackground(cell, isSelected: isSelected)
+            cell.accessoryType = .none
+            cell.accessoryView = makeVenueAccessory(capacity: data_?.capacity, isSelected: isSelected)
 
         } else {
             // TableData.sort { ($0.title ?? "") < ($1.title ?? "")}
@@ -342,10 +410,22 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
         }
     }
 
+    func tableView(_: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        if adminPage {
+            return isExpandedAdminRow(indexPath) ? expandedAdminRowHeight : compactRowHeight
+        }
+        if isMapFlow {
+            return compactRowHeight
+        }
+        return standardVenueRowHeight
+    }
+
     func tableView(_: UITableView, didSelectRowAt indexPath: IndexPath) {
         if adminPage, tableData.isEmpty {
             let selectedVenue = LocationsDataManager.shared.locationsToDisplay[indexPath.row]
+            adminSelectedVenueTitle = selectedVenue.title
             LocationsDataManager.shared.applySelection(selectedVenue, notificationName: "newScreenVenueSelected")
+            tableView.reloadData()
 
         } else if isMapFlow {
             let rows = mapFlowRows
@@ -364,6 +444,33 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
             continueButton.isEnabled = true
             continueButton.backgroundColor = .black
         }
+    }
+
+    private func makeVenueAccessory(capacity: Int?, isSelected: Bool) -> UIView {
+        let capacityLabel = UILabel()
+        capacityLabel.text = "capacity \(capacity.map(String.init) ?? "n/a")"
+        capacityLabel.font = .systemFont(ofSize: 10, weight: .regular)
+        capacityLabel.textColor = VenueUIStyle.accessoryText
+        capacityLabel.backgroundColor = VenueUIStyle.accessoryChipBackground
+        capacityLabel.layer.borderWidth = 1
+        capacityLabel.layer.borderColor = VenueUIStyle.accessoryChipBorder.cgColor
+        capacityLabel.layer.cornerRadius = 10
+        capacityLabel.layer.masksToBounds = true
+        capacityLabel.textAlignment = .center
+        capacityLabel.translatesAutoresizingMaskIntoConstraints = false
+
+        let container = UIView(frame: CGRect(x: 0, y: 0, width: 108, height: 24))
+        container.backgroundColor = isSelected ? VenueUIStyle.selectedRowBackground : VenueUIStyle.defaultRowBackground
+        container.addSubview(capacityLabel)
+
+        NSLayoutConstraint.activate([
+            capacityLabel.heightAnchor.constraint(equalToConstant: 20),
+            capacityLabel.widthAnchor.constraint(greaterThanOrEqualToConstant: 84),
+            capacityLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            capacityLabel.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+        ])
+
+        return container
     }
 }
 

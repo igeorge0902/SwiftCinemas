@@ -52,10 +52,10 @@ class FeedCells: UICollectionViewCell {
         contentView.addSubview(textLabel!)
         contentView.addSubview(CancelImage!)
 
-        addConstraintswithFormat("H:|-8-[v0(44)]-8-[v1]-8-[v2(44)]-8-|", views: profileImage!, textLabel!, QRCodeImage!)
+        addConstraintswithFormat("H:|-8-[v0(44)]-8-[v1]-8-[v2(36)]-8-|", views: profileImage!, textLabel!, QRCodeImage!)
         addConstraintswithFormat("V:|-8-[v0(44)]", views: profileImage!)
         addConstraintswithFormat("V:|-8-[v0]", views: textLabel!)
-        addConstraintswithFormat("V:|-8-[v0(44)]", views: QRCodeImage!)
+        addConstraintswithFormat("V:|-12-[v0(36)]", views: QRCodeImage!)
 
         addConstraintswithFormat("H:|-4-[v0]-4-|", views: statusText!)
         addConstraintswithFormat("V:|-8-[v0(44)]-4-[v1(90)]", views: profileImage!, statusText!)

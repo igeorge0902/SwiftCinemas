@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844">
+  <rect width="390" height="844" fill="#f7f7fa"/>
+  <rect x="8" y="8" width="374" height="36" rx="14" fill="#111"/>
+  <text x="32" y="31" font-family="Arial, sans-serif" font-size="13" fill="#fff">Back</text>
+  <text x="296" y="31" font-family="Arial, sans-serif" font-size="13" fill="#fff">Purchases</text>
+  <text x="195" y="56" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#2b2b34">Menu / Profile</text>
+
+  <rect x="8" y="56" width="374" height="146" rx="10" fill="#fff" stroke="#e5e5e8"/>
+  <text x="20" y="76" font-family="Arial, sans-serif" font-size="12" fill="#222">PROFILE</text>
+  <text x="20" y="98" font-family="Arial, sans-serif" font-size="12" fill="#666">Username</text>
+  <text x="120" y="98" font-family="Courier New, monospace" font-size="12" fill="#222">cinema_user</text>
+  <text x="20" y="118" font-family="Arial, sans-serif" font-size="12" fill="#666">Email</text>
+  <text x="120" y="118" font-family="Courier New, monospace" font-size="12" fill="#222">user@cinemas.local</text>
+
+  <rect x="8" y="214" width="374" height="286" rx="10" fill="#fff" stroke="#e5e5e8"/>
+  <text x="20" y="234" font-family="Arial, sans-serif" font-size="12" fill="#222">AVATAR</text>
+  <rect x="20" y="246" width="350" height="196" rx="10" fill="#9aa3b4"/>
+  <text x="195" y="346" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#fff">PROFILE IMAGE (backend)</text>
+  <text x="195" y="364" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#eef3ff">fallback placeholder on load error</text>
+  <rect x="20" y="452" width="350" height="36" rx="12" fill="#111"/>
+  <text x="186" y="475" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" fill="#fff">Admin</text>
+</svg>
+

@@ -6,13 +6,17 @@ class MenuVC: UIViewController, HasAppServices {
     var appServices: AppServices!
     // MARK: - UI Elements
 
-    private lazy var nameTextView = createTextView()
-    private lazy var sessionCookieTextView = createTextView()
-    private lazy var xsrfCookieTextView = createTextView()
+    private lazy var profileCard = createProfileCard()
+    private lazy var usernameTitleLabel = createFieldTitleLabel(text: "Username")
+    private lazy var usernameValueLabel = createFieldValueLabel()
+    private lazy var emailTitleLabel = createFieldTitleLabel(text: "Email")
+    private lazy var emailValueLabel = createFieldValueLabel()
     private lazy var imageView = createImageView()
+    private lazy var adminButton = createButton(title: "Admin", action: #selector(admin))
 
     lazy var session: URLSession = .sharedCustomSession
     private let url = URL(string: URLManager.login("/logout"))
+    private var sessionCookieValue = ""
 
     private var items = [JSON]()
 
@@ -29,50 +33,104 @@ class MenuVC: UIViewController, HasAppServices {
     // MARK: - UI Setup
 
     private func setupUI() {
-        view.backgroundColor = .white
+        view.backgroundColor = UIColor(white: 0.95, alpha: 1)
 
         addTopNavigationButtons([
             (title: "Back", action: #selector(navigateBack)),
             (title: "Purchases", action: #selector(navigateToPurchases)),
         ])
 
-        let textViews = [nameTextView, sessionCookieTextView, xsrfCookieTextView]
-        for (index, textView) in textViews.enumerated() {
-            textView.frame.origin.y = CGFloat(80 + (index * 60))
-            view.addSubview(textView)
+        imageView.image = UIImage(named: "placeholder")
+        [profileCard, adminButton].forEach {
+            $0.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview($0)
         }
 
-        imageView.image = UIImage(named: "placeholder")
-        view.addSubview(imageView)
+        [imageView, usernameTitleLabel, usernameValueLabel, emailTitleLabel, emailValueLabel].forEach {
+            $0.translatesAutoresizingMaskIntoConstraints = false
+            profileCard.addSubview($0)
+        }
 
-        let adminButton = createButton(title: "Admin", action: #selector(admin))
-        adminButton.frame.origin = CGPoint(x: view.frame.width * 0.15, y: (view.frame.height / 2) - 150)
-        adminButton.center.x = view.center.x
-        view.addSubview(adminButton)
+        NSLayoutConstraint.activate([
+            profileCard.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 56),
+            profileCard.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            profileCard.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+
+            imageView.topAnchor.constraint(equalTo: profileCard.topAnchor, constant: 20),
+            imageView.centerXAnchor.constraint(equalTo: profileCard.centerXAnchor),
+            imageView.widthAnchor.constraint(equalToConstant: 120),
+            imageView.heightAnchor.constraint(equalToConstant: 120),
+
+            usernameTitleLabel.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: 18),
+            usernameTitleLabel.leadingAnchor.constraint(equalTo: profileCard.leadingAnchor, constant: 16),
+            usernameTitleLabel.trailingAnchor.constraint(equalTo: profileCard.trailingAnchor, constant: -16),
+
+            usernameValueLabel.topAnchor.constraint(equalTo: usernameTitleLabel.bottomAnchor, constant: 4),
+            usernameValueLabel.leadingAnchor.constraint(equalTo: usernameTitleLabel.leadingAnchor),
+            usernameValueLabel.trailingAnchor.constraint(equalTo: usernameTitleLabel.trailingAnchor),
+
+            emailTitleLabel.topAnchor.constraint(equalTo: usernameValueLabel.bottomAnchor, constant: 14),
+            emailTitleLabel.leadingAnchor.constraint(equalTo: usernameTitleLabel.leadingAnchor),
+            emailTitleLabel.trailingAnchor.constraint(equalTo: usernameTitleLabel.trailingAnchor),
+
+            emailValueLabel.topAnchor.constraint(equalTo: emailTitleLabel.bottomAnchor, constant: 4),
+            emailValueLabel.leadingAnchor.constraint(equalTo: usernameTitleLabel.leadingAnchor),
+            emailValueLabel.trailingAnchor.constraint(equalTo: usernameTitleLabel.trailingAnchor),
+            emailValueLabel.bottomAnchor.constraint(equalTo: profileCard.bottomAnchor, constant: -20),
+
+            adminButton.topAnchor.constraint(equalTo: profileCard.bottomAnchor, constant: 18),
+            adminButton.leadingAnchor.constraint(equalTo: profileCard.leadingAnchor),
+            adminButton.trailingAnchor.constraint(equalTo: profileCard.trailingAnchor),
+            adminButton.heightAnchor.constraint(equalToConstant: 42),
+        ])
     }
 
     private func createButton(title: String, action: Selector) -> UIButton {
         let button = UIButton(type: .system)
-        button.frame = CGRect(x: 0, y: 25, width: view.frame.width / 2, height: 40)
         button.setTitle(title, for: .normal)
-        button.backgroundColor = .black
-        button.setTitleColor(.white, for: .normal)
+        stylePrimaryButton(button, fontSize: 15)
         button.addTarget(self, action: action, for: .touchUpInside)
         return button
     }
 
-    private func createTextView() -> UITextView {
-        let textView = UITextView(frame: CGRect(x: view.frame.width * 0.1, y: 100, width: view.frame.width * 0.8, height: 50))
-        textView.isEditable = false
-        textView.layer.borderWidth = 1
-        textView.layer.borderColor = UIColor.darkGray.cgColor
-        textView.font = UIFont(name: "Courier New", size: 13.0)
-        return textView
+    private func stylePrimaryButton(_ button: UIButton, fontSize: CGFloat) {
+        button.backgroundColor = .black
+        button.setTitleColor(.white, for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: fontSize, weight: .semibold)
+        button.layer.cornerRadius = 14
+    }
+
+    private func createProfileCard() -> UIView {
+        let card = UIView()
+        card.backgroundColor = .white
+        card.layer.cornerRadius = 16
+        card.layer.borderWidth = 1
+        card.layer.borderColor = UIColor(white: 0.86, alpha: 1).cgColor
+        return card
+    }
+
+    private func createFieldTitleLabel(text: String) -> UILabel {
+        let label = UILabel()
+        label.text = text
+        label.font = .systemFont(ofSize: 12, weight: .semibold)
+        label.textColor = .darkGray
+        return label
+    }
+
+    private func createFieldValueLabel() -> UILabel {
+        let label = UILabel()
+        label.font = UIFont(name: "Courier New", size: 13) ?? .monospacedSystemFont(ofSize: 13, weight: .regular)
+        label.numberOfLines = 0
+        label.textColor = .black
+        return label
     }
 
     private func createImageView() -> UIImageView {
-        let imageView = UIImageView(frame: CGRect(x: view.frame.width * 0.1, y: view.frame.height / 2.5, width: view.frame.width * 0.8, height: view.frame.height / 3))
+        let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
+        imageView.layer.cornerRadius = 12
+        imageView.layer.masksToBounds = true
+        imageView.backgroundColor = UIColor(white: 0.96, alpha: 1)
         return imageView
     }
 
@@ -102,8 +160,8 @@ class MenuVC: UIViewController, HasAppServices {
         let cookieStorage = HTTPCookieStorage.shared
         let cookies = cookieStorage.cookies ?? []
 
-        sessionCookieTextView.text = cookies.first(where: { $0.name == "JSESSIONID" })?.value ?? "JSESSION cookie"
-        //  xsrfCookieTextView.text = cookies.first(where: { $0.name == "XSRF-TOKEN" })?.value ?? "xsrf-cookie"
+        // Keep session cookie fetched for existing logout/session workflows, but not shown as a primary profile field.
+        sessionCookieValue = cookies.first(where: { $0.name == "JSESSIONID" })?.value ?? ""
     }
 
     // MARK: - Networking
@@ -115,11 +173,11 @@ class MenuVC: UIViewController, HasAppServices {
             do {
                 let profile = try await AuthDataManager.shared.fetchUserProfile()
 
-                self.nameTextView.text = profile.username.isEmpty
+                self.usernameValueLabel.text = profile.username.isEmpty
                     ? "No logged-in user"
                     : profile.username
 
-                self.xsrfCookieTextView.text = profile.email.isEmpty
+                self.emailValueLabel.text = profile.email.isEmpty
                     ? "No email"
                     : profile.email
 
@@ -192,9 +250,9 @@ class MenuVC: UIViewController, HasAppServices {
         let cookieStorage = HTTPCookieStorage.shared
         cookieStorage.cookies?.forEach { cookieStorage.deleteCookie($0) }
 
-        nameTextView.text = "No logged-in user"
-        sessionCookieTextView.text = "JSESSION cookie"
-        xsrfCookieTextView.text = "xsrf-cookie"
+        usernameValueLabel.text = "No logged-in user"
+        emailValueLabel.text = "No email"
+        sessionCookieValue = ""
 
         UserDefaults.standard.removePersistentDomain(forName: Bundle.main.bundleIdentifier!)
         SecureStore.remove("X-Token")

@@ -145,6 +145,7 @@ final class Location: NSObject, MKAnnotation {
     let title: String?
     let address: String
     let formattedAddress: String
+    let capacity: Int?
     let coordinate: CLLocationCoordinate2D
     let thumbnail: String?
 
@@ -155,6 +156,7 @@ final class Location: NSObject, MKAnnotation {
         let formatted = json["formatted_address"].string ?? json["address"].string ?? ""
         let latitude = json["latitude"].double ?? Double(json["latitude"].string ?? "")
         let longitude = json["longitude"].double ?? Double(json["longitude"].string ?? "")
+        let capacity = json["capacity"].int ?? Int(json["capacity"].string ?? "")
 
         guard let id,
               let name,
@@ -167,6 +169,7 @@ final class Location: NSObject, MKAnnotation {
         self.title = name
         self.address = address
         self.formattedAddress = formatted
+        self.capacity = capacity
         self.coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
         self.thumbnail = json["thumbnail"].string ?? "No picture"
 

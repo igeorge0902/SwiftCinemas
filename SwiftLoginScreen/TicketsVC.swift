@@ -14,6 +14,10 @@ import UIKit
  Displays ticket data for completed purchases.
  */
 class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, HasAppServices {
+    private enum Notifications {
+        static let purchaseDeletedFromTickets = Notification.Name("purchaseDeletedFromTickets")
+    }
+
     var appServices: AppServices!
     deinit {
         purchaseId = nil
@@ -43,29 +47,24 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
 
     var collectionData: [TicketDetailModel] = []
     lazy var layout = UICollectionViewFlowLayout()
+    private var navButtons: [UIButton] = []
+    private var deleteArmedTicketIndex: Int?
+    private weak var pdfPreviewController: UIViewController?
+    private let ticketsRefreshedToast = UILabel()
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
         injectAppServicesIfNeeded()
 
-        let btnNav = UIButton(frame: CGRect(x: 0, y: 25, width: view.frame.width / 2, height: 20))
-        btnNav.backgroundColor = UIColor.black
-        btnNav.showsTouchWhenHighlighted = true
-        btnNav.setTitle("Back", for: UIControl.State.normal)
-        btnNav.addTarget(self, action: #selector(TicketsVC.navigateBack), for: UIControl.Event.touchUpInside)
+        navButtons = addTopNavigationButtons([
+            (title: "Back", action: #selector(TicketsVC.navigateBack)),
+            (title: "Pdf", action: #selector(TicketsVC.generatePdf)),
+        ])
 
-        view.addSubview(btnNav)
+        title = "Tickets"
 
-        let btnPdf = UIButton(frame: CGRect(x: view.frame.width / 2, y: 25, width: view.frame.width / 2, height: 20))
-        btnPdf.backgroundColor = UIColor.black
-        btnPdf.showsTouchWhenHighlighted = true
-        btnPdf.setTitle("Pdf", for: UIControl.State.normal)
-        btnPdf.addTarget(self, action: #selector(TicketsVC.generatePdf), for: UIControl.Event.touchUpInside)
-
-        view.addSubview(btnPdf)
-
-        layout.sectionInset = UIEdgeInsets(top: 55, left: 10, bottom: 10, right: 10)
+        layout.sectionInset = UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10)
         layout.itemSize = CGSize(width: view.frame.width * 0.9, height: view.frame.width * 0.5)
 
         collectionView = UICollectionView(frame: view.frame, collectionViewLayout: layout)
@@ -79,7 +78,24 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
         view.addSubview(collectionView)
         view.sendSubviewToBack(collectionView)
 
+        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
+        collectionView.addGestureRecognizer(longPress)
+
+        configureRefreshToast()
+
         addData()
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        layoutTopNavigationButtons(navButtons, topOffset: 8)
+        let topButtonBottom = navButtons.map { $0.frame.maxY }.max() ?? (view.safeAreaInsets.top + 42)
+        collectionView.frame = CGRect(
+            x: 0,
+            y: topButtonBottom + 8,
+            width: view.bounds.width,
+            height: max(0, view.bounds.height - topButtonBottom - 8)
+        )
     }
 
     override func viewDidAppear(_: Bool) {
@@ -90,8 +106,18 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
         dismiss(animated: false, completion: nil)
     }
 
+    @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
+        guard gesture.state == .began else { return }
+        let location = gesture.location(in: collectionView)
+        guard let indexPath = collectionView.indexPathForItem(at: location) else { return }
+        deleteArmedTicketIndex = indexPath.row
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        collectionView.reloadData()
+    }
+
     // Close PDF View Function
     @objc func closePdfView() {
+        pdfPreviewController = nil
         dismiss(animated: true, completion: nil)
     }
 
@@ -110,22 +136,22 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
         }
 
         let pdfViewController = UIViewController()
+        pdfViewController.view.backgroundColor = .white
         pdfViewController.view.addSubview(pdfView)
         pdfViewController.modalPresentationStyle = .fullScreen
+        pdfPreviewController = pdfViewController
 
         // Create Share Button
-        let shareButton = UIButton(frame: CGRect(x: 0, y: 50, width: view.frame.width / 2, height: 20))
-        shareButton.backgroundColor = UIColor.black
-        shareButton.showsTouchWhenHighlighted = true
+        let shareButton = UIButton(frame: CGRect(x: 0, y: 50, width: view.frame.width / 2, height: 34))
         shareButton.setTitle("Share", for: UIControl.State.normal)
+        stylePdfActionButton(shareButton)
         shareButton.addTarget(self, action: #selector(sharePdf), for: .touchUpInside)
         pdfViewController.view.addSubview(shareButton)
 
         // Create Close Button
-        let closeButton = UIButton(frame: CGRect(x: view.frame.width / 2, y: 50, width: view.frame.width / 2, height: 20))
-        closeButton.backgroundColor = UIColor.black
-        closeButton.showsTouchWhenHighlighted = true
+        let closeButton = UIButton(frame: CGRect(x: view.frame.width / 2, y: 50, width: view.frame.width / 2, height: 34))
         closeButton.setTitle("Close", for: UIControl.State.normal)
+        stylePdfActionButton(closeButton)
         closeButton.addTarget(self, action: #selector(closePdfView), for: .touchUpInside)
         pdfViewController.view.addSubview(closeButton)
 
@@ -133,31 +159,19 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
     }
 
     @objc func sharePdf() {
-        do {
-            let docURL = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
-            let contents = try FileManager.default.contentsOfDirectory(at: docURL, includingPropertiesForKeys: [.fileResourceTypeKey], options: .skipsHiddenFiles)
-            for url in contents {
-                if url.description.contains(pdfNameFromUrl!) {
-                    let activityViewController = UIActivityViewController(activityItems: [url], applicationActivities: nil)
-
-                    DispatchQueue.main.async {
-                        if let topVC = UIApplication.shared.connectedScenes
-                            .compactMap({ ($0 as? UIWindowScene)?.keyWindow?.rootViewController })
-                            .first
-                        {
-                            // ✅ Find the topmost view controller
-                            if let topVC = self.topMostViewController() {
-                                topVC.present(activityViewController, animated: true, completion: nil)
-                            } else {
-                                print("❌ Unable to find top view controller")
-                            }
-                        }
-                    }
-                }
-            }
-        } catch {
-            print("could not locate pdf file !!!!!!!")
+        guard let pdfURL = pdfURL_, presentedViewController === pdfPreviewController else {
+            presentAlert(withTitle: "Info", message: "Open PDF preview first to share.")
+            return
         }
+        let activityViewController = UIActivityViewController(activityItems: [pdfURL], applicationActivities: nil)
+        activityViewController.completionWithItemsHandler = { [weak self] _, completed, _, _ in
+            guard let self, completed else { return }
+            self.pdfPreviewController?.dismiss(animated: true)
+            self.pdfPreviewController = nil
+            self.addData()
+            self.showTicketsRefreshedToast()
+        }
+        pdfPreviewController?.present(activityViewController, animated: true, completion: nil)
     }
 
     func createPDF(from collectionView: UICollectionView, filename: String) -> URL? {
@@ -178,16 +192,13 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
         UIGraphicsEndPDFContext()
 
         // ✅ Save in Documents Directory
-        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let fileURL = documentsDirectory.appendingPathComponent("\(filename).pdf")
-
         let resourceDocPath = (FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)).last! as URL
         pdfNameFromUrl = "YourTickets-\(filename).pdf"
         let actualPath = resourceDocPath.appendingPathComponent(pdfNameFromUrl!)
         do {
             try pdfData.write(to: actualPath, options: .atomic)
             print("pdf successfully saved!")
-            return fileURL
+            return actualPath
         } catch {
             print("Pdf could not be saved")
             return nil
@@ -215,6 +226,10 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
      Method to delete tickets one by one
      */
     @objc func cancelTicket(button: UIButton, event _: UIEvent) {
+        guard deleteArmedTicketIndex == button.tag else {
+            presentAlert(withTitle: "Info", message: "Long-press a ticket first to reveal delete.")
+            return
+        }
         guard let purchaseId = resolvedPurchaseId else {
             presentAlert(withTitle: "Warning!", message: "No purchase selected")
             return
@@ -225,15 +240,60 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
             guard let self else { return }
             do {
                 if try await CheckoutDataManager.shared.cancelTickets(purchaseId: purchaseId, ticketIds: [ticketId]) {
-                    NotificationCenter.default.post(name: NSNotification.Name(rawValue: "newDataNotif"), object: nil)
+                    self.collectionData.remove(at: button.tag)
+                    self.deleteArmedTicketIndex = nil
+                    self.collectionView.reloadData()
+                    if self.collectionData.isEmpty {
+                        NotificationCenter.default.post(
+                            name: Notifications.purchaseDeletedFromTickets,
+                            object: nil,
+                            userInfo: ["purchaseId": purchaseId]
+                        )
+                        self.dismiss(animated: false, completion: nil)
+                    }
                 }
             } catch {
                 NSLog("cancelTicket: %@", error.localizedDescription)
             }
         }
+    }
 
-        collectionData.remove(at: button.tag)
-        collectionView.reloadData()
+    private func configureRefreshToast() {
+        ticketsRefreshedToast.translatesAutoresizingMaskIntoConstraints = false
+        ticketsRefreshedToast.isHidden = true
+        ticketsRefreshedToast.backgroundColor = UIColor(red: 238 / 255, green: 243 / 255, blue: 1, alpha: 1)
+        ticketsRefreshedToast.textColor = UIColor(red: 43 / 255, green: 79 / 255, blue: 147 / 255, alpha: 1)
+        ticketsRefreshedToast.layer.cornerRadius = 10
+        ticketsRefreshedToast.layer.masksToBounds = true
+        ticketsRefreshedToast.font = .systemFont(ofSize: 12, weight: .regular)
+        ticketsRefreshedToast.textAlignment = .center
+        ticketsRefreshedToast.text = "PDF shared. Tickets screen refreshed."
+        view.addSubview(ticketsRefreshedToast)
+
+        NSLayoutConstraint.activate([
+            ticketsRefreshedToast.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 50),
+            ticketsRefreshedToast.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            ticketsRefreshedToast.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            ticketsRefreshedToast.heightAnchor.constraint(equalToConstant: 34),
+        ])
+    }
+
+    private func showTicketsRefreshedToast() {
+        ticketsRefreshedToast.alpha = 1
+        ticketsRefreshedToast.isHidden = false
+        UIView.animate(withDuration: 0.2, delay: 1.6, options: [.curveEaseOut], animations: {
+            self.ticketsRefreshedToast.alpha = 0
+        }, completion: { _ in
+            self.ticketsRefreshedToast.isHidden = true
+            self.ticketsRefreshedToast.alpha = 1
+        })
+    }
+
+    private func stylePdfActionButton(_ button: UIButton) {
+        button.backgroundColor = .black
+        button.setTitleColor(.white, for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
+        button.layer.cornerRadius = 12
     }
 
     func numberOfSections(in _: UICollectionView) -> Int {
@@ -303,11 +363,13 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
         }
         cell.statusText?.attributedText = text
 
+        cell.contentView.subviews.compactMap { $0 as? UIButton }.forEach { $0.removeFromSuperview() }
         let btn = UIButton(type: UIButton.ButtonType.custom) as UIButton
         btn.frame = cell.CancelImage!.frame
         btn.addTarget(self, action: #selector(TicketsVC.cancelTicket), for: .touchUpInside)
         btn.tag = indexPath.row
         btn.setImage(UIImage(named: "trash"), for: .normal)
+        btn.isHidden = deleteArmedTicketIndex != indexPath.row
         cell.contentView.addSubview(btn)
 
         guard let filter,
@@ -333,20 +395,6 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
         // Dispose of any resources that can be recreated.
     }
 
-    // Helper function to get the topmost view controller
-    func topMostViewController() -> UIViewController? {
-        guard let keyWindow = UIApplication.shared.connectedScenes
-            .compactMap({ ($0 as? UIWindowScene)?.windows.first(where: { $0.isKeyWindow }) }).first
-        else {
-            return nil
-        }
-
-        var topVC = keyWindow.rootViewController
-        while let presentedVC = topVC?.presentedViewController {
-            topVC = presentedVC
-        }
-        return topVC
-    }
 }
 
 // Helper function inserted by Swift 4.2 migrator.

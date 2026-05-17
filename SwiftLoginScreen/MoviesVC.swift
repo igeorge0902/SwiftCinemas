@@ -19,6 +19,17 @@ var veil = true
 var shouldShowSearchResults = false
 class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UISearchResultsUpdating, UISearchBarDelegate, HasAppServices {
     var appServices: AppServices!
+
+    private enum PopoverUIStyle {
+        static let selectedRowBackground = UIColor(white: 0.95, alpha: 1)
+        static let defaultRowBackground = UIColor.white
+        static let searchBorder = UIColor(white: 0.84, alpha: 1)
+        static let chipTitle = UIColor(white: 0.2, alpha: 1)
+        static let chipActiveBackground = UIColor(white: 0.90, alpha: 1)
+        static let chipBackground = UIColor(white: 0.94, alpha: 1)
+        static let chipBorder = UIColor(white: 0.86, alpha: 1)
+    }
+
     deinit {
         endOfFile = false
         TableData.removeAll()
@@ -43,6 +54,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
     var favoritesByMovieId: [Int: Bool] = [:]
     var ratingsByMovieId: [Int: String] = [:]
     let fallbackCategories = ["All", "Action", "Drama", "Crime", "Romance", "Troll"]
+    private var selectedPopoverMovieRow: Int?
 
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "goto_venues",
@@ -70,7 +82,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         searchController?.dimsBackgroundDuringPresentation = false
         searchController?.searchBar.placeholder = "Search in Title and Description..."
         searchController?.searchBar.autocapitalizationType = .none
-        searchController?.searchBar.searchBarStyle = .minimal
+        searchController?.searchBar.searchBarStyle = .default
         searchController?.searchBar.barTintColor = .white
         searchController?.searchBar.backgroundColor = .white
         searchController?.searchBar.isUserInteractionEnabled = true
@@ -83,11 +95,17 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
 
         loadRatingsFixture()
 
-        let sbFrame = UIView(frame: CGRect(x: 0.0, y: 50, width: view.frame.width, height: 44))
+        let sbFrame = UIView(frame: CGRect(x: 12.0, y: 50, width: view.frame.width - 24, height: 40))
         sbFrame.backgroundColor = .white
+        searchController?.searchBar.frame = sbFrame.bounds
         sbFrame.addSubview(searchController!.searchBar)
+        styleSearchBarForPopover()
         let tap = UITapGestureRecognizer(target: self, action: #selector(focusSearchBar))
         sbFrame.addGestureRecognizer(tap)
+        sbFrame.layer.borderColor = PopoverUIStyle.searchBorder.cgColor
+        sbFrame.layer.borderWidth = 1
+        sbFrame.layer.cornerRadius = 8
+        sbFrame.clipsToBounds = true
         view.addSubview(sbFrame)
         searchBarFrame = sbFrame
 
@@ -98,7 +116,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
 
     override func viewWillAppear(_: Bool) {
         tableView?.removeFromSuperview()
-        let frame = CGRect(x: 0, y: 140, width: view.frame.width, height: view.frame.height - 140)
+        let frame = CGRect(x: 0, y: 136, width: view.frame.width, height: view.frame.height - 136)
         tableView = UITableView(frame: frame)
         tableView?.dataSource = self
         tableView?.delegate = self
@@ -126,6 +144,17 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
      //   DispatchQueue.main.async { [weak self] in
      //       self?.searchController?.searchBar.becomeFirstResponder()
      //   }
+    }
+
+    private func applyPopoverRowSelection(_ cell: UITableViewCell, indexPath: IndexPath) {
+        cell.contentView.backgroundColor = selectedPopoverMovieRow == indexPath.row
+            ? PopoverUIStyle.selectedRowBackground
+            : PopoverUIStyle.defaultRowBackground
+    }
+
+    private func selectPopoverMovieRow(_ indexPath: IndexPath) {
+        selectedPopoverMovieRow = indexPath.row
+        tableView?.reloadData()
     }
 
     @objc func navigateBack() {
@@ -355,13 +384,20 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
     }
 
     func tableView(_: UITableView, heightForRowAt _: IndexPath) -> CGFloat {
-        if adminUpdatePage {
+        if adminPage || adminUpdatePage {
             return 60
         }
         return 180.0
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if adminPage, !adminUpdatePage {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "ADMIN_MOVIE_CELL")
+                ?? UITableViewCell(style: .default, reuseIdentifier: "ADMIN_MOVIE_CELL")
+            configureAdminCreateMovieCell(cell, at: indexPath)
+            return cell
+        }
+
         var cell = tableView.dequeueReusableCell(withIdentifier: "CELL") as? ListViewCell
 
         if cell == nil {
@@ -395,6 +431,10 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         // Pass the information about whether to load image or not
         configureCell(cell: cell, with: movieData, adminRow, categories: categories, indexPath: indexPath, shouldLoadImage: !adminUpdatePage)
 
+        if adminUpdatePage {
+            applyPopoverRowSelection(cell!, indexPath: indexPath)
+        }
+
         return cell!
     }
 
@@ -413,7 +453,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         // ── Admin/update mode: show venue › movie rows from ScreenData_2 ──
         if adminUpdatePage, let venueData {
             cell.configureLayout(compact: true)
-            let label = "\(venueData.venue ?? "") › \(venueData.movie ?? "")"
+            let label = venueData.movie
             cell.titleText.attributedText = NSAttributedString(string: label, attributes: textAttr)
             cell.movieImageView.image = nil
             return
@@ -427,7 +467,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
             return
         }
 
-        // ── Normal movie rows ──
+        // ── Normal movie rows ─��
         guard let data else { return }
 
         cell.configureLayout(compact: false)
@@ -477,6 +517,91 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         }
     }
 
+    private func configureAdminCreateMovieCell(_ cell: UITableViewCell, at indexPath: IndexPath) {
+        let rowData: MovieDataModel? = if TableData.indices.contains(indexPath.row) {
+            TableData[indexPath.row]
+        } else if SearchData.indices.contains(indexPath.row) {
+            SearchData[indexPath.row]
+        } else {
+            nil
+        }
+
+        cell.backgroundColor = PopoverUIStyle.defaultRowBackground
+        cell.selectionStyle = .none
+        applyPopoverRowSelection(cell, indexPath: indexPath)
+
+        let thumbTag = 4001
+        let titleTag = 4002
+        let thumb = (cell.contentView.viewWithTag(thumbTag) as? UIImageView) ?? {
+            let v = UIImageView()
+            v.tag = thumbTag
+            v.translatesAutoresizingMaskIntoConstraints = false
+            v.contentMode = .scaleAspectFit // Keep full poster visible, no crop.
+            v.backgroundColor = UIColor(white: 0.96, alpha: 1)
+            v.layer.cornerRadius = 6
+            v.layer.masksToBounds = true
+            v.layer.borderWidth = 1
+            v.layer.borderColor = PopoverUIStyle.chipBorder.cgColor
+            cell.contentView.addSubview(v)
+            NSLayoutConstraint.activate([
+                v.leadingAnchor.constraint(equalTo: cell.contentView.leadingAnchor, constant: 10),
+                v.centerYAnchor.constraint(equalTo: cell.contentView.centerYAnchor),
+                v.widthAnchor.constraint(equalToConstant: 42),
+                v.heightAnchor.constraint(equalToConstant: 56),
+            ])
+            return v
+        }()
+
+        let titleLabel = (cell.contentView.viewWithTag(titleTag) as? UILabel) ?? {
+            let v = UILabel()
+            v.tag = titleTag
+            v.translatesAutoresizingMaskIntoConstraints = false
+            v.font = UIFont(name: "Courier New", size: 13.0) ?? .monospacedSystemFont(ofSize: 13, weight: .regular)
+            v.textColor = PopoverUIStyle.chipTitle
+            v.numberOfLines = 1
+            cell.contentView.addSubview(v)
+            NSLayoutConstraint.activate([
+                v.leadingAnchor.constraint(equalTo: thumb.trailingAnchor, constant: 10),
+                v.trailingAnchor.constraint(equalTo: cell.contentView.trailingAnchor, constant: -10),
+                v.centerYAnchor.constraint(equalTo: cell.contentView.centerYAnchor),
+            ])
+            return v
+        }()
+
+        titleLabel.text = rowData?.name ?? ""
+        thumb.image = nil
+
+        if let rowData {
+            let urlString = URLManager.image(rowData.largePicture)
+            Task { @MainActor [weak self, weak cell] in
+                guard let self, let cell else { return }
+                do {
+                    let imgData = try await self.appServices.images.getData(urlString: urlString, realmCache: true)
+                    if let image = UIImage(data: imgData) {
+                        thumb.image = image
+                        cell.setNeedsLayout()
+                    }
+                } catch {
+                    NSLog("MoviesVC admin image: %@", error.localizedDescription)
+                }
+            }
+        }
+    }
+
+    private func styleSearchBarForPopover() {
+        guard let searchBar = searchController?.searchBar else { return }
+        searchBar.backgroundImage = UIImage()
+        searchBar.layer.borderColor = PopoverUIStyle.searchBorder.cgColor
+        searchBar.layer.borderWidth = 1
+        searchBar.layer.cornerRadius = 8
+        searchBar.layer.masksToBounds = true
+        searchBar.searchTextField.layer.cornerRadius = 0
+        searchBar.searchTextField.layer.borderWidth = 0
+        searchBar.searchTextField.borderStyle = .none
+        searchBar.searchTextField.backgroundColor = .clear
+        searchBar.setSearchFieldBackgroundImage(UIImage(), for: .normal)
+    }
+
     func numberOfSections(in _: UITableView) -> Int {
         if adminUpdatePage {
             return 1
@@ -512,6 +637,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         searchController!.searchBar.isHidden = false
 
         if adminPage, CategoryData.count == 0 {
+            selectPopoverMovieRow(indexPath)
             if TableData.count > 0 {
                 addMovie = TableData[indexPath.row].name
             } else {
@@ -521,6 +647,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         }
 
         if adminUpdatePage, CategoryData.count == 0 {
+            selectPopoverMovieRow(indexPath)
             if ScreenData_2.count > 0 {
                 addMovie = ScreenData_2[indexPath.row].movie
                 addVenue = ScreenData_2[indexPath.row].venue
@@ -624,6 +751,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         scroll.backgroundColor = .white
         scroll.alwaysBounceHorizontal = true
         scroll.alwaysBounceVertical = false
+        scroll.decelerationRate = .fast
 
         let stack = UIStackView()
         stack.axis = .horizontal
@@ -638,7 +766,6 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
             stack.topAnchor.constraint(equalTo: scroll.contentLayoutGuide.topAnchor, constant: 4),
             stack.bottomAnchor.constraint(equalTo: scroll.contentLayoutGuide.bottomAnchor, constant: -4),
             stack.heightAnchor.constraint(equalTo: scroll.frameLayoutGuide.heightAnchor, constant: -8),
-            stack.widthAnchor.constraint(greaterThanOrEqualTo: scroll.frameLayoutGuide.widthAnchor, constant: -24),
         ])
 
         view.addSubview(scroll)
@@ -657,15 +784,17 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         for chip in chips {
             let button = UIButton(type: .system)
             button.setTitle(chip, for: .normal)
-            button.setTitleColor(.black, for: .normal)
-            button.backgroundColor = (category_ == chip || (chip == "All" && (category_ == nil || category_ == "nil"))) ? .lightGray : .white
-            button.layer.borderColor = UIColor.black.cgColor
+            button.setTitleColor(PopoverUIStyle.chipTitle, for: .normal)
+            button.backgroundColor = (category_ == chip || (chip == "All" && (category_ == nil || category_ == "nil")))
+                ? PopoverUIStyle.chipActiveBackground
+                : PopoverUIStyle.chipBackground
+            button.layer.borderColor = PopoverUIStyle.chipBorder.cgColor
             button.layer.borderWidth = 1
-            button.layer.cornerRadius = 14
-            button.contentEdgeInsets = UIEdgeInsets(top: 4, left: 12, bottom: 4, right: 12)
+            button.layer.cornerRadius = 9
+            button.contentEdgeInsets = UIEdgeInsets(top: 2, left: 7, bottom: 2, right: 7)
             button.setContentCompressionResistancePriority(.required, for: .horizontal)
             button.setContentHuggingPriority(.required, for: .horizontal)
-            button.titleLabel?.font = UIFont(name: "Courier New", size: 12)
+            button.titleLabel?.font = .systemFont(ofSize: 10, weight: .regular)
             button.addTarget(self, action: #selector(didTapCategoryChip(_:)), for: .touchUpInside)
             stack.addArrangedSubview(button)
         }
@@ -723,4 +852,3 @@ private struct RatingItem: Codable {
     let movieId: Int
     let rating: String
 }
-

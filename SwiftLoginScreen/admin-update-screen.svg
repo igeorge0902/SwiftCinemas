@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844" role="img" aria-labelledby="title desc">
+  <title id="title">SwiftCinemas Admin Update Screen Mock</title>
+  <desc id="desc">Vector mock of the AdminUpdateVC screen with top Back and Clear buttons, editable form fields, and bottom Save/Delete actions.</desc>
+
+  <rect x="0" y="0" width="390" height="844" fill="#f7f7f8"/>
+  <rect x="16" y="12" width="358" height="820" rx="24" fill="#ffffff" stroke="#d8d8dc"/>
+
+  <rect x="28" y="40" width="160" height="34" rx="14" fill="#111111"/>
+  <text x="108" y="62" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="600" fill="#ffffff">Back</text>
+
+  <rect x="202" y="40" width="160" height="34" rx="14" fill="#111111"/>
+  <text x="282" y="62" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="600" fill="#ffffff">Clear</text>
+
+  <text x="40" y="118" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" fill="#222222">Movie</text>
+  <rect x="40" y="126" width="230" height="34" rx="6" fill="#f2f2f5" stroke="#c9c9cf"/>
+  <text x="52" y="148" font-family="Menlo, Monaco, monospace" font-size="12" fill="#6b6b73">movieName (locked)</text>
+  <rect x="282" y="126" width="80" height="34" rx="6" fill="#e9eaee" stroke="#c9c9cf"/>
+  <text x="322" y="148" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" fill="#1f1f1f">Select</text>
+
+  <text x="40" y="184" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" fill="#222222">Venue name</text>
+  <rect x="40" y="192" width="230" height="34" rx="6" fill="#fafafa" stroke="#c9c9cf"/>
+  <text x="52" y="214" font-family="Menlo, Monaco, monospace" font-size="12" fill="#85858c">venueName</text>
+  <polygon points="274,205 278,197 282,205" fill="#1f1f1f"/>
+  <rect x="282" y="192" width="80" height="34" rx="6" fill="#e9eaee" stroke="#c9c9cf"/>
+  <text x="322" y="214" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" fill="#1f1f1f">Select</text>
+
+  <text x="40" y="250" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" fill="#222222">Screening Date</text>
+  <rect x="40" y="258" width="322" height="34" rx="6" fill="#fafafa" stroke="#c9c9cf"/>
+  <text x="52" y="280" font-family="Menlo, Monaco, monospace" font-size="12" fill="#85858c">yyyy-MM-dd HH:mm:ss</text>
+  <polygon points="366,271 370,263 374,271" fill="#1f1f1f"/>
+
+  <text x="40" y="316" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" fill="#222222">ScreeningID</text>
+  <rect x="40" y="324" width="322" height="34" rx="6" fill="#fafafa" stroke="#c9c9cf"/>
+  <text x="52" y="346" font-family="Menlo, Monaco, monospace" font-size="12" fill="#85858c">ScreeningID</text>
+
+  <text x="40" y="382" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="14" fill="#222222">Category (Troll)</text>
+  <rect x="40" y="390" width="322" height="34" rx="6" fill="#fafafa" stroke="#c9c9cf"/>
+  <text x="52" y="412" font-family="Menlo, Monaco, monospace" font-size="12" fill="#85858c">category</text>
+  <polygon points="366,403 370,395 374,403" fill="#1f1f1f"/>
+
+  <text x="40" y="446" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="12" fill="#cf2f2f">...correct category!</text>
+
+  <rect x="28" y="774" width="160" height="34" rx="14" fill="#111111"/>
+  <text x="108" y="796" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="600" fill="#ffffff">Save</text>
+
+  <rect x="202" y="774" width="160" height="34" rx="14" fill="#111111"/>
+  <text x="282" y="796" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="13" font-weight="600" fill="#ffffff">Delete</text>
+</svg>
+
