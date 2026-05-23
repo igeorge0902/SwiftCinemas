@@ -20,16 +20,17 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
         print(#function, "\(self)")
     }
 
-    lazy var label = UILabel()
+    private lazy var tableCard = createTableCard()
     var sortBy = "purchase"
-    var refreshControl: UIRefreshControl!
-    var tableView: UITableView?
+    private var label = UILabel()
+    private var tableView = UITableView()
+    private let refreshControl = UIRefreshControl()
     var purchaseTableData: [PurchaseSummaryModel] = []
     private var navButtons: [UIButton] = []
     private var sortButtons: [UIButton] = []
     private var refundArmedSection: Int?
-    private var refundPendingSection: Int?
     private var refundedEntries: [String] = []
+    
     private lazy var purchaseDeletedToastLabel: UILabel = {
         let label = UILabel()
         label.isHidden = true
@@ -43,35 +44,35 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
+    
     private lazy var refundBubbleLabel: UILabel = {
         let view = UILabel()
+
         view.isHidden = true
         view.numberOfLines = 0
         view.isUserInteractionEnabled = false
-        view.backgroundColor = UIColor.gray.withAlphaComponent(0.24)
+
+        view.backgroundColor = UIColor.white.withAlphaComponent(0.96)
         view.textColor = .black
+
         view.font = UIFont(name: "Courier New", size: 12) ?? .monospacedSystemFont(ofSize: 12, weight: .regular)
-        view.layer.cornerRadius = 10
-        view.layer.masksToBounds = true
+
+        view.layer.cornerRadius = 14
+        view.layer.masksToBounds = false
+
+        view.layer.shadowColor = UIColor.black.cgColor
+        view.layer.shadowOpacity = 0.12
+        view.layer.shadowRadius = 10
+        view.layer.shadowOffset = CGSize(width: 0, height: 4)
+
         view.textAlignment = .left
         view.translatesAutoresizingMaskIntoConstraints = false
+
         return view
     }()
 
-    var ResponseText: String?
-    var ResponseCode: String?
-    var AuthCode: String?
-    var Status: String?
-    var Amount: String?
-    var TaxAmount: String?
-    var movieName: String?
-    var purchaseId: String?
-
-    lazy var layout = UICollectionViewFlowLayout()
-
     override func viewWillAppear(_: Bool) {
         super.viewWillAppear(true)
-        purchaseTableData.removeAll()
         addPurchasesData()
     }
 
@@ -80,19 +81,12 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
 
         injectAppServicesIfNeeded()
 
-        view.backgroundColor = UIColor(white: 0.95, alpha: 1)
-        configureStaticUI()
+        configureView()
+        configureNavigation()
+        configureSortButtons()
+        configureTable()
 
-        refreshControl = UIRefreshControl()
-        tableView?.addSubview(refreshControl)
-
-        label.textColor = UIColor.black
-        label.textAlignment = NSTextAlignment.left
-
-        let myTextAttribute = [convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 13.0)!]
-        let detailText = NSMutableAttributedString(string: sortBy, attributes: convertToOptionalNSAttributedStringKeyDictionary(myTextAttribute))
-
-        label.attributedText = detailText
+        refresh()
 
         NotificationCenter.default.addObserver(self, selector: #selector(refresh), name: NSNotification.Name(rawValue: "newDataNotif"), object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(handlePurchaseDeletedFromTickets(_:)), name: Notifications.purchaseDeletedFromTickets, object: nil)
@@ -112,50 +106,155 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
 
         label.frame = CGRect(x: inset, y: sortTop + 40, width: view.bounds.width - (inset * 2), height: 20)
 
-        let tableTop = label.frame.maxY + 8
-        let tableBottomInset = max(view.safeAreaInsets.bottom, 8)
-        tableView?.frame = CGRect(x: 0, y: tableTop, width: view.bounds.width, height: max(0, view.bounds.height - tableTop - tableBottomInset))
+        let tableTop = label.frame.maxY + 6
+
+        let bottomInset =
+            view.safeAreaInsets.bottom + 12
+
+        tableCard.frame = CGRect(
+            x: 12,
+            y: tableTop,
+            width: view.bounds.width - 24,
+            height: view.bounds.height
+                - tableTop
+                - bottomInset
+        )
+
+        tableView.frame = CGRect(
+            x: 0,
+            y: 0,
+            width: tableCard.bounds.width,
+            height: tableCard.bounds.height
+        )
     }
+    
+    private func createTableCard() -> UIView {
+        let card = UIView()
+        card.backgroundColor = .white
+        card.layer.cornerRadius = 16
+        card.layer.borderWidth = 1
+        card.layer.borderColor = UIColor(white: 0.86, alpha: 1).cgColor
+        card.clipsToBounds = true
+        return card
+    }
+    
+    private func configureView() {
+        view.backgroundColor = UIColor(white: 0.95, alpha: 1)
 
-    private func configureStaticUI() {
-        navButtons = addTopNavigationButtons([
-            (title: "Back", action: #selector(PurchasesVC.navigateBack)),
-        ])
-
-        let btnSortScreening = makeControlButton(title: "By Screening", action: #selector(PurchasesVC.sortByScreeningDate))
-        let btnSortPurchase = makeControlButton(title: "By Purchase", action: #selector(PurchasesVC.sortByPurchaseDate))
-        sortButtons = [btnSortScreening, btnSortPurchase]
-        sortButtons.forEach { view.addSubview($0) }
-
-        label = UILabel(frame: .zero)
         view.addSubview(label)
-
-        let frame = CGRect(x: 0, y: 110, width: view.frame.width, height: view.frame.height - 110)
-        tableView = UITableView(frame: frame)
-        tableView?.dataSource = self
-        tableView?.delegate = self
-        tableView?.separatorInset = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
-        view.addSubview(tableView!)
-
-        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
-        tableView?.addGestureRecognizer(longPress)
-
+        view.addSubview(tableCard)
         view.addSubview(refundBubbleLabel)
         view.addSubview(purchaseDeletedToastLabel)
+        view.bringSubviewToFront(refundBubbleLabel)
+        view.bringSubviewToFront(purchaseDeletedToastLabel)
+        
         NSLayoutConstraint.activate([
-            refundBubbleLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
-            refundBubbleLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
-            refundBubbleLabel.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -8),
-            purchaseDeletedToastLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 50),
-            purchaseDeletedToastLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 12),
-            purchaseDeletedToastLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
+
+            refundBubbleLabel.leadingAnchor.constraint(
+                equalTo: view.leadingAnchor,
+                constant: 16
+            ),
+
+            refundBubbleLabel.trailingAnchor.constraint(
+                equalTo: view.trailingAnchor,
+                constant: -16
+            ),
+
+            refundBubbleLabel.bottomAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.bottomAnchor,
+                constant: -12
+            ),
+
+            purchaseDeletedToastLabel.topAnchor.constraint(
+                equalTo: view.safeAreaLayoutGuide.topAnchor,
+                constant: 50
+            ),
+
+            purchaseDeletedToastLabel.leadingAnchor.constraint(
+                equalTo: view.leadingAnchor,
+                constant: 12
+            ),
+
+            purchaseDeletedToastLabel.trailingAnchor.constraint(
+                equalTo: view.trailingAnchor,
+                constant: -12
+            )
         ])
-
-        // Keep the affordance visible until user interacts: long-press arms swipe refund.
-        refundBubbleLabel.text = "  Long press a purchase row to enable swipe.\n  Swipe left, tap Refund, then swipe left again and tap Confirm."
-        refundBubbleLabel.isHidden = false
     }
+    
+    private func configureTable() {
 
+        tableView.dataSource = self
+        tableView.delegate = self
+
+        tableView.rowHeight = 82
+        tableView.separatorStyle = .none
+
+        tableView.backgroundColor = UIColor(white: 0.97, alpha: 1)
+
+        tableView.showsVerticalScrollIndicator = false
+
+        tableView.contentInset = UIEdgeInsets(top: 6,left: 0, bottom: 16, right: 0)
+
+        tableView.register(PurchaseRowCell.self, forCellReuseIdentifier: "PurchaseRowCell")
+
+        tableCard.addSubview(tableView)
+
+        let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
+
+        tableView.addGestureRecognizer(longPress)
+        tableView.refreshControl = refreshControl
+    }
+    
+    private func applySorting() {
+
+        switch sortBy {
+
+        case "screening":
+            purchaseTableData.sort {
+                $0.screeningDate > $1.screeningDate
+            }
+
+        default:
+            purchaseTableData.sort {
+                $0.purchaseDate > $1.purchaseDate
+            }
+        }
+    }
+    
+    private func configureNavigation() {
+        navButtons = addTopNavigationButtons([
+            (title: "Back", action: #selector(navigateBack))
+        ])
+    }
+    
+    private func configureSortButtons() {
+        let screeningButton = makeControlButton(
+            title: "By Screening",
+            action: #selector(sortByScreeningDate)
+        )
+
+        let purchaseButton = makeControlButton(
+            title: "By Purchase",
+            action: #selector(sortByPurchaseDate)
+        )
+
+        sortButtons = [screeningButton, purchaseButton]
+        sortButtons.forEach(view.addSubview)
+
+        label.textColor = .black
+        label.font = UIFont(
+            name: "Courier New",
+            size: 13
+        )
+
+        updateSortLabel()
+    }
+    
+    private func updateSortLabel() {
+        label.text = "Sorted by \(sortBy)"
+    }
+    
     @objc private func handlePurchaseDeletedFromTickets(_ notification: Notification) {
         let purchaseId = notification.userInfo?["purchaseId"] as? String ?? ""
         let suffix = purchaseId.isEmpty ? "" : " #\(purchaseId)."
@@ -188,12 +287,44 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
     }
 
     @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
-        guard gesture.state == .began,
-              let tableView,
-              let indexPath = tableView.indexPathForRow(at: gesture.location(in: tableView)) else { return }
+
+        guard gesture.state == .began, let indexPath = tableView.indexPathForRow(
+            at: gesture.location(in: tableView)) else {
+            return
+        }
+
+        let previousSection = refundArmedSection
         refundArmedSection = indexPath.section
-        refundPendingSection = nil
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+
+        var reloads: [IndexPath] = [indexPath]
+        if let previousSection, previousSection != indexPath.section {
+
+            reloads.append(
+                IndexPath(
+                    row: 0,
+                    section: previousSection
+                )
+            )
+        }
+
+        tableView.reloadRows(
+            at: reloads,
+            with: .automatic
+        )
+
+        tableView.beginUpdates()
+        tableView.endUpdates()
+
+        tableView.scrollToRow(
+            at: indexPath,
+            at: .middle,
+            animated: true
+        )
+
+        UIImpactFeedbackGenerator(
+            style: .light
+        ).impactOccurred()
+
         showRefundHint(for: indexPath.section)
     }
 
@@ -202,25 +333,17 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
     }
 
     @objc func sortByPurchaseDate() {
-        purchaseTableData.sort { $0.purchaseDate > $1.purchaseDate }
         sortBy = "purchase"
-        let myTextAttribute = [convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 13.0)!]
-        let detailText = NSMutableAttributedString(string: sortBy, attributes: convertToOptionalNSAttributedStringKeyDictionary(myTextAttribute))
-
-        label.attributedText = detailText
-
-        tableView?.reloadData()
+        updateSortLabel()
+        applySorting()
+        tableView.reloadData()
     }
 
     @objc func sortByScreeningDate() {
-        purchaseTableData.sort { $0.screeningDate > $1.screeningDate }
         sortBy = "screening"
-        let myTextAttribute = [convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 13.0)!]
-        let detailText = NSMutableAttributedString(string: sortBy, attributes: convertToOptionalNSAttributedStringKeyDictionary(myTextAttribute))
-
-        label.attributedText = detailText
-
-        tableView?.reloadData()
+        updateSortLabel()
+        applySorting()
+        tableView.reloadData()
     }
 
     @objc func refresh() {
@@ -234,7 +357,7 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
 
     override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
         if segue.identifier == "goto_tickets" {
-            CheckoutDataManager.shared.selectedPurchaseId = purchaseId
+           // CheckoutDataManager.shared.selectedPurchaseId
         }
     }
 
@@ -247,49 +370,49 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        var cell = tableView.dequeueReusableCell(withIdentifier: "CELL") as UITableViewCell?
-
-        if cell == nil {
-            cell = UITableViewCell(style: UITableViewCell.CellStyle.value1, reuseIdentifier: "CELL")
-        }
-
-        if sortBy == "purchase" {
-            purchaseTableData.sort { $0.purchaseDate > $1.purchaseDate }
-        }
-        if sortBy == "screening" {
-            purchaseTableData.sort { $0.screeningDate > $1.screeningDate }
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: "PurchaseRowCell", for: indexPath) as? PurchaseRowCell else {
+            return UITableViewCell()
         }
 
         let data = purchaseTableData[indexPath.section]
 
-        let myTextAttribute = [convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 13.0)!]
-        let detailText = NSMutableAttributedString(string: data.movieName, attributes: convertToOptionalNSAttributedStringKeyDictionary(myTextAttribute))
+        cell.titleText.text = data.movieName
+        cell.subtitleLabel.text = data.screeningDate
 
-        detailText.append(NSAttributedString(string: "\n\(purchaseTableData[indexPath.section].screeningDate)", attributes: convertToOptionalNSAttributedStringKeyDictionary([convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 12.0)!, convertFromNSAttributedStringKey(NSAttributedString.Key.foregroundColor): UIColor(red: 155 / 255, green: 161 / 255, blue: 171 / 255, alpha: 1)])))
+        if refundArmedSection == indexPath.section {
 
-        cell!.textLabel?.numberOfLines = 5
-        // cell!.textLabel?.translatesAutoresizingMaskIntoConstraints = false
+            cell.refundLabel.text = "Swipe left to refund"
+            cell.pillLabel.text = "REFUND"
 
-        cell!.textLabel?.attributedText = detailText
+        } else {
 
-        let urlMovie = URLManager.image(purchaseTableData[indexPath.section].moviePicture)
+            cell.refundLabel.text = "Tickets purchased"
+            cell.pillLabel.text = "PAID"
+        }
+
+        let urlMovie = URLManager.image(data.moviePicture)
 
         Task { @MainActor [weak self] in
+
             guard let self else { return }
+
             do {
-                let imgData = try await self.appServices.images.getData(urlString: urlMovie, realmCache: true)
+                let imgData = try await self.appServices.images.getData(urlString: urlMovie,realmCache: true)
                 let image = UIImage(data: imgData)
-                cell!.imageView?.image = image
-                if let updatedCell = tableView.cellForRow(at: indexPath) {
-                    updatedCell.imageView?.image = image
-                    updatedCell.setNeedsLayout()
+                if let updatedCell = tableView.cellForRow(at: indexPath) as? PurchaseRowCell {
+                    updatedCell.movieImageView.image = image
                 }
+
             } catch {
-                NSLog("PurchasesVC image: %@", error.localizedDescription)
+
+                NSLog(
+                    "PurchasesVC image: %@",
+                    error.localizedDescription
+                )
             }
         }
 
-        return cell!
+        return cell
     }
 
     func numberOfSections(in _: UITableView) -> Int {
@@ -300,24 +423,23 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
         1
     }
 
-    func tableView(_: UITableView, heightForRowAt _: IndexPath) -> CGFloat {
-        75
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        if refundArmedSection == indexPath.section {
+            return 122
+        }
+        return 82
     }
 
     func tableView(_: UITableView, didSelectRowAt indexPath: IndexPath) {
-        purchaseId = purchaseTableData[indexPath.section].purchaseId
-        CheckoutDataManager.shared.selectedPurchaseId = purchaseId
+        CheckoutDataManager.shared.selectedPurchaseId = purchaseTableData[indexPath.section].purchaseId
         performSegue(withIdentifier: "goto_tickets", sender: self)
     }
 
-    func tableView(_: UITableView,
-                   trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration?
-    {
+    func tableView(_: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         guard refundArmedSection == indexPath.section else {
             return nil
         }
 
-        if refundPendingSection == indexPath.section {
             let confirmAction = UIContextualAction(style: .destructive, title: "Confirm") { [weak self] _, _, success in
                 Task { @MainActor [weak self] in
                     guard let self else { return }
@@ -328,9 +450,8 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
                             self.purchaseTableData.remove(at: indexPath.section)
                             self.refundedEntries.insert("#\(purchaseId) \(movieName)", at: 0)
                             self.refundArmedSection = nil
-                            self.refundPendingSection = nil
                             self.updateRefundBubble()
-                            self.tableView?.reloadData()
+                            self.tableView.reloadData()
                         }
                     } catch {
                         NSLog("delete purchase: %@", error.localizedDescription)
@@ -341,27 +462,13 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
             confirmAction.backgroundColor = .systemRed
 
             let cancelAction = UIContextualAction(style: .normal, title: "Cancel") { [weak self] _, _, success in
-                self?.refundPendingSection = nil
                 self?.showRefundHint(for: indexPath.section)
-                self?.tableView?.reloadRows(at: [indexPath], with: .none)
+                self?.tableView.reloadRows(at: [indexPath], with: .none)
                 success(true)
             }
             cancelAction.backgroundColor = .systemGray
 
-            let config = UISwipeActionsConfiguration(actions: [confirmAction, cancelAction])
-            config.performsFirstActionWithFullSwipe = false
-            return config
-        }
-
-        let armConfirmAction = UIContextualAction(style: .normal, title: "Refund") { [weak self] _, _, success in
-            self?.refundPendingSection = indexPath.section
-            self?.showConfirmHint(for: indexPath.section)
-            self?.tableView?.reloadRows(at: [indexPath], with: .none)
-            success(true)
-        }
-        armConfirmAction.backgroundColor = .systemOrange
-
-        let config = UISwipeActionsConfiguration(actions: [armConfirmAction])
+        let config = UISwipeActionsConfiguration(actions: [confirmAction, cancelAction])
         config.performsFirstActionWithFullSwipe = false
         return config
     }
@@ -389,42 +496,16 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
         refundBubbleLabel.isHidden = false
     }
 
-    private func showConfirmHint(for section: Int) {
-        guard purchaseTableData.indices.contains(section) else { return }
-        let purchase = purchaseTableData[section]
-        let header = "  Confirm refund for #\(purchase.purchaseId) \(purchase.movieName)\n  Swipe left again and tap Confirm"
-        let history = refundedEntries.prefix(3)
-        let historyText = history.isEmpty ? "" : "\n  \n  Refunded\n  " + history.joined(separator: "\n  ")
-        refundBubbleLabel.text = header + historyText
-        refundBubbleLabel.isHidden = false
-    }
-
     func addPurchasesData() {
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
                 self.purchaseTableData = try await CheckoutDataManager.shared.fetchAllPurchases()
-                self.tableView?.reloadData()
+                self.tableView.reloadData()
             } catch {
                 NSLog("addPurchasesData: %@", error.localizedDescription)
                 self.presentAlert(withTitle: "Error", message: error.localizedDescription)
             }
         }
     }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
-}
-
-// Helper function inserted by Swift 4.2 migrator.
-private func convertFromNSAttributedStringKey(_ input: NSAttributedString.Key) -> String {
-    input.rawValue
-}
-
-// Helper function inserted by Swift 4.2 migrator.
-private func convertToOptionalNSAttributedStringKeyDictionary(_ input: [String: Any]?) -> [NSAttributedString.Key: Any]? {
-    guard let input else { return nil }
-    return Dictionary(uniqueKeysWithValues: input.map { key, value in (NSAttributedString.Key(rawValue: key), value) })
 }

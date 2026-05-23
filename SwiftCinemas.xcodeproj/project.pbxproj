@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		54D956C6DD035C62972C4E3A /* Pods_SwiftCinemas.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8D825BF86296873B49574DCA /* Pods_SwiftCinemas.framework */; };
+		7D230E192FC105E40062B129 /* PurchaseRowCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D230E182FC105D20062B129 /* PurchaseRowCell.swift */; };
 		7D25892F2F8021CC00C5A23C /* VenuesMigrationSegueEntryVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D25892D2F8021CC00C5A23C /* VenuesMigrationSegueEntryVC.swift */; };
 		7D5C0D012F786E880019481A /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D5C0D002F786E790019481A /* APIClient.swift */; };
 		7D5C0D032F786E980019481A /* Endpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D5C0D022F786E940019481A /* Endpoint.swift */; };
@@ -141,6 +142,7 @@
 
 /* Begin PBXFileReference section */
 		5F8537B88264A8B854ED3468 /* Pods-SwiftCinemas.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SwiftCinemas.debug.xcconfig"; path = "Target Support Files/Pods-SwiftCinemas/Pods-SwiftCinemas.debug.xcconfig"; sourceTree = "<group>"; };
+		7D230E182FC105D20062B129 /* PurchaseRowCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchaseRowCell.swift; sourceTree = "<group>"; };
 		7D25892D2F8021CC00C5A23C /* VenuesMigrationSegueEntryVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenuesMigrationSegueEntryVC.swift; sourceTree = "<group>"; };
 		7D5C0D002F786E790019481A /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		7D5C0D022F786E940019481A /* Endpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Endpoint.swift; sourceTree = "<group>"; };
@@ -463,6 +465,7 @@
 		A4C0AE541D8800BE00260FCB /* CustomCells */ = {
 			isa = PBXGroup;
 			children = (
+				7D230E182FC105D20062B129 /* PurchaseRowCell.swift */,
 				A493B57F2D6B580800404BC0 /* MovieCollectionViewCell.swift */,
 				A4EEC5051D3A884B001C376B /* SeatCells.swift */,
 				A4C0AE551D8800E900260FCB /* FeedCells.swift */,
@@ -901,6 +904,7 @@
 				A42483571D1EB75B00F83E6C /* JSON.swift in Sources */,
 				7D5C0D0B2F786EC70019481A /* ErrorHandler.swift in Sources */,
 				A420BAE12D67CBA1004C4169 /* CustomURLSession.swift in Sources */,
+				7D230E192FC105E40062B129 /* PurchaseRowCell.swift in Sources */,
 				A4333017238F018E00A44212 /* AttendeesVC.swift in Sources */,
 				EAA118A9198AAC7100F443F1 /* SignupVC.swift in Sources */,
 				A44399C625C09B8600AB3154 /* ListViewCell.swift in Sources */,

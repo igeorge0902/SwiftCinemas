@@ -40,9 +40,9 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
 
     var SearchData: [MovieDataModel] = []
     var TableData: [MovieDataModel] = []
-//    var ScreenData_: [datastruct] = [datastruct]()
     var CategoryData = [String]()
-    var searchController: UISearchController?
+   // var searchController: UISearchController?
+    private let searchBar = UISearchBar()
     var tableView: UITableView?
     var searchBarFrame: UIView?
     var categoryScrollView: UIScrollView?
@@ -76,38 +76,39 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         injectAppServicesIfNeeded()
 
         veil = true
-        searchController = UISearchController(searchResultsController: nil)
-        searchController?.searchResultsUpdater = self
-        searchController?.searchBar.delegate = self
-        searchController?.dimsBackgroundDuringPresentation = false
-        searchController?.searchBar.placeholder = "Search in Title and Description..."
-        searchController?.searchBar.autocapitalizationType = .none
-        searchController?.searchBar.searchBarStyle = .default
-        searchController?.searchBar.barTintColor = .white
-        searchController?.searchBar.backgroundColor = .white
-        searchController?.searchBar.isUserInteractionEnabled = true
+        searchBar.delegate = self
+        searchBar.placeholder = "Search in Title and Description..."
+        searchBar.autocapitalizationType = .none
+        searchBar.searchBarStyle = .minimal
+        searchBar.backgroundImage = UIImage()
+        
         definesPresentationContext = true
         category_ = "nil"
-
-        searchController?.searchBar.sizeToFit()
 
         view.backgroundColor = .white
 
         loadRatingsFixture()
 
-        let sbFrame = UIView(frame: CGRect(x: 12.0, y: 50, width: view.frame.width - 24, height: 40))
+        let sbFrame = UIView(frame: CGRect(x: 12.0, y: 50, width: view.frame.width - 70, height: 40))
         sbFrame.backgroundColor = .white
-        searchController?.searchBar.frame = sbFrame.bounds
-        sbFrame.addSubview(searchController!.searchBar)
+        searchBar.frame = sbFrame.bounds
+        sbFrame.addSubview(searchBar)
+        
         styleSearchBarForPopover()
-        let tap = UITapGestureRecognizer(target: self, action: #selector(focusSearchBar))
-        sbFrame.addGestureRecognizer(tap)
         sbFrame.layer.borderColor = PopoverUIStyle.searchBorder.cgColor
         sbFrame.layer.borderWidth = 1
         sbFrame.layer.cornerRadius = 8
         sbFrame.clipsToBounds = true
         view.addSubview(sbFrame)
         searchBarFrame = sbFrame
+
+        let dismissTap = UITapGestureRecognizer(
+            target: self,
+            action: #selector(dismissSearchKeyboard)
+        )
+
+        dismissTap.cancelsTouchesInView = false
+        view.addGestureRecognizer(dismissTap)
 
         buildCategoryChipsBar()
 
@@ -141,9 +142,6 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-     //   DispatchQueue.main.async { [weak self] in
-     //       self?.searchController?.searchBar.becomeFirstResponder()
-     //   }
     }
 
     private func applyPopoverRowSelection(_ cell: UITableViewCell, indexPath: IndexPath) {
@@ -289,29 +287,34 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
 
     func searchBarShouldBeginEditing(_: UISearchBar) -> Bool {
         DispatchQueue.main.async { [weak self] in
-            self?.searchController?.searchBar.becomeFirstResponder()
+            self?.searchBar.becomeFirstResponder()
         }
         return true
     }
 
     @objc private func focusSearchBar() {
-        searchController?.searchBar.becomeFirstResponder()
+        searchBar.becomeFirstResponder()
+    }
+    
+    @objc private func dismissSearchKeyboard() {
+        searchBar.resignFirstResponder()
+        view.endEditing(true)
     }
 
     func searchBarShouldEndEditing(_: UISearchBar) -> Bool {
         // self.searchController!.searchBar.isHidden = true;
-        searchController?.searchBar.resignFirstResponder()
+        searchBar.resignFirstResponder()
         return true
     }
 
     func searchBarCancelButtonClicked(_: UISearchBar) {
         shouldShowSearchResults = true
-        searchController?.searchBar.resignFirstResponder()
+        searchBar.resignFirstResponder()
     }
 
     func searchBarTextDidEndEditing(_: UISearchBar) {
         shouldShowSearchResults = true
-        searchController?.searchBar.resignFirstResponder()
+        searchBar.resignFirstResponder()
     }
 
     func searchBar(_: UISearchBar, textDidChange searchText: String) {
@@ -362,7 +365,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         print("Coming in : \(segmentedControl.selectedSegmentIndex)")
         section_ = segmentedControl.selectedSegmentIndex
         if segmentedControl.selectedSegmentIndex == 0 {
-            searchController?.searchBar.text = ""
+            searchBar.text = ""
             category_ = nil
             SearchData.removeAll()
             TableData.removeAll()
@@ -374,7 +377,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
                 addData(category: "nil")
             }
         } else if section_ == 1 {
-            searchController?.searchBar.text = ""
+            searchBar.text = ""
             CategoryData = ["Action", "Drama", "Crime", "Romance", "Troll"]
             SearchData.removeAll()
             TableData.removeAll()
@@ -589,7 +592,6 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
     }
 
     private func styleSearchBarForPopover() {
-        guard let searchBar = searchController?.searchBar else { return }
         searchBar.backgroundImage = UIImage()
         searchBar.layer.borderColor = PopoverUIStyle.searchBorder.cgColor
         searchBar.layer.borderWidth = 1
@@ -634,7 +636,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
     }
 
     func tableView(_: UITableView, didSelectRowAt indexPath: IndexPath) {
-        searchController!.searchBar.isHidden = false
+        searchBar.isHidden = false
 
         if adminPage, CategoryData.count == 0 {
             selectPopoverMovieRow(indexPath)
@@ -709,7 +711,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
     }
 
     func tableView(_: UITableView, willDisplay _: UITableViewCell, forRowAt indexPath: IndexPath) {
-        searchController!.searchBar.isHidden = false
+        searchBar.isHidden = false
 
         if TableData.count > 10 || SearchData.count > 10 {
             if indexPath.row == TableData.count - 3 {
@@ -803,7 +805,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
     @objc private func didTapCategoryChip(_ sender: UIButton) {
         let title = sender.currentTitle ?? "All"
         category_ = (title == "All") ? "nil" : title
-        searchController?.searchBar.text = ""
+        searchBar.text = ""
         SearchData.removeAll()
         TableData.removeAll()
         addData(category: category_ ?? "nil")
