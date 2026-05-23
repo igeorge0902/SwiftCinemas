@@ -1,7 +1,5 @@
-//
-//  SharedDataManager.swift
-//  SwiftCinemas
-//
+// SharedDataManager.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 
@@ -9,6 +7,7 @@ import Foundation
 ///
 /// Conformers provide a short domain tag (for log prefixing) and use
 /// ``handleError(_:)`` to normalize logging while preserving the original error.
+@MainActor
 protocol SharedDataManager: AnyObject {
     /// Human-readable manager name used as log domain (for example: `Movies`, `Auth`).
     static var domain: String { get }
@@ -20,6 +19,7 @@ protocol SharedDataManager: AnyObject {
     func handleError(_ error: Error) -> Error
 }
 
+@MainActor
 extension SharedDataManager {
     func handleError(_ error: Error) -> Error {
         if let appError = error as? AppError {
@@ -30,4 +30,3 @@ extension SharedDataManager {
         return error
     }
 }
-

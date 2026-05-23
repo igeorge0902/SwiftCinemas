@@ -1,31 +1,31 @@
-//
-//  LoginVC.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 27/03/16.
-//  Copyright © 2016 George Gaspar. All rights reserved.
-//
+// LoginVC.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Security
 import UIKit
 
+@MainActor
 let deviceId = UIDevice.current.identifierForVendor!.uuidString
-var kKeychainItemName: String?
+nonisolated(unsafe) var kKeychainItemName: String?
 final class LoginVC: UIViewController, UITextFieldDelegate, HasAppServices {
+    // MARK: Lifecycle
+
     deinit {
         print(#function, "\(self)")
     }
 
-    var appServices: AppServices!
-
-    var username: NSString?
-    var password: NSString?
+    // MARK: Internal
 
     enum KeychainError: Error {
         case noPassword
         case unexpectedPasswordData
         case unhandledError(status: OSStatus)
     }
+
+    var appServices: AppServices!
+
+    var username: NSString?
+    var password: NSString?
 
     var imageView: UIImageView = .init()
     var backgroundDict: [String: String] = Dictionary()
@@ -70,7 +70,6 @@ final class LoginVC: UIViewController, UITextFieldDelegate, HasAppServices {
         // Dispose of any resources that can be recreated.
     }
 
-
     @IBAction func signinTapped(_: UIButton) {
         // let deviceId = UIDevice.currentDevice().identifierForVendor!.UUIDString
         NSLog("deviceId ==> %@", deviceId)
@@ -87,7 +86,7 @@ final class LoginVC: UIViewController, UITextFieldDelegate, HasAppServices {
         let hash: String = SHA3.hash(password! as String, outputLength: 512)
 
         if username!.isEqual(to: "") || password!.isEqual(to: "") {
-        self.presentAlert(withTitle: "Warning", message: ErrorHandler.message(for: AppError.decodingFailed))
+            presentAlert(withTitle: "Warning", message: ErrorHandler.message(for: AppError.decodingFailed))
 
         } else {
             Task { @MainActor [weak self] in

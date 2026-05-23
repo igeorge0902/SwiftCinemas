@@ -1,29 +1,26 @@
-//
-//  VenuesDetailsVC.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 27/03/16.
-//  Copyright © 2016 George Gaspar. All rights reserved.
+// VenuesDetailsVC.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import AVKit
-
-// import FacebookShare
-// import FacebookLogin
-// import FacebookCore
 import EventKit
 import UIKit
 
 class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresentationControllerDelegate, UIViewControllerTransitioningDelegate, HasAppServices {
-    var appServices: AppServices!
+    // MARK: Lifecycle
+
     deinit {
-        DatesDataManager.shared.resetNavigationContext()
-        // NotificationCenter.default.post(name: NSNotification.Name(rawValue: "navigateBack"), object: nil)
-        LocationsDataManager.shared.activeMapView = nil
         print(#function, "\(self)")
     }
 
-    // MARK: - Properties
+    // MARK: Internal
 
+    class HalfSizePresentationController: UIPresentationController {
+        override var frameOfPresentedViewInContainerView: CGRect {
+            CGRect(x: 0, y: 200, width: containerView!.bounds.width, height: containerView!.bounds.height)
+        }
+    }
+
+    var appServices: AppServices!
     lazy var noPicture: [String: String] = [:]
 
     var nameTextView: UITextView?
@@ -44,6 +41,324 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
     lazy var imageView = UIImageView()
     lazy var venueImageView = UIImageView()
     var scrollView: UIScrollView!
+    lazy var moviePicture = UIImage()
+    lazy var venuePicture = UIImage()
+
+    let eventStore = EKEventStore()
+
+    // MARK: - Lifecycle Methods
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        injectAppServicesIfNeeded()
+        populateSelectionContext()
+        setupScrollView()
+        addDatesData()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // Only load images if not already loaded to avoid repeated network/decoding
+        if moviePicture.size == CGSize.zero {
+            loadMovieImage()
+        }
+        if venuePicture.size == CGSize.zero {
+            loadVenueImage()
+        }
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        if !hasSetupUI {
+            setupUI()
+            hasSetupUI = true
+        }
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        DatesDataManager.shared.resetNavigationContext()
+        LocationsDataManager.shared.activeMapView = nil
+        NotificationCenter.default.post(name: NSNotification.Name(rawValue: "navigateBack"), object: nil)
+    }
+
+    override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
+        if segue.identifier == "goto_map2" {
+            LocationsDataManager.shared.selectedLocationId = locationId
+            LocationsDataManager.shared.selectedVenueId = selectVenueId
+            LocationsDataManager.shared.isMapFromVenueDetails = true
+        }
+        if segue.identifier == "goto_movie_detail2" {
+            let nextSegue = segue.destination as? MovieDetailVC
+            nextSegue?.iMDB = iMDB
+            nextSegue?.origin = "VenuesDetailsVC"
+        }
+    }
+
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Dispose of any resources that can be recreated.
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        guard hasSetupUI else { return }
+        layoutRedesignedUIIfNeeded()
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        // Avoid repeated audio-stack churn while this screen is not visible.
+        playerViewController?.player?.pause()
+    }
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        applyHeroBlur(for: scrollView.contentOffset.y)
+    }
+
+    @objc func showMoreActions(_ tap: UITapGestureRecognizer) {
+        _ = tap.location(in: view)
+    }
+
+    @objc func navigateBack() {
+        dismiss(animated: false, completion: nil)
+    }
+
+    @objc func movieDetail(_: UIButton, event _: UIEvent) {
+        performSegue(withIdentifier: "goto_movie_detail2", sender: self)
+    }
+
+    @objc func book(_: UIButton, event: UIEvent) {
+        if isLoadingSeats {
+            return
+        }
+
+        if event.type == .touches {
+            let touches: Set<UITouch> = event.allTouches!
+
+            if let touch = touches.first {
+                popOverY = touch.location(in: scrollView).y
+            }
+        }
+
+        if DatesDataManager.shared.selectedScreeningDateId == nil {
+            let alertView = UIAlertView()
+
+            alertView.title = "Warning!"
+            alertView.message = "Select dates first!"
+            alertView.delegate = self
+            alertView.addButton(withTitle: "OK")
+            alertView.show()
+
+        } else {
+            Task { @MainActor [weak self] in
+                guard let self,
+                      let selectedId = DatesDataManager.shared.selectedScreeningDateId,
+                      let parsedId = Int(selectedId) else { return }
+
+                self.isLoadingSeats = true
+                defer { self.isLoadingSeats = false }
+
+                do {
+                    _ = try await SeatsDataManager.shared.fetchSeats(screeningDateId: parsedId)
+
+                    let popOver = PopOver()
+                    popOver.modalPresentationStyle = UIModalPresentationStyle.popover
+                    popOver.preferredContentSize = CGSize(width: self.view.frame.width * 0.90, height: self.view.frame.height / 2)
+
+                    let popoverMenuViewController = popOver.popoverPresentationController
+                    popoverMenuViewController?.permittedArrowDirections = UIPopoverArrowDirection(rawValue: 0)
+                    popoverMenuViewController?.delegate = self
+                    popoverMenuViewController?.sourceView = self.view
+                    popoverMenuViewController!.sourceRect = CGRect(
+                        x: self.view.frame.width * 0.50,
+                        y: self.popOverY,
+                        width: 0,
+                        height: 0
+                    )
+
+                    self.present(popOver, animated: true)
+                } catch {
+                    self.presentAlert(withTitle: "Error", message: error.userMessage)
+                }
+            }
+        }
+    }
+
+    @objc func map(_: UIButton, event _: UIEvent) {
+        performSegue(withIdentifier: "goto_map2", sender: self)
+    }
+
+    @objc func dates(_: UIButton, event: UIEvent) {
+        if event.type == .touches {
+            let touches: Set<UITouch> = event.allTouches!
+
+            if let touch = touches.first {
+                popOverY = touch.location(in: scrollView).y
+            }
+        }
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            if DatesDataManager.shared.availableDates.isEmpty {
+                do {
+                    _ = try await self.loadDatesData()
+                } catch {
+                    self.presentAlert(withTitle: "Error", message: error.localizedDescription)
+                    return
+                }
+            }
+
+            guard !DatesDataManager.shared.availableDates.isEmpty else {
+                self.presentAlert(withTitle: "Info", message: "No dates available for this venue.")
+                return
+            }
+
+            let popOver = PopOverDates()
+            popOver.modalPresentationStyle = UIModalPresentationStyle.popover
+            popOver.preferredContentSize = CGSize(width: self.view.frame.width * 0.90, height: self.view.frame.height / 5)
+
+            let popoverMenuViewController = popOver.popoverPresentationController
+            popoverMenuViewController?.permittedArrowDirections = UIPopoverArrowDirection(rawValue: 0)
+
+            popoverMenuViewController?.delegate = self
+            popoverMenuViewController?.sourceView = self.view
+            popoverMenuViewController!.sourceRect = CGRect(
+                x: self.view.frame.width * 0.50,
+                y: self.popOverY,
+                width: 0,
+                height: 0
+            )
+
+            self.present(
+                popOver,
+                animated: true,
+                completion: nil
+            )
+        }
+    }
+
+    @objc func selectCalendar(_: UIButton) {
+        if DatesDataManager.shared.selectedScreeningDateId == nil {
+            let alertView = UIAlertView()
+
+            alertView.title = "Warning!"
+            alertView.message = "Select dates first!"
+            alertView.delegate = self
+            alertView.addButton(withTitle: "OK")
+            alertView.show()
+
+        } else {
+            // Access permission
+            eventStore.requestAccess(to: EKEntityType.event) { granted, error in
+                if granted, error == nil {
+                    print("permission is granted")
+
+                    DispatchQueue.main.async {
+                        let popOver = iOSCalendarVC()
+                        popOver.modalPresentationStyle = UIModalPresentationStyle.popover
+                        popOver.preferredContentSize = CGSize(width: self.view.frame.width * 0.90, height: self.view.frame.height / 4)
+
+                        let popoverMenuViewController = popOver.popoverPresentationController
+                        popoverMenuViewController?.permittedArrowDirections = UIPopoverArrowDirection(rawValue: 0)
+                        popoverMenuViewController?.delegate = self
+                        popoverMenuViewController?.sourceView = self.view
+                        popoverMenuViewController!.sourceRect = CGRect(
+                            x: self.view.frame.width * 0.50,
+                            y: self.view.frame.height * 0.50,
+                            width: 0,
+                            height: 0
+                        )
+
+                        self.present(
+                            popOver,
+                            animated: true,
+                            completion: nil
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    func presentationController(forPresented presented: UIViewController, presenting _: UIViewController?, source _: UIViewController) -> UIPresentationController? {
+        HalfSizePresentationController(presentedViewController: presented, presenting: presentingViewController)
+    }
+
+    func adaptivePresentationStyle(for _: UIPresentationController) -> UIModalPresentationStyle {
+        // Return no adaptive presentation style, use default presentation behaviour
+        .none
+    }
+
+    func addDatesData() {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                _ = try await self.loadDatesData()
+            } catch {
+                NSLog("addDatesData: %@", error.localizedDescription)
+            }
+        }
+    }
+
+    @objc func selectCalendar_(sender _: UIButton /* , event: UIEvent */ ) {
+        if DatesDataManager.shared.selectedScreeningDateId == nil {
+            let alertView = UIAlertView()
+
+            alertView.title = "Warning!"
+            alertView.message = "Select dates first!"
+            alertView.delegate = self
+            alertView.addButton(withTitle: "OK")
+            alertView.show()
+
+        } else {
+            // Access permission
+            eventStore.requestAccess(to: EKEntityType.event) { granted, error in
+                if granted, error == nil {
+                    print("permission is granted")
+                    /*
+                     if event.type == .touches {
+
+                     let touches:Set<UITouch> = event.allTouches!
+
+                     if let touch =  touches.first{
+
+                     self.popOverY = touch.location(in: self.scrollView).y
+                     self.popOverX = touch.location(in: self.view).x
+
+                     }
+                     }*/
+
+                    DispatchQueue.main.async {
+                        let popOver = iOSCalendarVC()
+                        popOver.modalPresentationStyle = UIModalPresentationStyle.popover
+                        popOver.preferredContentSize = CGSize(width: self.view.frame.width * 0.90, height: self.view.frame.height / 4)
+
+                        let popoverMenuViewController = popOver.popoverPresentationController
+                        popoverMenuViewController?.permittedArrowDirections = UIPopoverArrowDirection(rawValue: 0)
+                        popoverMenuViewController?.delegate = self
+                        popoverMenuViewController?.sourceView = self.view
+                        popoverMenuViewController!.sourceRect = CGRect(
+                            x: self.view.frame.width * 0.50,
+                            y: self.view.frame.height * 0.50,
+                            width: 0,
+                            height: 0
+                        )
+
+                        self.present(
+                            popOver,
+                            animated: true,
+                            completion: nil
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: Private
+
     private let heroContainerView = UIView()
     private let heroBlurOverlay = UIVisualEffectView(effect: nil)
     private let heroDimOverlay = UIView()
@@ -55,38 +370,24 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
     private let playerContainerView = UIView()
     private let heroGradientLayer = CAGradientLayer()
 
-    lazy var moviePicture = UIImage()
-    lazy var venuePicture = UIImage()
+    private var isLoadingDates = false
+    private var isLoadingSeats = false
+    private var hasSetupUI = false
+    private var playerViewController: AVPlayerViewController?
+    private var hasInitializedPlayer = false
+    private var lastLaidOutBoundsSize: CGSize = .zero
 
-     let eventStore = EKEventStore()
-     private var isLoadingDates = false
-     private var isLoadingSeats = false
-     private var hasSetupUI = false
-     private var playerViewController: AVPlayerViewController?
-     private var hasInitializedPlayer = false
-     private var lastLaidOutBoundsSize: CGSize = .zero
+    private let heroBlurRampDistance: CGFloat = 180
+    private let maxHeroDimAlpha: CGFloat = 0.80
+    private let actionButtonHeight: CGFloat = 50
+    private let actionButtonSpacing: CGFloat = 12
+    private let actionButtonFontName = "HelveticaNeue-Medium"
+    private let actionButtonFontSize: CGFloat = 16
 
-     private let heroBlurRampDistance: CGFloat = 180
-     private let maxHeroDimAlpha: CGFloat = 0.80
-     private let actionButtonHeight: CGFloat = 50
-     private let actionButtonSpacing: CGFloat = 12
-     private let actionButtonFontName = "HelveticaNeue-Medium"
-     private let actionButtonFontSize: CGFloat = 16
-
-     private var resolvedScreenId: String? {
+    private var resolvedScreenId: String? {
         let id = screenScreenId ?? VenuesDataManager.shared.selectedVenue?.screenId
         guard let id, !id.isEmpty else { return nil }
         return id
-    }
-
-    // MARK: - Lifecycle Methods
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        injectAppServicesIfNeeded()
-        populateSelectionContext()
-        setupScrollView()
-        addDatesData()
     }
 
     private func populateSelectionContext() {
@@ -129,7 +430,8 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
            let movieName,
            let movieDetails,
            let selectLargePicture,
-           let iMDB {
+           let iMDB
+        {
             MoviesDataManager.shared.selectedMovie = Movie(
                 movieId: movieId,
                 movieIdString: String(movieId),
@@ -144,7 +446,8 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
            let venueName,
            let selectAddress,
            let screenId = screenScreenId,
-           let locationId {
+           let locationId
+        {
             VenuesDataManager.shared.selectedVenue = Venue(
                 venuesId: selectVenueId,
                 name: venueName,
@@ -156,87 +459,68 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
         }
     }
 
-     override func viewWillAppear(_ animated: Bool) {
-         super.viewWillAppear(animated)
-         // Only load images if not already loaded to avoid repeated network/decoding
-         if moviePicture.size == CGSize.zero {
-             loadMovieImage()
-         }
-         if venuePicture.size == CGSize.zero {
-             loadVenueImage()
-         }
-     }
-
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        if !hasSetupUI {
-            setupUI()
-            hasSetupUI = true
-        }
-    }
-
     // MARK: - Setup Methods
 
-     private func setupScrollView() {
-         view.backgroundColor = .white
+    private func setupScrollView() {
+        view.backgroundColor = .white
 
-         heroContainerView.frame = CGRect(x: 0, y: 0, width: view.bounds.width, height: heroHeight())
-         heroContainerView.backgroundColor = UIColor(white: 0.12, alpha: 1)
-         heroContainerView.clipsToBounds = true
-         heroContainerView.autoresizingMask = [.flexibleWidth]
-         view.addSubview(heroContainerView)
+        heroContainerView.frame = CGRect(x: 0, y: 0, width: view.bounds.width, height: heroHeight())
+        heroContainerView.backgroundColor = UIColor(white: 0.12, alpha: 1)
+        heroContainerView.clipsToBounds = true
+        heroContainerView.autoresizingMask = [.flexibleWidth]
+        view.addSubview(heroContainerView)
 
-         imageView.contentMode = .scaleAspectFill
-         imageView.clipsToBounds = true
-         imageView.frame = heroContainerView.bounds
-         imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-         heroContainerView.addSubview(imageView)
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        imageView.frame = heroContainerView.bounds
+        imageView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        heroContainerView.addSubview(imageView)
 
-         heroGradientLayer.colors = [
-             UIColor.clear.cgColor,
-             UIColor.black.withAlphaComponent(0.16).cgColor,
-             UIColor.black.withAlphaComponent(0.45).cgColor,
-         ]
-         heroGradientLayer.locations = [0.0, 0.55, 1.0]
-         heroContainerView.layer.addSublayer(heroGradientLayer)
+        heroGradientLayer.colors = [
+            UIColor.clear.cgColor,
+            UIColor.black.withAlphaComponent(0.16).cgColor,
+            UIColor.black.withAlphaComponent(0.45).cgColor,
+        ]
+        heroGradientLayer.locations = [0.0, 0.55, 1.0]
+        heroContainerView.layer.addSublayer(heroGradientLayer)
 
-         heroBlurOverlay.frame = heroContainerView.bounds
-         heroBlurOverlay.alpha = 0
-         heroBlurOverlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-         if #available(iOS 13.0, *) {
-             heroBlurOverlay.effect = UIBlurEffect(style: .systemUltraThinMaterialDark)
-         } else {
-             heroBlurOverlay.effect = UIBlurEffect(style: .dark)
-         }
-         heroContainerView.addSubview(heroBlurOverlay)
+        heroBlurOverlay.frame = heroContainerView.bounds
+        heroBlurOverlay.alpha = 0
+        heroBlurOverlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        if #available(iOS 13.0, *) {
+            heroBlurOverlay.effect = UIBlurEffect(style: .systemUltraThinMaterialDark)
+        } else {
+            heroBlurOverlay.effect = UIBlurEffect(style: .dark)
+        }
+        heroContainerView.addSubview(heroBlurOverlay)
 
-         heroDimOverlay.frame = heroContainerView.bounds
-         heroDimOverlay.backgroundColor = .black
-         heroDimOverlay.alpha = 0.08
-         heroDimOverlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-         heroContainerView.addSubview(heroDimOverlay)
+        heroDimOverlay.frame = heroContainerView.bounds
+        heroDimOverlay.backgroundColor = .black
+        heroDimOverlay.alpha = 0.08
+        heroDimOverlay.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        heroContainerView.addSubview(heroDimOverlay)
 
-         scrollView = UIScrollView(frame: view.bounds)
-         scrollView.delegate = self
-         scrollView.alwaysBounceVertical = true
-         scrollView.backgroundColor = .clear
-         scrollView.contentInsetAdjustmentBehavior = .never
-         scrollView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-         view.addSubview(scrollView)
+        scrollView = UIScrollView(frame: view.bounds)
+        scrollView.delegate = self
+        scrollView.alwaysBounceVertical = true
+        scrollView.backgroundColor = .clear
+        scrollView.contentInsetAdjustmentBehavior = .never
+        scrollView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        view.addSubview(scrollView)
 
-         contentCardView.backgroundColor = .white
-         contentCardView.layer.cornerRadius = 24
-         contentCardView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-         contentCardView.layer.shadowColor = UIColor.black.cgColor
-         contentCardView.layer.shadowOpacity = 0.10
-         contentCardView.layer.shadowRadius = 18
-         contentCardView.layer.shadowOffset = CGSize(width: 0, height: -4)
-         scrollView.addSubview(contentCardView)
+        contentCardView.backgroundColor = .white
+        contentCardView.layer.cornerRadius = 24
+        contentCardView.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        contentCardView.layer.shadowColor = UIColor.black.cgColor
+        contentCardView.layer.shadowOpacity = 0.10
+        contentCardView.layer.shadowRadius = 18
+        contentCardView.layer.shadowOffset = CGSize(width: 0, height: -4)
+        scrollView.addSubview(contentCardView)
 
-         applyTopNavigationButtonStyle(backButton, title: "‹ Back")
-         backButton.addTarget(self, action: #selector(navigateBack), for: .touchUpInside)
-         view.addSubview(backButton)
-     }
+        applyTopNavigationButtonStyle(backButton, title: "‹ Back")
+        backButton.addTarget(self, action: #selector(navigateBack), for: .touchUpInside)
+        view.addSubview(backButton)
+    }
 
     private func loadMovieImage() {
         guard let selectLargePicture = selectLargePicture else { return }
@@ -316,7 +600,7 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
             contentCardView.addSubview(actionStackView)
         }
 
-        actionStackView.arrangedSubviews.forEach { arrangedSubview in
+        for arrangedSubview in actionStackView.arrangedSubviews {
             actionStackView.removeArrangedSubview(arrangedSubview)
             arrangedSubview.removeFromSuperview()
         }
@@ -336,85 +620,85 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
         }
     }
 
-     private func setupTextView() {
-         if titleLabel.superview == nil {
-             titleLabel.numberOfLines = 0
-             titleLabel.textColor = .black
-             titleLabel.font = .systemFont(ofSize: 28, weight: .bold)
-             contentCardView.addSubview(titleLabel)
-         }
+    private func setupTextView() {
+        if titleLabel.superview == nil {
+            titleLabel.numberOfLines = 0
+            titleLabel.textColor = .black
+            titleLabel.font = .systemFont(ofSize: 28, weight: .bold)
+            contentCardView.addSubview(titleLabel)
+        }
 
-         if subtitleLabel.superview == nil {
-             subtitleLabel.numberOfLines = 0
-             subtitleLabel.textColor = UIColor.black.withAlphaComponent(0.65)
-             subtitleLabel.font = .systemFont(ofSize: 14, weight: .medium)
-             contentCardView.addSubview(subtitleLabel)
-         }
+        if subtitleLabel.superview == nil {
+            subtitleLabel.numberOfLines = 0
+            subtitleLabel.textColor = UIColor.black.withAlphaComponent(0.65)
+            subtitleLabel.font = .systemFont(ofSize: 14, weight: .medium)
+            contentCardView.addSubview(subtitleLabel)
+        }
 
-         if nameTextView == nil {
-             nameTextView = UITextView(frame: .zero)
-         }
+        if nameTextView == nil {
+            nameTextView = UITextView(frame: .zero)
+        }
 
-         nameTextView?.isEditable = false
-         nameTextView?.isScrollEnabled = false
-         nameTextView?.textAlignment = .justified
-         nameTextView?.backgroundColor = .white
-         nameTextView?.textColor = .black
-         nameTextView?.textContainerInset = UIEdgeInsets(top: 12, left: 10, bottom: 12, right: 10)
-         nameTextView?.layer.borderWidth = 1
-         nameTextView?.layer.borderColor = UIColor.black.withAlphaComponent(0.12).cgColor
-         nameTextView?.layer.cornerRadius = 14
+        nameTextView?.isEditable = false
+        nameTextView?.isScrollEnabled = false
+        nameTextView?.textAlignment = .justified
+        nameTextView?.backgroundColor = .white
+        nameTextView?.textColor = .black
+        nameTextView?.textContainerInset = UIEdgeInsets(top: 12, left: 10, bottom: 12, right: 10)
+        nameTextView?.layer.borderWidth = 1
+        nameTextView?.layer.borderColor = UIColor.black.withAlphaComponent(0.12).cgColor
+        nameTextView?.layer.cornerRadius = 14
 
-         if let movieDetails {
-             let bodyFont = UIFont(name: "Courier New", size: 13.0) ?? .monospacedSystemFont(ofSize: 13.0, weight: .regular)
-             let textAttributes: [NSAttributedString.Key: Any] = [
-                 .font: bodyFont,
-                 .foregroundColor: UIColor.black,
-             ]
-             nameTextView?.attributedText = NSAttributedString(string: movieDetails, attributes: textAttributes)
-         }
+        if let movieDetails {
+            let bodyFont = UIFont(name: "Courier New", size: 13.0) ?? .monospacedSystemFont(ofSize: 13.0, weight: .regular)
+            let textAttributes: [NSAttributedString.Key: Any] = [
+                .font: bodyFont,
+                .foregroundColor: UIColor.black,
+            ]
+            nameTextView?.attributedText = NSAttributedString(string: movieDetails, attributes: textAttributes)
+        }
 
-         if nameTextView?.superview == nil, let nameTextView {
-             contentCardView.addSubview(nameTextView)
-         }
-     }
+        if nameTextView?.superview == nil, let nameTextView {
+            contentCardView.addSubview(nameTextView)
+        }
+    }
 
-     private func setupPlayer() {
-         // Skip if already initialized to avoid audio subsystem churn
-         if hasInitializedPlayer {
-             return
-         }
-         hasInitializedPlayer = true
+    private func setupPlayer() {
+        // Skip if already initialized to avoid audio subsystem churn
+        if hasInitializedPlayer {
+            return
+        }
+        hasInitializedPlayer = true
 
-         guard let fileURL = Bundle.main.path(forResource: "garnier1", ofType: "mov") else {
-             print("Player setup: File not found")
-             return
-         }
+        guard let fileURL = Bundle.main.path(forResource: "garnier1", ofType: "mov") else {
+            print("Player setup: File not found")
+            return
+        }
 
-         // Lazy-load player: only set up once and reuse
-         let url = NSURL.fileURL(withPath: fileURL)
-         let playerItem = AVPlayerItem(asset: AVAsset(url: url), automaticallyLoadedAssetKeys: ["playable"])
-         let player = AVPlayer(playerItem: playerItem)
+        // Lazy-load player: only set up once and reuse
+        let url = NSURL.fileURL(withPath: fileURL)
+        let playerItem = AVPlayerItem(asset: AVAsset(url: url), automaticallyLoadedAssetKeys: ["playable"])
+        let player = AVPlayer(playerItem: playerItem)
 
-         let pvc = AVPlayerViewController()
-         pvc.player = player
+        let pvc = AVPlayerViewController()
+        pvc.player = player
 
-         playerContainerView.frame = .zero
-         playerContainerView.backgroundColor = .black
-         playerContainerView.clipsToBounds = true
-         playerContainerView.layer.cornerRadius = 16
+        playerContainerView.frame = .zero
+        playerContainerView.backgroundColor = .black
+        playerContainerView.clipsToBounds = true
+        playerContainerView.layer.cornerRadius = 16
 
-         // Add player view to container with autoresizing
-         pvc.view.frame = playerContainerView.bounds
-         pvc.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-         playerContainerView.addSubview(pvc.view)
-         
-         addChild(pvc)
-          contentCardView.addSubview(playerContainerView)
-         pvc.didMove(toParent: self)
-         
-         playerViewController = pvc
-     }
+        // Add player view to container with autoresizing
+        pvc.view.frame = playerContainerView.bounds
+        pvc.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        playerContainerView.addSubview(pvc.view)
+
+        addChild(pvc)
+        contentCardView.addSubview(playerContainerView)
+        pvc.didMove(toParent: self)
+
+        playerViewController = pvc
+    }
 
     // MARK: - Helper Methods
 
@@ -577,215 +861,6 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
         scrollView.contentSize = CGSize(width: view.bounds.width, height: contentCardView.frame.maxY + 24)
     }
 
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        applyHeroBlur(for: scrollView.contentOffset.y)
-    }
-
-    override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
-        if segue.identifier == "goto_map2" {
-            LocationsDataManager.shared.selectedLocationId = locationId
-            LocationsDataManager.shared.selectedVenueId = selectVenueId
-            LocationsDataManager.shared.isMapFromVenueDetails = true
-        }
-        if segue.identifier == "goto_movie_detail2" {
-            let nextSegue = segue.destination as? MovieDetailVC
-            nextSegue?.iMDB = iMDB
-            nextSegue?.origin = "VenuesDetailsVC"
-        }
-    }
-
-    @objc func showMoreActions(_ tap: UITapGestureRecognizer) {
-        _ = tap.location(in: view)
-    }
-
-    @objc func navigateBack() {
-        dismiss(animated: false, completion: nil)
-    }
-
-    @objc func movieDetail(_: UIButton, event _: UIEvent) {
-        performSegue(withIdentifier: "goto_movie_detail2", sender: self)
-    }
-
-    @objc func book(_: UIButton, event: UIEvent) {
-        if isLoadingSeats {
-            return
-        }
-
-        if event.type == .touches {
-            let touches: Set<UITouch> = event.allTouches!
-
-            if let touch = touches.first {
-                popOverY = touch.location(in: scrollView).y
-            }
-        }
-
-        if DatesDataManager.shared.selectedScreeningDateId == nil {
-            let alertView = UIAlertView()
-
-            alertView.title = "Warning!"
-            alertView.message = "Select dates first!"
-            alertView.delegate = self
-            alertView.addButton(withTitle: "OK")
-            alertView.show()
-
-        } else {
-            Task { @MainActor [weak self] in
-                guard let self,
-                      let selectedId = DatesDataManager.shared.selectedScreeningDateId,
-                      let parsedId = Int(selectedId) else { return }
-
-                self.isLoadingSeats = true
-                defer { self.isLoadingSeats = false }
-
-                do {
-                    _ = try await SeatsDataManager.shared.fetchSeats(screeningDateId: parsedId)
-
-                    let popOver = PopOver()
-                    popOver.modalPresentationStyle = UIModalPresentationStyle.popover
-                    popOver.preferredContentSize = CGSize(width: self.view.frame.width * 0.90, height: self.view.frame.height / 2)
-
-                    let popoverMenuViewController = popOver.popoverPresentationController
-                    popoverMenuViewController?.permittedArrowDirections = UIPopoverArrowDirection(rawValue: 0)
-                    popoverMenuViewController?.delegate = self
-                    popoverMenuViewController?.sourceView = self.view
-                    popoverMenuViewController!.sourceRect = CGRect(
-                        x: self.view.frame.width * 0.50,
-                        y: self.popOverY,
-                        width: 0,
-                        height: 0
-                    )
-
-                    self.present(popOver, animated: true)
-                } catch {
-                    self.presentAlert(withTitle: "Error", message: error.userMessage)
-                }
-            }
-        }
-    }
-
-    @objc func map(_: UIButton, event _: UIEvent) {
-        performSegue(withIdentifier: "goto_map2", sender: self)
-    }
-
-    @objc func dates(_: UIButton, event: UIEvent) {
-        if event.type == .touches {
-            let touches: Set<UITouch> = event.allTouches!
-
-            if let touch = touches.first {
-                popOverY = touch.location(in: scrollView).y
-            }
-        }
-
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            if DatesDataManager.shared.availableDates.isEmpty {
-                do {
-                    _ = try await self.loadDatesData()
-                } catch {
-                    self.presentAlert(withTitle: "Error", message: error.localizedDescription)
-                    return
-                }
-            }
-
-            guard !DatesDataManager.shared.availableDates.isEmpty else {
-                self.presentAlert(withTitle: "Info", message: "No dates available for this venue.")
-                return
-            }
-
-            let popOver = PopOverDates()
-            popOver.modalPresentationStyle = UIModalPresentationStyle.popover
-            popOver.preferredContentSize = CGSize(width: self.view.frame.width * 0.90, height: self.view.frame.height / 5)
-
-            let popoverMenuViewController = popOver.popoverPresentationController
-            popoverMenuViewController?.permittedArrowDirections = UIPopoverArrowDirection(rawValue: 0)
-
-            popoverMenuViewController?.delegate = self
-            popoverMenuViewController?.sourceView = self.view
-            popoverMenuViewController!.sourceRect = CGRect(
-                x: self.view.frame.width * 0.50,
-                y: self.popOverY,
-                width: 0,
-                height: 0
-            )
-
-            self.present(
-                popOver,
-                animated: true,
-                completion: nil
-            )
-        }
-    }
-
-    @objc func selectCalendar(_: UIButton) {
-        if DatesDataManager.shared.selectedScreeningDateId == nil {
-            let alertView = UIAlertView()
-
-            alertView.title = "Warning!"
-            alertView.message = "Select dates first!"
-            alertView.delegate = self
-            alertView.addButton(withTitle: "OK")
-            alertView.show()
-
-        } else {
-            // Access permission
-            eventStore.requestAccess(to: EKEntityType.event) { granted, error in
-
-                if granted, error == nil {
-                    print("permission is granted")
-
-                    DispatchQueue.main.async {
-                        let popOver = iOSCalendarVC()
-                        popOver.modalPresentationStyle = UIModalPresentationStyle.popover
-                        popOver.preferredContentSize = CGSize(width: self.view.frame.width * 0.90, height: self.view.frame.height / 4)
-
-                        let popoverMenuViewController = popOver.popoverPresentationController
-                        popoverMenuViewController?.permittedArrowDirections = UIPopoverArrowDirection(rawValue: 0)
-                        popoverMenuViewController?.delegate = self
-                        popoverMenuViewController?.sourceView = self.view
-                        popoverMenuViewController!.sourceRect = CGRect(
-                            x: self.view.frame.width * 0.50,
-                            y: self.view.frame.height * 0.50,
-                            width: 0,
-                            height: 0
-                        )
-
-                        self.present(
-                            popOver,
-                            animated: true,
-                            completion: nil
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    func presentationController(forPresented presented: UIViewController, presenting _: UIViewController?, source _: UIViewController) -> UIPresentationController? {
-        HalfSizePresentationController(presentedViewController: presented, presenting: presentingViewController)
-    }
-
-    class HalfSizePresentationController: UIPresentationController {
-        override var frameOfPresentedViewInContainerView: CGRect {
-            CGRect(x: 0, y: 200, width: containerView!.bounds.width, height: containerView!.bounds.height)
-        }
-    }
-
-    func adaptivePresentationStyle(for _: UIPresentationController) -> UIModalPresentationStyle {
-        // Return no adaptive presentation style, use default presentation behaviour
-        .none
-    }
-
-    func addDatesData() {
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            do {
-                _ = try await self.loadDatesData()
-            } catch {
-                NSLog("addDatesData: %@", error.localizedDescription)
-            }
-        }
-    }
-
     @MainActor
     private func loadDatesData() async throws -> Bool {
         if isLoadingDates {
@@ -797,78 +872,4 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
         let screenDates = try await DatesDataManager.shared.fetchDates(locationId: locationId, movieId: movieId)
         return !screenDates.isEmpty
     }
-
-    @objc func selectCalendar_(sender _: UIButton /* , event: UIEvent */ ) {
-        if DatesDataManager.shared.selectedScreeningDateId == nil {
-            let alertView = UIAlertView()
-
-            alertView.title = "Warning!"
-            alertView.message = "Select dates first!"
-            alertView.delegate = self
-            alertView.addButton(withTitle: "OK")
-            alertView.show()
-
-        } else {
-            // Access permission
-            eventStore.requestAccess(to: EKEntityType.event) { granted, error in
-
-                if granted, error == nil {
-                    print("permission is granted")
-                    /*
-                     if event.type == .touches {
-
-                     let touches:Set<UITouch> = event.allTouches!
-
-                     if let touch =  touches.first{
-
-                     self.popOverY = touch.location(in: self.scrollView).y
-                     self.popOverX = touch.location(in: self.view).x
-
-                     }
-                     }*/
-
-                    DispatchQueue.main.async {
-                        let popOver = iOSCalendarVC()
-                        popOver.modalPresentationStyle = UIModalPresentationStyle.popover
-                        popOver.preferredContentSize = CGSize(width: self.view.frame.width * 0.90, height: self.view.frame.height / 4)
-
-                        let popoverMenuViewController = popOver.popoverPresentationController
-                        popoverMenuViewController?.permittedArrowDirections = UIPopoverArrowDirection(rawValue: 0)
-                        popoverMenuViewController?.delegate = self
-                        popoverMenuViewController?.sourceView = self.view
-                        popoverMenuViewController!.sourceRect = CGRect(
-                            x: self.view.frame.width * 0.50,
-                            y: self.view.frame.height * 0.50,
-                            width: 0,
-                            height: 0
-                        )
-
-                        self.present(
-                            popOver,
-                            animated: true,
-                            completion: nil
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        guard hasSetupUI else { return }
-        layoutRedesignedUIIfNeeded()
-    }
-
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
-        // Avoid repeated audio-stack churn while this screen is not visible.
-        playerViewController?.player?.pause()
-    }
 }
-

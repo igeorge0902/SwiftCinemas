@@ -1,6 +1,45 @@
+// ListViewCell.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
+
 import UIKit
 
 class ListViewCell: UITableViewCell {
+    // MARK: Lifecycle
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        backgroundColor = .white
+        contentView.backgroundColor = .white
+        selectionStyle = .none
+
+        layer.cornerRadius = 14
+        layer.borderWidth = 1
+        layer.borderColor = UIColor(white: 0.85, alpha: 1.0).cgColor
+        layer.masksToBounds = true
+
+        contentView.addSubview(movieImageView)
+        contentView.addSubview(titleText)
+        contentView.addSubview(ratingLabel)
+        contentView.addSubview(favoriteButton)
+
+        favoriteButton.addTarget(self, action: #selector(didTapFavorite), for: .touchUpInside)
+
+        buildConstraints()
+        // Default: full layout
+        applyFullLayout()
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: Internal
+
+    override var intrinsicContentSize: CGSize {
+        CGSize(width: UIView.noIntrinsicMetric, height: 180)
+    }
+
     let movieImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
@@ -39,37 +78,54 @@ class ListViewCell: UITableViewCell {
 
     var favoriteTapHandler: (() -> Void)?
 
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        favoriteTapHandler = nil
+    }
+
+    /// Call with `true` for admin/update rows (text-only, 60pt height).
+    func configureLayout(compact: Bool) {
+        if compact {
+            NSLayoutConstraint.deactivate(fullConstraints)
+            NSLayoutConstraint.activate(compactConstraints)
+            movieImageView.isHidden = true
+            ratingLabel.isHidden = true
+            favoriteButton.isHidden = true
+            titleText.textAlignment = .left
+            layer.cornerRadius = 0
+            layer.borderWidth = 0
+        } else {
+            NSLayoutConstraint.deactivate(compactConstraints)
+            NSLayoutConstraint.activate(fullConstraints)
+            movieImageView.isHidden = false
+            ratingLabel.isHidden = false
+            favoriteButton.isHidden = false
+            titleText.textAlignment = .center
+            layer.cornerRadius = 14
+            layer.borderWidth = 1
+            layer.borderColor = UIColor(white: 0.85, alpha: 1.0).cgColor
+        }
+        setNeedsLayout()
+    }
+
+    func configureCell(with image: UIImage?, title: String) {
+        movieImageView.image = image
+        titleText.text = title
+    }
+
+    func configureRedesign(title: NSAttributedString, rating: NSAttributedString, isFavorite: Bool, onFavoriteTap: (() -> Void)?) {
+        titleText.attributedText = title
+        ratingLabel.attributedText = rating
+        favoriteTapHandler = onFavoriteTap
+        favoriteButton.setTitle(isFavorite ? "★" : "☆", for: .normal)
+    }
+
+    // MARK: Private
+
     // Constraints that differ between compact (text-only) and full (image+text) layouts
     private var compactConstraints: [NSLayoutConstraint] = []
     private var fullConstraints: [NSLayoutConstraint] = []
     private var sharedConstraints: [NSLayoutConstraint] = []
-
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        backgroundColor = .white
-        contentView.backgroundColor = .white
-        selectionStyle = .none
-
-        layer.cornerRadius = 14
-        layer.borderWidth = 1
-        layer.borderColor = UIColor(white: 0.85, alpha: 1.0).cgColor
-        layer.masksToBounds = true
-
-        contentView.addSubview(movieImageView)
-        contentView.addSubview(titleText)
-        contentView.addSubview(ratingLabel)
-        contentView.addSubview(favoriteButton)
-
-        favoriteButton.addTarget(self, action: #selector(didTapFavorite), for: .touchUpInside)
-
-        buildConstraints()
-        // Default: full layout
-        applyFullLayout()
-    }
-
-    required init?(coder _: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
 
     private func buildConstraints() {
         // ── Shared: image width/position ──
@@ -111,54 +167,12 @@ class ListViewCell: UITableViewCell {
         NSLayoutConstraint.activate(sharedConstraints)
     }
 
-    /// Call with `true` for admin/update rows (text-only, 60pt height).
-    func configureLayout(compact: Bool) {
-        if compact {
-            NSLayoutConstraint.deactivate(fullConstraints)
-            NSLayoutConstraint.activate(compactConstraints)
-            movieImageView.isHidden = true
-            ratingLabel.isHidden = true
-            favoriteButton.isHidden = true
-            titleText.textAlignment = .left
-            layer.cornerRadius = 0
-            layer.borderWidth = 0
-        } else {
-            NSLayoutConstraint.deactivate(compactConstraints)
-            NSLayoutConstraint.activate(fullConstraints)
-            movieImageView.isHidden = false
-            ratingLabel.isHidden = false
-            favoriteButton.isHidden = false
-            titleText.textAlignment = .center
-            layer.cornerRadius = 14
-            layer.borderWidth = 1
-            layer.borderColor = UIColor(white: 0.85, alpha: 1.0).cgColor
-        }
-        setNeedsLayout()
-    }
-
     private func applyFullLayout() {
         NSLayoutConstraint.activate(fullConstraints)
     }
 
-    func configureCell(with image: UIImage?, title: String) {
-        movieImageView.image = image
-        titleText.text = title
-    }
-
-    func configureRedesign(title: NSAttributedString, rating: NSAttributedString, isFavorite: Bool, onFavoriteTap: (() -> Void)?) {
-        titleText.attributedText = title
-        ratingLabel.attributedText = rating
-        favoriteTapHandler = onFavoriteTap
-        favoriteButton.setTitle(isFavorite ? "★" : "☆", for: .normal)
-    }
-
     @objc private func didTapFavorite() {
         favoriteTapHandler?()
-    }
-
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        favoriteTapHandler = nil
     }
 
     private func addShadow() {
@@ -167,9 +181,5 @@ class ListViewCell: UITableViewCell {
         contentView.layer.shadowOffset = CGSize(width: 0, height: 2)
         contentView.layer.shadowRadius = 4
         contentView.layer.masksToBounds = false
-    }
-
-    override var intrinsicContentSize: CGSize {
-        CGSize(width: UIView.noIntrinsicMetric, height: 180)
     }
 }

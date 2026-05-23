@@ -1,20 +1,19 @@
-//
-//  SignupVC.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 27/03/16.
-//  Copyright © 2016 George Gaspar. All rights reserved.
-//
+// SignupVC.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import UIKit
 
 class SignupVC: UIViewController {
-    var imageView: UIImageView = .init()
-    var backgroundDict: [String: String] = Dictionary()
+    // MARK: Lifecycle
 
     deinit {
         print(#function, "\(self)")
     }
+
+    // MARK: Internal
+
+    var imageView: UIImageView = .init()
+    var backgroundDict: [String: String] = Dictionary()
 
     @IBOutlet var txtVoucher: UITextField!
     @IBOutlet var txtEmail: UITextField!

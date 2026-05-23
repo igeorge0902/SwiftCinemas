@@ -1,9 +1,5 @@
-//
-//  BackendServices.swift
-//  SwiftCinemas
-//
-//  Named after backend areas: mbooks REST, login gateway (dalogin), image webapp, RapidAPI IMDb.
-//
+// BackendServices.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 import UIKit
@@ -18,16 +14,19 @@ struct AppServices {
     let rapidMovieDatabase: RapidMovieDatabaseService
 }
 
+@MainActor
 protocol HasAppServices: AnyObject {
     var appServices: AppServices! { get set }
 }
 
+@MainActor
 extension HasAppServices {
     func inject(appServices: AppServices) {
         self.appServices = appServices
     }
 }
 
+@MainActor
 extension HasAppServices where Self: UIViewController {
     func injectAppServicesIfNeeded() {
         guard appServices == nil else { return }
@@ -37,15 +36,15 @@ extension HasAppServices where Self: UIViewController {
 
 // MARK: - mbooks-1/rest/book (MbooksService)
 
+@MainActor
 final class MbooksService {
-    private let apiClient: APIClient
-    private let session = SessionHeaderProvider()
+    // MARK: Lifecycle
 
     init(apiClient: APIClient) {
         self.apiClient = apiClient
     }
 
-    private static let bookRoot = "mbooks-1/rest/book"
+    // MARK: Internal
 
     /// Full URL string including query — matches legacy Realm `CachedResponse.url` keys.
     static func mbooksURLString(suffix: String, query: [String: String]?) -> String {
@@ -55,44 +54,6 @@ final class MbooksService {
             c.queryItems = q.map { URLQueryItem(name: $0.key, value: $0.value) }
         }
         return c.url!.absoluteString
-    }
-
-    private func get(suffix: String, query: [String: String]?, realmCache: Bool) async throws -> Data {
-        let p = suffix.hasPrefix("/") ? String(suffix.dropFirst()) : suffix
-        let fullPath = "\(Self.bookRoot)/\(p)"
-        let items = query?.map { URLQueryItem(name: $0.key, value: $0.value) }
-        let cacheKey = realmCache ? Self.mbooksURLString(suffix: "/" + p, query: query) : nil
-        let endpoint = Endpoint(path: fullPath, method: "GET", query: items, body: nil, cacheKey: cacheKey, absoluteURL: nil)
-        return try await apiClient.requestData(endpoint, headers: session)
-    }
-
-    private func postJSON(suffix: String, body: [String: Any]) async throws -> Data {
-        let p = suffix.hasPrefix("/") ? String(suffix.dropFirst()) : suffix
-        let fullPath = "\(Self.bookRoot)/\(p)"
-        let data = try JSONSerialization.data(withJSONObject: body, options: [])
-        let hp = MergedHeaderProvider(base: session, extra: ["Content-Type": "application/json"])
-        let endpoint = Endpoint(path: fullPath, method: "POST", query: nil, body: data, cacheKey: nil, absoluteURL: nil)
-        return try await apiClient.requestData(endpoint, headers: hp)
-    }
-
-    private func deleteJSON(suffix: String, body: [String: Any]) async throws -> Data {
-        let p = suffix.hasPrefix("/") ? String(suffix.dropFirst()) : suffix
-        let fullPath = "\(Self.bookRoot)/\(p)"
-        let data = try JSONSerialization.data(withJSONObject: body, options: [])
-        let hp = MergedHeaderProvider(base: session, extra: ["Content-Type": "application/json"])
-        let endpoint = Endpoint(path: fullPath, method: "DELETE", query: nil, body: data, cacheKey: nil, absoluteURL: nil)
-        return try await apiClient.requestData(endpoint, headers: hp)
-    }
-
-    /// GET with `Content-Type: application/json` (legacy ``GeneralRequestManager`` behaviour for admin movie pickers).
-    private func getExpectingJSONBodyHeader(suffix: String, query: [String: String]?, realmCache: Bool) async throws -> Data {
-        let p = suffix.hasPrefix("/") ? String(suffix.dropFirst()) : suffix
-        let fullPath = "\(Self.bookRoot)/\(p)"
-        let items = query?.map { URLQueryItem(name: $0.key, value: $0.value) }
-        let cacheKey = realmCache ? Self.mbooksURLString(suffix: "/" + p, query: query) : nil
-        let hp = MergedHeaderProvider(base: session, extra: ["Content-Type": "application/json"])
-        let endpoint = Endpoint(path: fullPath, method: "GET", query: items, body: nil, cacheKey: cacheKey, absoluteURL: nil)
-        return try await apiClient.requestData(endpoint, headers: hp)
     }
 
     func moviesPaging(query: [String: String]) async throws -> Data {
@@ -163,22 +124,64 @@ final class MbooksService {
     func adminDeleteScreen(body: [String: Any]) async throws -> Data {
         try await deleteJSON(suffix: "admin/deletescreen", body: body)
     }
+
+    // MARK: Private
+
+    private static let bookRoot = "mbooks-1/rest/book"
+
+    private let apiClient: APIClient
+    private let session = SessionHeaderProvider()
+
+    private func get(suffix: String, query: [String: String]?, realmCache: Bool) async throws -> Data {
+        let p = suffix.hasPrefix("/") ? String(suffix.dropFirst()) : suffix
+        let fullPath = "\(Self.bookRoot)/\(p)"
+        let items = query?.map { URLQueryItem(name: $0.key, value: $0.value) }
+        let cacheKey = realmCache ? Self.mbooksURLString(suffix: "/" + p, query: query) : nil
+        let endpoint = Endpoint(path: fullPath, method: "GET", query: items, body: nil, cacheKey: cacheKey, absoluteURL: nil)
+        return try await apiClient.requestData(endpoint, headers: session)
+    }
+
+    private func postJSON(suffix: String, body: [String: Any]) async throws -> Data {
+        let p = suffix.hasPrefix("/") ? String(suffix.dropFirst()) : suffix
+        let fullPath = "\(Self.bookRoot)/\(p)"
+        let data = try JSONSerialization.data(withJSONObject: body, options: [])
+        let hp = MergedHeaderProvider(base: session, extra: ["Content-Type": "application/json"])
+        let endpoint = Endpoint(path: fullPath, method: "POST", query: nil, body: data, cacheKey: nil, absoluteURL: nil)
+        return try await apiClient.requestData(endpoint, headers: hp)
+    }
+
+    private func deleteJSON(suffix: String, body: [String: Any]) async throws -> Data {
+        let p = suffix.hasPrefix("/") ? String(suffix.dropFirst()) : suffix
+        let fullPath = "\(Self.bookRoot)/\(p)"
+        let data = try JSONSerialization.data(withJSONObject: body, options: [])
+        let hp = MergedHeaderProvider(base: session, extra: ["Content-Type": "application/json"])
+        let endpoint = Endpoint(path: fullPath, method: "DELETE", query: nil, body: data, cacheKey: nil, absoluteURL: nil)
+        return try await apiClient.requestData(endpoint, headers: hp)
+    }
+
+    /// GET with `Content-Type: application/json` (legacy ``GeneralRequestManager`` behaviour for admin movie pickers).
+    private func getExpectingJSONBodyHeader(suffix: String, query: [String: String]?, realmCache: Bool) async throws -> Data {
+        let p = suffix.hasPrefix("/") ? String(suffix.dropFirst()) : suffix
+        let fullPath = "\(Self.bookRoot)/\(p)"
+        let items = query?.map { URLQueryItem(name: $0.key, value: $0.value) }
+        let cacheKey = realmCache ? Self.mbooksURLString(suffix: "/" + p, query: query) : nil
+        let hp = MergedHeaderProvider(base: session, extra: ["Content-Type": "application/json"])
+        let endpoint = Endpoint(path: fullPath, method: "GET", query: items, body: nil, cacheKey: cacheKey, absoluteURL: nil)
+        return try await apiClient.requestData(endpoint, headers: hp)
+    }
 }
 
 // MARK: - /login (LoginGatewayService)
 
+@MainActor
 final class LoginGatewayService {
-    private let apiClient: APIClient
-    private let session = SessionHeaderProvider()
+    // MARK: Lifecycle
 
     init(apiClient: APIClient) {
         self.apiClient = apiClient
     }
 
-    private func loginPath(_ suffix: String) -> String {
-        let s = suffix.hasPrefix("/") ? String(suffix.dropFirst()) : suffix
-        return "login/\(s)"
-    }
+    // MARK: Internal
 
     func signIn(
         username: String,
@@ -260,7 +263,7 @@ final class LoginGatewayService {
         let endpoint = Endpoint(path: loginPath("admin"), method: "GET", query: nil, body: nil, cacheKey: nil, absoluteURL: nil)
         return try await apiClient.requestData(endpoint, headers: session)
     }
-    
+
     func getCheckOut() async throws -> Data {
         let endpoint = Endpoint(path: loginPath("CheckOut"), method: "GET", query: nil, body: nil, cacheKey: nil, absoluteURL: nil)
         return try await apiClient.requestData(endpoint, headers: session)
@@ -269,7 +272,7 @@ final class LoginGatewayService {
     func postCheckOut(body: Data) async throws -> Data {
         let hp = MergedHeaderProvider(base: session, extra: [
             "Content-Type": "application/x-www-form-urlencoded",
-            "Content-Length": "\(body.count)"
+            "Content-Length": "\(body.count)",
         ])
         let endpoint = Endpoint(path: loginPath("CheckOut"), method: "POST", query: nil, body: body, cacheKey: nil, absoluteURL: nil)
         return try await apiClient.requestData(endpoint, headers: hp)
@@ -302,17 +305,16 @@ final class LoginGatewayService {
     func postManagePurchases(body: Data) async throws -> Data {
         let hp = MergedHeaderProvider(base: session, extra: [
             "Content-Type": "application/x-www-form-urlencoded",
-            "Content-Length": "\(body.count)"
+            "Content-Length": "\(body.count)",
         ])
         let endpoint = Endpoint(path: loginPath("ManagePurchases"), method: "POST", query: nil, body: body, cacheKey: nil, absoluteURL: nil)
         return try await apiClient.requestData(endpoint, headers: hp)
     }
 
     func postActivation(deviceId: String, user: String) async throws -> Data {
-  
         let json: [String: Any] = [
             "deviceId": deviceId,
-            "user": user
+            "user": user,
         ]
 
         let body = try JSONSerialization.data(withJSONObject: json, options: [])
@@ -320,23 +322,36 @@ final class LoginGatewayService {
         let hp = MergedHeaderProvider(
             base: session,
             extra: [
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
             ]
         )
-        
+
         let endpoint = Endpoint(path: loginPath("activation"), method: "POST", query: nil, body: body, cacheKey: nil, absoluteURL: nil)
         return try await apiClient.requestData(endpoint, headers: hp)
+    }
+
+    // MARK: Private
+
+    private let apiClient: APIClient
+    private let session = SessionHeaderProvider()
+
+    private func loginPath(_ suffix: String) -> String {
+        let s = suffix.hasPrefix("/") ? String(suffix.dropFirst()) : suffix
+        return "login/\(s)"
     }
 }
 
 // MARK: - simple-service-webapp images (ImageResourceService)
 
+@MainActor
 final class ImageResourceService {
-    private let apiClient: APIClient
+    // MARK: Lifecycle
 
     init(apiClient: APIClient) {
         self.apiClient = apiClient
     }
+
+    // MARK: Internal
 
     func getData(urlString: String, realmCache: Bool) async throws -> Data {
         guard let url = URL(string: urlString) else {
@@ -346,16 +361,23 @@ final class ImageResourceService {
         let endpoint = Endpoint(path: "", method: "GET", query: nil, body: nil, cacheKey: key, absoluteURL: url)
         return try await apiClient.requestData(endpoint, headers: MinimalGETHeaderProvider())
     }
+
+    // MARK: Private
+
+    private let apiClient: APIClient
 }
 
 // MARK: - RapidAPI IMDb (RapidMovieDatabaseService)
 
+@MainActor
 final class RapidMovieDatabaseService {
-    private let apiClient: APIClient
+    // MARK: Lifecycle
 
     init(apiClient: APIClient) {
         self.apiClient = apiClient
     }
+
+    // MARK: Internal
 
     func imdbTitle(imdbId: String, realmCache: Bool) async throws -> Data {
         var c = URLComponents(string: "https://movie-database-imdb-alternative.p.rapidapi.com")!
@@ -365,4 +387,8 @@ final class RapidMovieDatabaseService {
         let endpoint = Endpoint(path: "", method: "GET", query: nil, body: nil, cacheKey: key, absoluteURL: url)
         return try await apiClient.requestData(endpoint, headers: RapidMovieDatabaseHeaderProvider())
     }
+
+    // MARK: Private
+
+    private let apiClient: APIClient
 }

@@ -1,9 +1,5 @@
-//
-//  CachedURLResponse.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 15/11/15.
-//
+// CachedURLResponse.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import CoreData
 import Foundation

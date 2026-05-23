@@ -1,9 +1,5 @@
-//
-//  HomeVC.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 27/03/16.
-//  Copyright © 2016 George Gaspar. All rights reserved.
+// HomeVC.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import CoreData
 import SwiftyJSON
@@ -12,12 +8,13 @@ import WebKit
 
 class HomeVC: UIViewController, UIViewControllerTransitioningDelegate, HasAppServices,
     UICollectionViewDataSource, UICollectionViewDelegateFlowLayout,
-    UITableViewDataSource, UITableViewDelegate /* , WebSocketDelegate */ {
+    UITableViewDataSource, UITableViewDelegate /* , WebSocketDelegate */
+{
+    // MARK: Lifecycle
 
     deinit { print(#function, "\(self)") }
 
-    var imageView: UIImageView!
-    var appServices: AppServices!
+    // MARK: Internal
 
     // MARK: - Trending state
 
@@ -33,31 +30,14 @@ class HomeVC: UIViewController, UIViewControllerTransitioningDelegate, HasAppSer
         let descriptionText: String
     }
 
-    private var trendingMovies: [TrendingMovie] = []
-    private var displayMode: TrendingDisplayMode = .carousel
-    private var isLoadingTrending = false
-    private var trendingErrorMessage: String?
-
-    // MARK: - Trending views
-
-    private let trendingSectionContainer = UIView()
-    private let trendingTitleLabel = UILabel()
-    private let trendingStatusLabel = UILabel()
-    private let restoreCarouselButton = UIButton(type: .system)
-    private let trendingActivity = UIActivityIndicatorView(style: .medium)
-    private let trendingContentContainer = UIView()
-    private var carouselCollectionView: UICollectionView!
-    private let trendingListTableView = UITableView(frame: .zero, style: .plain)
-    private var trendingCollapsedHeightConstraint: NSLayoutConstraint?
-    private var trendingExpandedBottomConstraint: NSLayoutConstraint?
-
-    // MARK: - Lifecycle
+    var imageView: UIImageView!
+    var appServices: AppServices!
 
     override func viewDidLoad() {
         super.viewDidLoad()
-       
+
         injectAppServicesIfNeeded()
-        
+
         UIApplication.shared.isNetworkActivityIndicatorVisible = false
 
         imageView = UIImageView(frame: view.bounds)
@@ -78,6 +58,115 @@ class HomeVC: UIViewController, UIViewControllerTransitioningDelegate, HasAppSer
             performSegue(withIdentifier: "goto_login", sender: self)
         }
     }
+
+    // MARK: - Navigation
+
+    override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
+        if segue.identifier == "goto_map" {
+            LocationsDataManager.shared.isVenuesFromMapFlow = true
+            LocationsDataManager.shared.isMapFromVenueDetails = false
+        }
+    }
+
+    // MARK: - UICollectionViewDataSource
+
+    func collectionView(_: UICollectionView, numberOfItemsInSection _: Int) -> Int {
+        trendingMovies.count
+    }
+
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "TrendingCarouselCell", for: indexPath) as? TrendingCarouselCell else {
+            return UICollectionViewCell()
+        }
+        let movie = trendingMovies[indexPath.item]
+        cell.configure(title: movie.name)
+        if let url = URL(string: URLManager.image(movie.largePicture)) {
+            loadImage(from: url, into: cell.posterImageView)
+        }
+        return cell
+    }
+
+    func collectionView(_ collectionView: UICollectionView, layout _: UICollectionViewLayout, sizeForItemAt _: IndexPath) -> CGSize {
+        CGSize(width: 122, height: max(160, collectionView.bounds.height - 8))
+    }
+
+    // MARK: - UITableViewDataSource
+
+    func tableView(_: UITableView, numberOfRowsInSection _: Int) -> Int {
+        trendingMovies.count
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: "TrendingListCell", for: indexPath) as? TrendingListCell else {
+            return UITableViewCell()
+        }
+        let movie = trendingMovies[indexPath.row]
+        cell.configure(title: movie.name, description: movie.descriptionText)
+        if let url = URL(string: URLManager.image(movie.largePicture)) {
+            loadImage(from: url, into: cell.posterImageView)
+        }
+        return cell
+    }
+
+    @IBAction func basket(_: UIButton) {
+        guard !BasketDataManager.shared.basketItemsBySeatId.isEmpty else {
+            UIAlertController.popUp(title: "Warning!", message: "No free seat(s) to be reserved!")
+            return
+        }
+        let pvc = UIStoryboard(name: "Storyboard", bundle: nil).instantiateViewController(withIdentifier: "Basket")
+        pvc.modalPresentationStyle = .custom
+        pvc.transitioningDelegate = self
+        present(pvc, animated: true)
+    }
+
+    @IBAction func NearbyVenues(_: UIButton) {
+        performSegue(withIdentifier: "goto_map", sender: self)
+    }
+
+    @IBAction func Navigation(_: UIButton) {
+        let sheet = UIAlertController(title: "Action Sheet", message: "Choose an option!", preferredStyle: .actionSheet)
+        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        sheet.addAction(UIAlertAction(title: "Go to Menu", style: .default) { [weak self] _ in
+            self?.performSegue(withIdentifier: "goto_menu", sender: self)
+        })
+        sheet.addAction(UIAlertAction(title: "Go to Login Screen", style: .default) { [weak self] _ in
+            UserDefaults.standard.set(0, forKey: "ISLOGGEDIN")
+            self?.dismiss(animated: true)
+            self?.performSegue(withIdentifier: "goto_login", sender: self)
+        })
+        DispatchQueue.main.async {
+            UIApplication.shared.keyWindow?.rootViewController?.present(sheet, animated: true)
+        }
+    }
+
+    @IBAction func WebView(_: UIButton) {
+        presentedViewController?.removeFromParent()
+        performSegue(withIdentifier: "goto_webview", sender: self)
+    }
+
+    @IBAction func Movies(_: UIButton) {
+        performSegue(withIdentifier: "goto_movies", sender: self)
+    }
+
+    // MARK: Private
+
+    private var trendingMovies: [TrendingMovie] = []
+    private var displayMode: TrendingDisplayMode = .carousel
+    private var isLoadingTrending = false
+    private var trendingErrorMessage: String?
+
+    // MARK: - Trending views
+
+    private let trendingSectionContainer = UIView()
+    private let trendingTitleLabel = UILabel()
+    private let trendingStatusLabel = UILabel()
+    private let restoreCarouselButton = UIButton(type: .system)
+    private let trendingActivity = UIActivityIndicatorView(style: .medium)
+    private let trendingContentContainer = UIView()
+    private var carouselCollectionView: UICollectionView!
+    private let trendingListTableView = UITableView(frame: .zero, style: .plain)
+    private var trendingCollapsedHeightConstraint: NSLayoutConstraint?
+    private var trendingExpandedBottomConstraint: NSLayoutConstraint?
 
     // MARK: - Trending UI setup
 
@@ -193,7 +282,7 @@ class HomeVC: UIViewController, UIViewControllerTransitioningDelegate, HasAppSer
             trendingListTableView.leadingAnchor.constraint(equalTo: trendingContentContainer.leadingAnchor),
             trendingListTableView.trailingAnchor.constraint(equalTo: trendingContentContainer.trailingAnchor),
             trendingListTableView.topAnchor.constraint(equalTo: trendingContentContainer.topAnchor),
-            trendingListTableView.bottomAnchor.constraint(equalTo: trendingContentContainer.bottomAnchor)
+            trendingListTableView.bottomAnchor.constraint(equalTo: trendingContentContainer.bottomAnchor),
         ])
 
         setDisplayMode(.carousel, animated: false)
@@ -270,7 +359,6 @@ class HomeVC: UIViewController, UIViewControllerTransitioningDelegate, HasAppSer
         }
     }
 
-
     private func updateTrendingStateUI() {
         if isLoadingTrending {
             trendingStatusLabel.text = "Loading trending movies..."
@@ -301,7 +389,7 @@ class HomeVC: UIViewController, UIViewControllerTransitioningDelegate, HasAppSer
         let isCarousel = mode == .carousel
 
         NSLayoutConstraint.deactivate([trendingCollapsedHeightConstraint, trendingExpandedBottomConstraint].compactMap { $0 })
-        NSLayoutConstraint.activate([(isCarousel ? trendingCollapsedHeightConstraint : trendingExpandedBottomConstraint)].compactMap { $0 })
+        NSLayoutConstraint.activate([isCarousel ? trendingCollapsedHeightConstraint : trendingExpandedBottomConstraint].compactMap { $0 })
 
         restoreCarouselButton.isHidden = isCarousel
 
@@ -335,95 +423,6 @@ class HomeVC: UIViewController, UIViewControllerTransitioningDelegate, HasAppSer
                 NSLog("HomeVC.loadImage: %@ url=%@", errorMsg, url.absoluteString)
             }
         }
-    }
-
-    // MARK: - UICollectionViewDataSource
-
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        trendingMovies.count
-    }
-
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "TrendingCarouselCell", for: indexPath) as? TrendingCarouselCell else {
-            return UICollectionViewCell()
-        }
-        let movie = trendingMovies[indexPath.item]
-        cell.configure(title: movie.name)
-        if let url = URL(string: URLManager.image(movie.largePicture)) {
-            loadImage(from: url, into: cell.posterImageView)
-        }
-        return cell
-    }
-
-    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        CGSize(width: 122, height: max(160, collectionView.bounds.height - 8))
-    }
-
-    // MARK: - UITableViewDataSource
-
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        trendingMovies.count
-    }
-
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: "TrendingListCell", for: indexPath) as? TrendingListCell else {
-            return UITableViewCell()
-        }
-        let movie = trendingMovies[indexPath.row]
-        cell.configure(title: movie.name, description: movie.descriptionText)
-        if let url = URL(string: URLManager.image(movie.largePicture)) {
-            loadImage(from: url, into: cell.posterImageView)
-        }
-        return cell
-    }
-
-    // MARK: - Navigation
-
-    override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
-        if segue.identifier == "goto_map" {
-            LocationsDataManager.shared.isVenuesFromMapFlow = true
-            LocationsDataManager.shared.isMapFromVenueDetails = false
-        }
-    }
-
-    @IBAction func basket(_: UIButton) {
-        guard !BasketDataManager.shared.basketItemsBySeatId.isEmpty else {
-            UIAlertController.popUp(title: "Warning!", message: "No free seat(s) to be reserved!")
-            return
-        }
-        let pvc = UIStoryboard(name: "Storyboard", bundle: nil).instantiateViewController(withIdentifier: "Basket")
-        pvc.modalPresentationStyle = .custom
-        pvc.transitioningDelegate = self
-        present(pvc, animated: true)
-    }
-
-    @IBAction func NearbyVenues(_: UIButton) {
-        performSegue(withIdentifier: "goto_map", sender: self)
-    }
-
-    @IBAction func Navigation(_: UIButton) {
-        let sheet = UIAlertController(title: "Action Sheet", message: "Choose an option!", preferredStyle: .actionSheet)
-        sheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        sheet.addAction(UIAlertAction(title: "Go to Menu", style: .default) { [weak self] _ in
-            self?.performSegue(withIdentifier: "goto_menu", sender: self)
-        })
-        sheet.addAction(UIAlertAction(title: "Go to Login Screen", style: .default) { [weak self] _ in
-            UserDefaults.standard.set(0, forKey: "ISLOGGEDIN")
-            self?.dismiss(animated: true)
-            self?.performSegue(withIdentifier: "goto_login", sender: self)
-        })
-        DispatchQueue.main.async {
-            UIApplication.shared.keyWindow?.rootViewController?.present(sheet, animated: true)
-        }
-    }
-
-    @IBAction func WebView(_: UIButton) {
-        presentedViewController?.removeFromParent()
-        performSegue(withIdentifier: "goto_webview", sender: self)
-    }
-
-    @IBAction func Movies(_: UIButton) {
-        performSegue(withIdentifier: "goto_movies", sender: self)
     }
 }
 

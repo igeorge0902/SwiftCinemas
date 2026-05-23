@@ -1,13 +1,7 @@
-//
-//  ErrorHandler.swift
-//  SwiftCinemas
-//
-//  Created by GYORGY GASPAR on 2026. 03. 28..
-//  Copyright © 2026 George Gaspar. All rights reserved.
-//
+// ErrorHandler.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
-final class ErrorHandler {
-
+enum ErrorHandler {
     static func message(for error: AppError) -> String {
         switch error {
         case .networkFailure:
@@ -19,7 +13,7 @@ final class ErrorHandler {
         case .activationRequired:
             return "Activation required"
 
-        case .httpError(_, let message):
+        case let .httpError(_, message):
             return message.isEmpty ? "Server error" : message
 
         case .decodingFailed:

@@ -1,22 +1,10 @@
-//
-//  Endpoint.swift
-//  SwiftCinemas
-//
-//  Created by GYORGY GASPAR on 2026. 03. 28..
-//  Copyright © 2026 George Gaspar. All rights reserved.
-//
+// Endpoint.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 
 struct Endpoint {
-    let path: String
-    let method: String
-    let query: [URLQueryItem]?
-    let body: Data?
-    /// When set, ``APIClient`` may read/write ``ResponseCache`` for successful GET responses.
-    let cacheKey: String?
-    /// When set, the request URL is this (optionally merged with ``query``) instead of ``baseURL`` + ``path``.
-    let absoluteURL: URL?
+    // MARK: Lifecycle
 
     init(
         path: String = "",
@@ -33,6 +21,17 @@ struct Endpoint {
         self.cacheKey = cacheKey
         self.absoluteURL = absoluteURL
     }
+
+    // MARK: Internal
+
+    let path: String
+    let method: String
+    let query: [URLQueryItem]?
+    let body: Data?
+    /// When set, ``APIClient`` may read/write ``ResponseCache`` for successful GET responses.
+    let cacheKey: String?
+    /// When set, the request URL is this (optionally merged with ``query``) instead of ``baseURL`` + ``path``.
+    let absoluteURL: URL?
 
     func buildRequest(baseURL: URL, headers: [String: String]) -> URLRequest {
         let resolvedURL: URL

@@ -1,10 +1,5 @@
-//
-//  Time.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 28/12/15.
-//  Copyright © 2015 George Gaspar. All rights reserved.
-//
+// Time.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 import UIKit
@@ -15,9 +10,7 @@ typealias emptyString = String
 
 extension Int64 {
     func getCurrentMillis() -> Int64 {
-        let time = Int64(Date().timeIntervalSince1970 * 1000)
-
-        return time
+        return Int64(Date().timeIntervalSince1970 * 1000)
     }
 }
 
@@ -39,7 +32,7 @@ extension UIViewController: @retroactive UIGestureRecognizerDelegate {
         view.endEditing(true)
     }
 
-    // Allow gesture recognizer to work while still allowing interaction with other UI elements
+    /// Allow gesture recognizer to work while still allowing interaction with other UI elements
     public func gestureRecognizer(_: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         !(touch.view is UIControl) // Prevents interfering with buttons, sliders, etc.
     }
@@ -115,8 +108,6 @@ extension String {
 
         dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ssZ"
         dateFormatter.timeZone = TimeZone.autoupdatingCurrent
-        let timeStamp = dateFormatter.string(from: date.addingTimeInterval(timeinterval))
-
-        return timeStamp
+        return dateFormatter.string(from: date.addingTimeInterval(timeinterval))
     }
 }

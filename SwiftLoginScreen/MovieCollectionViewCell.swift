@@ -1,6 +1,23 @@
+// MovieCollectionViewCell.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
+
 import UIKit
 
 class MovieCollectionViewCell: UICollectionViewCell {
+    // MARK: Lifecycle
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupViews()
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: Internal
+
     var imageView: UIImageView!
     var textLabel: UILabel!
     var categoryLabel: UILabel!
@@ -8,14 +25,34 @@ class MovieCollectionViewCell: UICollectionViewCell {
     var chevronLabel: UILabel!
     var representedImagePath: String?
 
-    override init(frame: CGRect) {
-        super.init(frame: frame)
-        setupViews()
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        representedImagePath = nil
+        imageView.image = nil
+        textLabel.attributedText = nil
+        categoryLabel.attributedText = nil
+        screeningDateLabel.attributedText = nil
     }
 
-    required init?(coder _: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+    func configureRedesign(title: String, category: String, screeningDate: String, fontName: String = "HelveticaNeue-Medium", fontSize: CGFloat = 14) {
+        let titleFont = UIFont(name: fontName, size: fontSize) ?? .systemFont(ofSize: fontSize, weight: .semibold)
+        textLabel.attributedText = NSAttributedString(string: title, attributes: [
+            .font: titleFont,
+            .foregroundColor: UIColor.black,
+        ])
+
+        let metadataFont = UIFont(name: fontName, size: 12) ?? .systemFont(ofSize: 12, weight: .regular)
+        categoryLabel.attributedText = NSAttributedString(string: category, attributes: [
+            .font: metadataFont,
+            .foregroundColor: UIColor(white: 0.5, alpha: 1),
+        ])
+        screeningDateLabel.attributedText = NSAttributedString(string: screeningDate, attributes: [
+            .font: metadataFont,
+            .foregroundColor: UIColor(white: 0.5, alpha: 1),
+        ])
     }
+
+    // MARK: Private
 
     private func setupViews() {
         contentView.backgroundColor = .white
@@ -82,38 +119,10 @@ class MovieCollectionViewCell: UICollectionViewCell {
             screeningDateLabel.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -12),
         ])
     }
-
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        representedImagePath = nil
-        imageView.image = nil
-        textLabel.attributedText = nil
-        categoryLabel.attributedText = nil
-        screeningDateLabel.attributedText = nil
-    }
-
-    func configureRedesign(title: String, category: String, screeningDate: String, fontName: String = "HelveticaNeue-Medium", fontSize: CGFloat = 14) {
-        let titleFont = UIFont(name: fontName, size: fontSize) ?? .systemFont(ofSize: fontSize, weight: .semibold)
-        textLabel.attributedText = NSAttributedString(string: title, attributes: [
-            .font: titleFont,
-            .foregroundColor: UIColor.black,
-        ])
-
-        let metadataFont = UIFont(name: fontName, size: 12) ?? .systemFont(ofSize: 12, weight: .regular)
-        categoryLabel.attributedText = NSAttributedString(string: category, attributes: [
-            .font: metadataFont,
-            .foregroundColor: UIColor(white: 0.5, alpha: 1),
-        ])
-        screeningDateLabel.attributedText = NSAttributedString(string: screeningDate, attributes: [
-            .font: metadataFont,
-            .foregroundColor: UIColor(white: 0.5, alpha: 1),
-        ])
-    }
 }
 
 final class TrendingCarouselCell: UICollectionViewCell {
-    let posterImageView = UIImageView()
-    private let titleLabel = UILabel()
+    // MARK: Lifecycle
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -148,22 +157,31 @@ final class TrendingCarouselCell: UICollectionViewCell {
             titleLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
             titleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
             titleLabel.topAnchor.constraint(equalTo: posterImageView.bottomAnchor, constant: 8),
-            titleLabel.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -8)
+            titleLabel.bottomAnchor.constraint(lessThanOrEqualTo: contentView.bottomAnchor, constant: -8),
         ])
     }
 
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: Internal
+
+    let posterImageView = UIImageView()
 
     func configure(title: String) {
         titleLabel.text = title
         posterImageView.image = UIImage(systemName: "photo")
     }
+
+    // MARK: Private
+
+    private let titleLabel = UILabel()
 }
 
 final class TrendingListCell: UITableViewCell {
-    let posterImageView = UIImageView()
-    private let titleLabel = UILabel()
-    private let descriptionLabel = UILabel()
+    // MARK: Lifecycle
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -207,15 +225,27 @@ final class TrendingListCell: UITableViewCell {
             descriptionLabel.leadingAnchor.constraint(equalTo: titleLabel.leadingAnchor),
             descriptionLabel.trailingAnchor.constraint(equalTo: titleLabel.trailingAnchor),
             descriptionLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 4),
-            descriptionLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10)
+            descriptionLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -10),
         ])
     }
 
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: Internal
+
+    let posterImageView = UIImageView()
 
     func configure(title: String, description: String) {
         titleLabel.text = title
         descriptionLabel.text = description
         posterImageView.image = UIImage(systemName: "photo")
     }
+
+    // MARK: Private
+
+    private let titleLabel = UILabel()
+    private let descriptionLabel = UILabel()
 }

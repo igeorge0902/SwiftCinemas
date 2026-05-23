@@ -1,10 +1,5 @@
-//
-//  TicketsVC.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 2017. 09. 16..
-//  Copyright © 2017. George Gaspar. All rights reserved.
-//
+// TicketsVC.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 import PDFKit
@@ -14,17 +9,17 @@ import UIKit
  Displays ticket data for completed purchases.
  */
 class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, HasAppServices {
-    private enum Notifications {
-        static let purchaseDeletedFromTickets = Notification.Name("purchaseDeletedFromTickets")
-    }
+    // MARK: Lifecycle
 
-    var appServices: AppServices!
     deinit {
         purchaseId = nil
         collectionData.removeAll()
         print(#function, "\(self)")
     }
 
+    // MARK: Internal
+
+    var appServices: AppServices!
     var collectionView: UICollectionView!
 
     var ResponseText: String?
@@ -36,10 +31,6 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
     var movieName: String?
     var purchaseId: String!
 
-    private var resolvedPurchaseId: String? {
-        purchaseId ?? CheckoutDataManager.shared.selectedPurchaseId
-    }
-
     var pdfURL_: URL?
     var pdfNameFromUrl: String?
 
@@ -47,10 +38,6 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
 
     var collectionData: [TicketDetailModel] = []
     lazy var layout = UICollectionViewFlowLayout()
-    private var navButtons: [UIButton] = []
-    private var deleteArmedTicketIndex: Int?
-    private weak var pdfPreviewController: UIViewController?
-    private let ticketsRefreshedToast = UILabel()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -102,20 +89,16 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
         super.viewDidAppear(true)
     }
 
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Dispose of any resources that can be recreated.
+    }
+
     @objc func navigateBack() {
         dismiss(animated: false, completion: nil)
     }
 
-    @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
-        guard gesture.state == .began else { return }
-        let location = gesture.location(in: collectionView)
-        guard let indexPath = collectionView.indexPathForItem(at: location) else { return }
-        deleteArmedTicketIndex = indexPath.row
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        collectionView.reloadData()
-    }
-
-    // Close PDF View Function
+    /// Close PDF View Function
     @objc func closePdfView() {
         pdfPreviewController = nil
         dismiss(animated: true, completion: nil)
@@ -191,7 +174,6 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
 
         UIGraphicsEndPDFContext()
 
-        // ✅ Save in Documents Directory
         let resourceDocPath = (FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)).last! as URL
         pdfNameFromUrl = "YourTickets-\(filename).pdf"
         let actualPath = resourceDocPath.appendingPathComponent(pdfNameFromUrl!)
@@ -222,7 +204,7 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
         }
     }
 
-    /*
+    /**
      Method to delete tickets one by one
      */
     @objc func cancelTicket(button: UIButton, event _: UIEvent) {
@@ -256,44 +238,6 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
                 NSLog("cancelTicket: %@", error.localizedDescription)
             }
         }
-    }
-
-    private func configureRefreshToast() {
-        ticketsRefreshedToast.translatesAutoresizingMaskIntoConstraints = false
-        ticketsRefreshedToast.isHidden = true
-        ticketsRefreshedToast.backgroundColor = UIColor(red: 238 / 255, green: 243 / 255, blue: 1, alpha: 1)
-        ticketsRefreshedToast.textColor = UIColor(red: 43 / 255, green: 79 / 255, blue: 147 / 255, alpha: 1)
-        ticketsRefreshedToast.layer.cornerRadius = 10
-        ticketsRefreshedToast.layer.masksToBounds = true
-        ticketsRefreshedToast.font = .systemFont(ofSize: 12, weight: .regular)
-        ticketsRefreshedToast.textAlignment = .center
-        ticketsRefreshedToast.text = "PDF shared. Tickets screen refreshed."
-        view.addSubview(ticketsRefreshedToast)
-
-        NSLayoutConstraint.activate([
-            ticketsRefreshedToast.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 50),
-            ticketsRefreshedToast.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            ticketsRefreshedToast.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            ticketsRefreshedToast.heightAnchor.constraint(equalToConstant: 34),
-        ])
-    }
-
-    private func showTicketsRefreshedToast() {
-        ticketsRefreshedToast.alpha = 1
-        ticketsRefreshedToast.isHidden = false
-        UIView.animate(withDuration: 0.2, delay: 1.6, options: [.curveEaseOut], animations: {
-            self.ticketsRefreshedToast.alpha = 0
-        }, completion: { _ in
-            self.ticketsRefreshedToast.isHidden = true
-            self.ticketsRefreshedToast.alpha = 1
-        })
-    }
-
-    private func stylePdfActionButton(_ button: UIButton) {
-        button.backgroundColor = .black
-        button.setTitleColor(.white, for: .normal)
-        button.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
-        button.layer.cornerRadius = 12
     }
 
     func numberOfSections(in _: UICollectionView) -> Int {
@@ -390,20 +334,76 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
 
     func collectionView(_: UICollectionView, willDisplay _: UICollectionViewCell, forItemAt _: IndexPath) {}
 
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
+    // MARK: Private
+
+    private enum Notifications {
+        static let purchaseDeletedFromTickets = Notification.Name("purchaseDeletedFromTickets")
     }
 
+    private var navButtons: [UIButton] = []
+    private var deleteArmedTicketIndex: Int?
+    private weak var pdfPreviewController: UIViewController?
+    private let ticketsRefreshedToast = UILabel()
+
+    private var resolvedPurchaseId: String? {
+        purchaseId ?? CheckoutDataManager.shared.selectedPurchaseId
+    }
+
+    @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
+        guard gesture.state == .began else { return }
+        let location = gesture.location(in: collectionView)
+        guard let indexPath = collectionView.indexPathForItem(at: location) else { return }
+        deleteArmedTicketIndex = indexPath.row
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        collectionView.reloadData()
+    }
+
+    private func configureRefreshToast() {
+        ticketsRefreshedToast.translatesAutoresizingMaskIntoConstraints = false
+        ticketsRefreshedToast.isHidden = true
+        ticketsRefreshedToast.backgroundColor = UIColor(red: 238 / 255, green: 243 / 255, blue: 1, alpha: 1)
+        ticketsRefreshedToast.textColor = UIColor(red: 43 / 255, green: 79 / 255, blue: 147 / 255, alpha: 1)
+        ticketsRefreshedToast.layer.cornerRadius = 10
+        ticketsRefreshedToast.layer.masksToBounds = true
+        ticketsRefreshedToast.font = .systemFont(ofSize: 12, weight: .regular)
+        ticketsRefreshedToast.textAlignment = .center
+        ticketsRefreshedToast.text = "PDF shared. Tickets screen refreshed."
+        view.addSubview(ticketsRefreshedToast)
+
+        NSLayoutConstraint.activate([
+            ticketsRefreshedToast.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 50),
+            ticketsRefreshedToast.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            ticketsRefreshedToast.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            ticketsRefreshedToast.heightAnchor.constraint(equalToConstant: 34),
+        ])
+    }
+
+    private func showTicketsRefreshedToast() {
+        ticketsRefreshedToast.alpha = 1
+        ticketsRefreshedToast.isHidden = false
+        UIView.animate(withDuration: 0.2, delay: 1.6, options: [.curveEaseOut], animations: {
+            self.ticketsRefreshedToast.alpha = 0
+        }, completion: { _ in
+            self.ticketsRefreshedToast.isHidden = true
+            self.ticketsRefreshedToast.alpha = 1
+        })
+    }
+
+    private func stylePdfActionButton(_ button: UIButton) {
+        button.backgroundColor = .black
+        button.setTitleColor(.white, for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 13, weight: .semibold)
+        button.layer.cornerRadius = 12
+    }
 }
 
-// Helper function inserted by Swift 4.2 migrator.
+/// Helper function inserted by Swift 4.2 migrator.
 private func convertToOptionalNSAttributedStringKeyDictionary(_ input: [String: Any]?) -> [NSAttributedString.Key: Any]? {
     guard let input else { return nil }
     return Dictionary(uniqueKeysWithValues: input.map { key, value in (NSAttributedString.Key(rawValue: key), value) })
 }
 
-// Helper function inserted by Swift 4.2 migrator.
+/// Helper function inserted by Swift 4.2 migrator.
 private func convertFromNSAttributedStringKey(_ input: NSAttributedString.Key) -> String {
     input.rawValue
 }

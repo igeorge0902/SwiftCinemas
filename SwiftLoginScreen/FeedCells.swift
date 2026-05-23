@@ -1,20 +1,11 @@
-//
-//  FeedCells.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 13/09/16.
-//  Copyright © 2016 George Gaspar. All rights reserved.
-//
+// FeedCells.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 import UIKit
 
 class FeedCells: UICollectionViewCell {
-    var textLabel: UILabel?
-    var profileImage: UIImageView?
-    var QRCodeImage: UIImageView?
-    var CancelImage: UIImageView?
-    var statusText: UITextView?
+    // MARK: Lifecycle
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -64,6 +55,19 @@ class FeedCells: UICollectionViewCell {
         addConstraintswithFormat("V:[v0(25)]-8-|", views: CancelImage!)
     }
 
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: Internal
+
+    var textLabel: UILabel?
+    var profileImage: UIImageView?
+    var QRCodeImage: UIImageView?
+    var CancelImage: UIImageView?
+    var statusText: UITextView?
+
     func toggleSelected() {
         if isSelected {
             backgroundColor = UIColor.purple
@@ -71,9 +75,5 @@ class FeedCells: UICollectionViewCell {
         } else {
             backgroundColor = UIColor.white
         }
-    }
-
-    required init?(coder _: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
     }
 }

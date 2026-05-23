@@ -1,10 +1,5 @@
-//
-//  AppError.swift
-//  SwiftCinemas
-//
-//  Created by GYORGY GASPAR on 2026. 03. 28..
-//  Copyright © 2026 George Gaspar. All rights reserved.
-//
+// AppError.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 
@@ -19,7 +14,6 @@ enum AppError: Error {
 extension AppError {
     var userMessage: String {
         switch self {
-
         case let .networkFailure(underlying):
             guard let urlError = underlying as? URLError else {
                 return "Network request failed. Please try again."
@@ -34,7 +28,6 @@ extension AppError {
             default:
                 return "Network request failed (\(urlError.code.rawValue)). Please try again."
             }
-
         case let .httpError(statusCode, _):
             return "Server returned an error (\(statusCode)). Please try again."
         case .authRequired:
@@ -55,4 +48,3 @@ extension Error {
         return localizedDescription
     }
 }
-

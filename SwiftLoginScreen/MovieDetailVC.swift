@@ -1,10 +1,5 @@
-//
-//  MovieDetailVC.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 2019. 12. 25..
-//  Copyright © 2019. George Gaspar. All rights reserved.
-//
+// MovieDetailVC.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 import SafariServices
@@ -12,13 +7,17 @@ import SwiftyJSON
 import UIKit
 
 class MovieDetailVC: UIViewController, UIViewControllerTransitioningDelegate, UIScrollViewDelegate, HasAppServices {
-    var appServices: AppServices!
+    // MARK: Lifecycle
+
     deinit {
         veil = true
         shouldShowSearchResults = false
         print(#function, "\(self)")
     }
 
+    // MARK: Internal
+
+    var appServices: AppServices!
     var iMDB: String!
     var movieId: Int!
     var movieName: String!
@@ -45,7 +44,6 @@ class MovieDetailVC: UIViewController, UIViewControllerTransitioningDelegate, UI
     }
 
     override func viewWillAppear(_: Bool) {
-
         if let selectedMovie = MoviesDataManager.shared.selectedMovie {
             movieId = selectedMovie.movieId
             movieName = selectedMovie.name
@@ -125,18 +123,6 @@ class MovieDetailVC: UIViewController, UIViewControllerTransitioningDelegate, UI
         UIApplication.shared.isNetworkActivityIndicatorVisible = false
     }
 
-    @objc func navigateBack() {
-        dismiss(animated: false, completion: nil)
-    }
-
-    @objc func Venues() {
-        if VenuesFeatureFlags.shouldUseMigration() {
-            presentVenuesMigration()
-        } else {
-            performSegue(withIdentifier: "goto_venues2", sender: self)
-        }
-    }
-
     override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
         if segue.identifier == "goto_venues2", movieId != nil {
             MoviesDataManager.shared.selectedMovie = Movie(
@@ -147,6 +133,18 @@ class MovieDetailVC: UIViewController, UIViewControllerTransitioningDelegate, UI
                 largePicture: selectLarge_picture,
                 imdbUrl: iMDB
             )
+        }
+    }
+
+    @objc func navigateBack() {
+        dismiss(animated: false, completion: nil)
+    }
+
+    @objc func Venues() {
+        if VenuesFeatureFlags.shouldUseMigration() {
+            presentVenuesMigration()
+        } else {
+            performSegue(withIdentifier: "goto_venues2", sender: self)
         }
     }
 
@@ -162,6 +160,8 @@ class MovieDetailVC: UIViewController, UIViewControllerTransitioningDelegate, UI
             }
         }
     }
+
+    // MARK: Private
 
     private func presentVenuesMigration() {
         injectAppServicesIfNeeded()
@@ -181,12 +181,12 @@ class MovieDetailVC: UIViewController, UIViewControllerTransitioningDelegate, UI
     }
 }
 
-// Helper function inserted by Swift 4.2 migrator.
+/// Helper function inserted by Swift 4.2 migrator.
 private func convertFromNSAttributedStringKey(_ input: NSAttributedString.Key) -> String {
     input.rawValue
 }
 
-// Helper function inserted by Swift 4.2 migrator.
+/// Helper function inserted by Swift 4.2 migrator.
 private func convertToOptionalNSAttributedStringKeyDictionary(_ input: [String: Any]?) -> [NSAttributedString.Key: Any]? {
     guard let input else { return nil }
     return Dictionary(uniqueKeysWithValues: input.map { key, value in (NSAttributedString.Key(rawValue: key), value) })

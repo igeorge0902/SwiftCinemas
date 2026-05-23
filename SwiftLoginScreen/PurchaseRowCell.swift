@@ -1,3 +1,6 @@
+// PurchaseRowCell.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
+
 //
 //  PurchaseCell.swift
 //  SwiftCinemas
@@ -8,7 +11,28 @@
 import UIKit
 
 final class PurchaseRowCell: UITableViewCell {
-    
+    // MARK: Lifecycle
+
+    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        backgroundColor = .clear
+        contentView.backgroundColor = .clear
+        selectionStyle = .none
+        clipsToBounds = false
+        contentView.clipsToBounds = false
+
+        buildHierarchy()
+        configureStacks()
+        buildConstraints()
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: Internal
+
     let movieImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.layer.cornerRadius = 6
@@ -30,20 +54,20 @@ final class PurchaseRowCell: UITableViewCell {
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-    
+
     let subtitleLabel: UILabel = {
         let subtitleLabel = UILabel()
         subtitleLabel.font = .systemFont(ofSize: 11)
         subtitleLabel.translatesAutoresizingMaskIntoConstraints = false
         return subtitleLabel
     }()
-    
+
     let refundLabel: UILabel = {
         let refundLabel = UILabel()
         refundLabel.font = .systemFont(ofSize: 10)
         return refundLabel
     }()
-    
+
     let pillLabel: UILabel = {
         let pillLabel = UILabel()
         pillLabel.font = .systemFont(ofSize: 11)
@@ -69,18 +93,25 @@ final class PurchaseRowCell: UITableViewCell {
         pillLabel.translatesAutoresizingMaskIntoConstraints = false
         return pillLabel
     }()
-    
+
+    func configureCell(with image: UIImage?, title: String) {
+        movieImageView.image = image
+        titleText.text = title
+    }
+
+    // MARK: Private
+
     private let textStack = UIStackView()
     private let leftStack = UIStackView()
-    
+
     private let cardView: UIView = {
         let cardView = UIView()
         cardView.layer.cornerRadius = 10
         cardView.layer.borderWidth = 1
         cardView.layer.borderColor = UIColor(
-            red: 229/255,
-            green: 229/255,
-            blue: 232/255,
+            red: 229 / 255,
+            green: 229 / 255,
+            blue: 232 / 255,
             alpha: 1
         ).cgColor
         cardView.translatesAutoresizingMaskIntoConstraints = false
@@ -88,25 +119,7 @@ final class PurchaseRowCell: UITableViewCell {
         return cardView
     }()
 
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
-        backgroundColor = .clear
-        contentView.backgroundColor = .clear
-        selectionStyle = .none
-        clipsToBounds = false
-        contentView.clipsToBounds = false
-
-        buildHierarchy()
-        configureStacks()
-        buildConstraints()
-    }
-
-    required init?(coder _: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-
     private func buildHierarchy() {
-
         contentView.addSubview(cardView)
 
         cardView.addSubview(leftStack)
@@ -119,9 +132,8 @@ final class PurchaseRowCell: UITableViewCell {
         textStack.addArrangedSubview(subtitleLabel)
         textStack.addArrangedSubview(refundLabel)
     }
-    
-    private func configureStacks() {
 
+    private func configureStacks() {
         leftStack.axis = .horizontal
         leftStack.alignment = .center
         leftStack.spacing = 10
@@ -131,11 +143,9 @@ final class PurchaseRowCell: UITableViewCell {
         textStack.spacing = 2
         textStack.translatesAutoresizingMaskIntoConstraints = false
     }
-    
+
     private func buildConstraints() {
-
         NSLayoutConstraint.activate([
-
             cardView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 6),
             cardView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 2),
             cardView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -2),
@@ -152,10 +162,5 @@ final class PurchaseRowCell: UITableViewCell {
             movieImageView.widthAnchor.constraint(equalToConstant: 38),
             movieImageView.heightAnchor.constraint(equalToConstant: 54),
         ])
-    }
-
-    func configureCell(with image: UIImage?, title: String) {
-        movieImageView.image = image
-        titleText.text = title
     }
 }

@@ -1,21 +1,25 @@
-//
-//  CheckoutDataManager.swift
-//  SwiftCinemas
-//
+// CheckoutDataManager.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 import SwiftyJSON
 import UIKit
 
+@MainActor
 final class CheckoutDataManager: SharedDataManager, HasAppServices {
-    static let shared = CheckoutDataManager()
-    static var domain: String { "Checkout" }
-
-    var appServices: AppServices!
-
-    private var loginGateway: LoginGatewayService { appServices.loginGateway }
+    // MARK: Lifecycle
 
     private init() {}
+
+    // MARK: Internal
+
+    static let shared = CheckoutDataManager()
+
+    static var domain: String {
+        "Checkout"
+    }
+
+    var appServices: AppServices!
 
     // MARK: - Navigation Context
 
@@ -149,6 +153,12 @@ final class CheckoutDataManager: SharedDataManager, HasAppServices {
         }
     }
 
+    // MARK: Private
+
+    private var loginGateway: LoginGatewayService {
+        appServices.loginGateway
+    }
+
     // MARK: - Private Methods
 
     private func postCheckout(
@@ -193,15 +203,7 @@ struct ClientTokenModel {
 }
 
 struct CheckoutResultModel {
-    let isSuccess: Bool
-    let responseText: String?
-    let status: String?
-    let amount: String?
-    let taxAmount: String?
-    let reservedSeats: [SeatModel]
-    let tickets: [TicketDetailModel]
-    let failedTickets: [TicketDetailModel]
-    var errorMessage: String?
+    // MARK: Lifecycle
 
     init(json: JSON) {
         responseText = json["ResponseText"].string
@@ -226,16 +228,22 @@ struct CheckoutResultModel {
         errorMessage = json["Error"].string ?? json["Error with Transaction"].string ?? json["message"].string
         isSuccess = responseText == "hello" || status == "success"
     }
+
+    // MARK: Internal
+
+    let isSuccess: Bool
+    let responseText: String?
+    let status: String?
+    let amount: String?
+    let taxAmount: String?
+    let reservedSeats: [SeatModel]
+    let tickets: [TicketDetailModel]
+    let failedTickets: [TicketDetailModel]
+    var errorMessage: String?
 }
 
 struct PurchaseSummaryModel {
-    let orderId: String
-    let purchaseId: String
-    let movieName: String
-    let venueName: String
-    let moviePicture: String
-    let screeningDate: String
-    let purchaseDate: String
+    // MARK: Lifecycle
 
     init?(json: JSON) {
         guard let orderId = json["orderId"].string,
@@ -244,7 +252,8 @@ struct PurchaseSummaryModel {
               let venueName = json["venue_name"].string,
               let moviePicture = json["movie_picture"].string,
               let screeningDate = json["screeningDate"].string,
-              let purchaseDate = json["purchaseDate"].string else {
+              let purchaseDate = json["purchaseDate"].string
+        else {
             return nil
         }
 
@@ -256,19 +265,20 @@ struct PurchaseSummaryModel {
         self.screeningDate = screeningDate
         self.purchaseDate = purchaseDate
     }
+
+    // MARK: Internal
+
+    let orderId: String
+    let purchaseId: String
+    let movieName: String
+    let venueName: String
+    let moviePicture: String
+    let screeningDate: String
+    let purchaseDate: String
 }
 
 struct TicketDetailModel {
-    let movieName: String
-    let moviePicture: String
-    let venueName: String
-    let seatRow: String
-    let seatNumber: String
-    let price: Int
-    let tax: Double
-    let screenId: String
-    let screeningDate: String
-    let ticketId: Int
+    // MARK: Lifecycle
 
     init?(json: JSON) {
         guard let movieName = json["movie_name"].string,
@@ -280,7 +290,8 @@ struct TicketDetailModel {
               let tax = json["tax"].double,
               let screenId = json["screen_screenId"].string,
               let screeningDate = json["screening_date"].string,
-              let ticketId = json["ticketId"].int else {
+              let ticketId = json["ticketId"].int
+        else {
             return nil
         }
 
@@ -295,6 +306,19 @@ struct TicketDetailModel {
         self.screeningDate = screeningDate
         self.ticketId = ticketId
     }
+
+    // MARK: Internal
+
+    let movieName: String
+    let moviePicture: String
+    let venueName: String
+    let seatRow: String
+    let seatNumber: String
+    let price: Int
+    let tax: Double
+    let screenId: String
+    let screeningDate: String
+    let ticketId: Int
 }
 
 typealias ClientToken = ClientTokenModel

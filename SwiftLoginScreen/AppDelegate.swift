@@ -1,23 +1,21 @@
-//
-//  AppDelegate.swift
-//  SwiftLoginScreen
-//
-//  Copyright (c) 2015 Gaspar Gyorgy. MIT
-//
+// AppDelegate.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Contacts
 import CoreData
 import CoreLocation
+import FirebaseCore
+import FirebaseMessaging
 import Realm
 import SwiftyJSON
 import UIKit
-import FirebaseCore
-import FirebaseMessaging
 import UserNotifications
 
-var expiryDate: Date?
+@MainActor var expiryDate: Date?
 @main
-class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, @MainActor CLLocationManagerDelegate {
+    // MARK: Internal
+
     var window: UIWindow?
     var locationManager: CLLocationManager?
     var contactStore: CNContactStore?
@@ -40,14 +38,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
             rapidMovieDatabase: RapidMovieDatabaseService(apiClient: client)
         )
     }()
-    
+
+    // MARK: - Core Data stack
+
+    lazy var applicationDocumentsDirectory: URL = {
+        // The directory the application uses to store the Core Data store file. This code uses a directory named "org.CoreData" in the application's documents Application Support directory.
+        let urls = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+        return urls[urls.count - 1]
+    }()
+
     func application(_: UIApplication, willFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         setenv("CFNETWORK_DIAGNOSTICS", "3", 1)
         return true
     }
 
-    func application(_ application: UIApplication, didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        
+    func application(_: UIApplication, didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         let navAppearance = UINavigationBarAppearance()
         navAppearance.configureWithOpaqueBackground()
         navAppearance.backgroundColor = .darkGray
@@ -94,15 +99,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
         requestLocationPermission()
         loadLocations()
         setupFirebase()
-        
+
         registerForPushNotifications()
-        
+
         let urls = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
         print("dB location: \(urls[urls.count - 1] as URL)")
-        
+
         socketManager = WebSocketManager()
         socketManager!.connect()
-        
+
         return true
     }
 
@@ -124,7 +129,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
         // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
     }
 
-    // Request notification permission
+    /// Request notification permission
     func requestNotificationPermission() {
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
@@ -152,7 +157,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
         }
     }
 
-    // Trigger a notification when entering the geofence
+    /// Trigger a notification when entering the geofence
     func locationManager(_: CLLocationManager, didEnterRegion region: CLRegion) {
         sendNotification(title: "You’re near, body!", body: "You are near to \(region.identifier).")
     }
@@ -232,6 +237,52 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
         }
     }
 
+    func setupFirebase() {
+        //  let environment = Bundle.main.object(forInfoDictionaryKey: "ENVIRONMENT") as? String ?? "prod"
+        //  let plistFileName = environment == "dev" ? "GoogleService-Info-Dev" : "GoogleService-Info-Prod"
+
+        let plistFileName = "FireBaseGoogleService-Info"
+        if let filePath = Bundle.main.path(forResource: plistFileName, ofType: "plist"),
+           let options = FirebaseOptions(contentsOfFile: filePath)
+        {
+            FirebaseApp.configure(options: options)
+        } else {
+            fatalError("Could not load Firebase configuration file.")
+        }
+    }
+
+    func registerForPushNotifications() {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, _ in
+            if granted {
+                DispatchQueue.main.async {
+                    UIApplication.shared.registerForRemoteNotifications()
+                }
+            }
+        }
+    }
+
+    func application(_: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        let token = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
+        print("Device Token: \(token)") // Send this token to your server
+    }
+
+    func application(_: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        print("Failed to register: \(error.localizedDescription)")
+    }
+
+    func applicationWillTerminate(_: UIApplication) {
+        // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+    }
+
+    func application(_: UIApplication, open _: URL, sourceApplication _: String?, annotation _: Any) -> Bool {
+        false
+    }
+
+    func applicationDidReceiveMemoryWarning(_: UIApplication) {}
+
+    // MARK: Private
+
     private func bootstrapDataManagers() {
         let container = services
         MoviesDataManager.shared.inject(appServices: container)
@@ -244,71 +295,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate, CLLocationManagerDelegate
         BasketDataManager.shared.inject(appServices: container)
         AdminDataManager.shared.inject(appServices: container)
     }
-
-    func setupFirebase() {
-      //  let environment = Bundle.main.object(forInfoDictionaryKey: "ENVIRONMENT") as? String ?? "prod"
-      //  let plistFileName = environment == "dev" ? "GoogleService-Info-Dev" : "GoogleService-Info-Prod"
-        
-        let plistFileName = "FireBaseGoogleService-Info"
-        if let filePath = Bundle.main.path(forResource: plistFileName, ofType: "plist"),
-           let options = FirebaseOptions(contentsOfFile: filePath) {
-            FirebaseApp.configure(options: options)
-        } else {
-            fatalError("Could not load Firebase configuration file.")
-        }
-    }
-
-    func registerForPushNotifications() {
-        let center = UNUserNotificationCenter.current()
-        center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            if granted {
-                DispatchQueue.main.async {
-                    UIApplication.shared.registerForRemoteNotifications()
-                }
-            }
-        }
-    }
-    
-    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
-    ) {
-        let token = deviceToken.map { String(format: "%02.2hhx", $0) }.joined()
-        print("Device Token: \(token)") // Send this token to your server
-    }
-
-    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error
-    ) {
-        print("Failed to register: \(error.localizedDescription)")
-    }
-    
-    func applicationWillTerminate(_: UIApplication) {
-        // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
-    }
-
-    // MARK: - Core Data stack
-    lazy var applicationDocumentsDirectory: URL = {
-        // The directory the application uses to store the Core Data store file. This code uses a directory named "org.CoreData" in the application's documents Application Support directory.
-        let urls = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-        return urls[urls.count - 1]
-    }()
-
-    func application(_: UIApplication, open _: URL, sourceApplication _: String?, annotation _: Any) -> Bool {
-        false
-    }
-
-    func applicationDidReceiveMemoryWarning(_: UIApplication) {}
 }
 
-extension AppDelegate: UNUserNotificationCenterDelegate {
+extension AppDelegate: @MainActor UNUserNotificationCenterDelegate {
     func userNotificationCenter(
-        _ center: UNUserNotificationCenter,
-        willPresent notification: UNNotification,
+        _: UNUserNotificationCenter,
+        willPresent _: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
         completionHandler([.banner, .sound, .badge])
     }
 
     func userNotificationCenter(
-        _ center: UNUserNotificationCenter,
+        _: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {

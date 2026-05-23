@@ -1,19 +1,18 @@
-//
-//  VenueForMoviesVC.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 14/08/16.
-//  Copyright © 2016 George Gaspar. All rights reserved.
-//
+// VenueForMoviesVC.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import UIKit
 
 class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, UISearchResultsUpdating, UISearchBarDelegate, HasAppServices {
-    var appServices: AppServices!
+    // MARK: Lifecycle
+
     deinit {
         print(#function, "\(self)")
     }
 
+    // MARK: Internal
+
+    var appServices: AppServices!
     var venuesId: Int!
     var venues_picture: String!
     var locationId: Int!
@@ -24,14 +23,6 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
 
     var refreshControl: UIRefreshControl!
     var collectionView: UICollectionView!
-    private var backButton: UIButton!
-
-    private struct VenueMovieRowDisplay {
-        let title: String
-        let imagePath: String
-        let categoryText: String
-        let screeningDateText: String
-    }
 
     override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
         if segue.identifier == "goto_venues_details2" {
@@ -141,7 +132,6 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
         }
     }
 
-
     func searchBarTextDidBeginEditing(_: UISearchBar) {
         shouldShowSearchResults = true
         collectionView.reloadData()
@@ -179,22 +169,6 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
         return CGSize(width: max(0, collectionView.bounds.width - horizontalInsets), height: 92)
     }
 
-    private func makeDisplayRow(from selection: VenueMovieSelection) -> VenueMovieRowDisplay {
-        let category = (selection.category?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false)
-            ? selection.category!
-            : "N/A"
-        let screeningDate = (selection.screeningDate?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false)
-            ? selection.screeningDate!
-            : "TBA"
-
-        return VenueMovieRowDisplay(
-            title: selection.movie.name,
-            imagePath: selection.movie.largePicture,
-            categoryText: "Category: \(category)",
-            screeningDateText: "Date: \(screeningDate)"
-        )
-    }
-
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CELL", for: indexPath) as! MovieCollectionViewCell
 
@@ -227,5 +201,32 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
 
     func collectionView(_: UICollectionView, didSelectItemAt _: IndexPath) {
         performSegue(withIdentifier: "goto_venues_details2", sender: self)
+    }
+
+    // MARK: Private
+
+    private struct VenueMovieRowDisplay {
+        let title: String
+        let imagePath: String
+        let categoryText: String
+        let screeningDateText: String
+    }
+
+    private var backButton: UIButton!
+
+    private func makeDisplayRow(from selection: VenueMovieSelection) -> VenueMovieRowDisplay {
+        let category = (selection.category?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false)
+            ? selection.category!
+            : "N/A"
+        let screeningDate = (selection.screeningDate?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false)
+            ? selection.screeningDate!
+            : "TBA"
+
+        return VenueMovieRowDisplay(
+            title: selection.movie.name,
+            imagePath: selection.movie.largePicture,
+            categoryText: "Category: \(category)",
+            screeningDateText: "Date: \(screeningDate)"
+        )
     }
 }

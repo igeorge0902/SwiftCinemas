@@ -1,24 +1,16 @@
+// MenuVC.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
+
 import SafariServices
 import SwiftyJSON
 import UIKit
 
-class MenuVC: UIViewController, HasAppServices {
-    var appServices: AppServices!
-    // MARK: - UI Elements
+class MenuVC: UIViewController, @MainActor HasAppServices {
+    // MARK: Internal
 
-    private lazy var profileCard = createProfileCard()
-    private lazy var usernameTitleLabel = createFieldTitleLabel(text: "Username")
-    private lazy var usernameValueLabel = createFieldValueLabel()
-    private lazy var emailTitleLabel = createFieldTitleLabel(text: "Email")
-    private lazy var emailValueLabel = createFieldValueLabel()
-    private lazy var imageView = createImageView()
-    private lazy var adminButton = createButton(title: "Admin", action: #selector(admin))
+    var appServices: AppServices!
 
     lazy var session: URLSession = .sharedCustomSession
-    private let url = URL(string: URLManager.login("/logout"))
-    private var sessionCookieValue = ""
-
-    private var items = [JSON]()
 
     // MARK: - Lifecycle Methods
 
@@ -29,6 +21,76 @@ class MenuVC: UIViewController, HasAppServices {
         loadCookies()
         getUser()
     }
+
+    override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
+        if segue.identifier == "goto_mypurchases" {
+            _ = segue.destination as? PurchasesVC
+        }
+    }
+
+    // MARK: - Networking
+
+    func getUser() {
+        Task { [weak self] in
+            guard let self else { return }
+
+            do {
+                let profile = try await AuthDataManager.shared.fetchUserProfile()
+
+                self.usernameValueLabel.text = profile.username.isEmpty
+                    ? "No logged-in user"
+                    : profile.username
+
+                self.emailValueLabel.text = profile.email.isEmpty
+                    ? "No email"
+                    : profile.email
+
+                let urlString = URLManager.image(profile.profilePicture)
+
+                let imagedata = try await self.appServices.images.getData(
+                    urlString: urlString,
+                    realmCache: true
+                )
+
+                self.imageView.image = UIImage(data: imagedata)
+
+            } catch let err as AppError {
+                let title: String
+                switch err {
+                case .activationRequired(voucherActive: false):
+                    title = "Warning!"
+                    self.presentAlertWithFunction(withTitle: title, message: ErrorHandler.message(for: err), function: "sendEmail")
+
+                default:
+                    title = "No valid session!"
+                }
+                self.presentAlert(withTitle: title, message: ErrorHandler.message(for: err))
+
+            } catch {
+                self.presentAlert(
+                    withTitle: "Error!",
+                    message: ErrorHandler.message(for: AppError.networkFailure(underlying: error))
+                )
+            }
+        }
+    }
+
+    // MARK: Private
+
+    // MARK: - UI Elements
+
+    private lazy var profileCard = createProfileCard()
+    private lazy var usernameTitleLabel = createFieldTitleLabel(text: "Username")
+    private lazy var usernameValueLabel = createFieldValueLabel()
+    private lazy var emailTitleLabel = createFieldTitleLabel(text: "Email")
+    private lazy var emailValueLabel = createFieldValueLabel()
+    private lazy var imageView = createImageView()
+    private lazy var adminButton = createButton(title: "Admin", action: #selector(admin))
+
+    private let url = URL(string: URLManager.login("/logout"))
+    private var sessionCookieValue = ""
+
+    private var items = [JSON]()
 
     // MARK: - UI Setup
 
@@ -41,14 +103,14 @@ class MenuVC: UIViewController, HasAppServices {
         ])
 
         imageView.image = UIImage(named: "placeholder")
-        [profileCard, adminButton].forEach {
-            $0.translatesAutoresizingMaskIntoConstraints = false
-            view.addSubview($0)
+        for item in [profileCard, adminButton] {
+            item.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(item)
         }
 
-        [imageView, usernameTitleLabel, usernameValueLabel, emailTitleLabel, emailValueLabel].forEach {
-            $0.translatesAutoresizingMaskIntoConstraints = false
-            profileCard.addSubview($0)
+        for item in [imageView, usernameTitleLabel, usernameValueLabel, emailTitleLabel, emailValueLabel] {
+            item.translatesAutoresizingMaskIntoConstraints = false
+            profileCard.addSubview(item)
         }
 
         NSLayoutConstraint.activate([
@@ -144,12 +206,6 @@ class MenuVC: UIViewController, HasAppServices {
         performSegue(withIdentifier: "goto_mypurchases", sender: self)
     }
 
-    override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
-        if segue.identifier == "goto_mypurchases" {
-            _ = segue.destination as? PurchasesVC
-        }
-    }
-
     @objc private func admin() {
         performSegue(withIdentifier: "goto_admin", sender: self)
     }
@@ -162,53 +218,6 @@ class MenuVC: UIViewController, HasAppServices {
 
         // Keep session cookie fetched for existing logout/session workflows, but not shown as a primary profile field.
         sessionCookieValue = cookies.first(where: { $0.name == "JSESSIONID" })?.value ?? ""
-    }
-
-    // MARK: - Networking
-
-    func getUser() {
-        Task { [weak self] in
-            guard let self else { return }
-
-            do {
-                let profile = try await AuthDataManager.shared.fetchUserProfile()
-
-                self.usernameValueLabel.text = profile.username.isEmpty
-                    ? "No logged-in user"
-                    : profile.username
-
-                self.emailValueLabel.text = profile.email.isEmpty
-                    ? "No email"
-                    : profile.email
-
-                let urlString = URLManager.image(profile.profilePicture)
-
-                let imagedata = try await self.appServices.images.getData(
-                    urlString: urlString,
-                    realmCache: true
-                )
-
-                self.imageView.image = UIImage(data: imagedata)
-
-                } catch let err as AppError {
-                    let title: String
-                    switch err {
-                    case .activationRequired(voucherActive: false):
-                        title = "Warning!"
-                        self.presentAlertWithFunction(withTitle: title, message: ErrorHandler.message(for: err), function: "sendEmail")
-
-                    default:
-                        title = "No valid session!"
-                    }
-                    self.presentAlert(withTitle: title, message: ErrorHandler.message(for: err))
-                    
-                } catch {
-                    self.presentAlert(
-                        withTitle: "Error!",
-                        message: ErrorHandler.message(for: AppError.networkFailure(underlying: error))
-                    )
-                }
-        }
     }
 
     @IBAction private func logoutTapped(_: UIButton) {

@@ -1,3 +1,6 @@
+// AdminUIStyle.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
+
 import UIKit
 
 extension UIButton {
@@ -22,4 +25,3 @@ extension UIButton {
         layer.cornerRadius = 6
     }
 }
-

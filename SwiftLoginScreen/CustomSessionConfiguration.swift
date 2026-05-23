@@ -1,9 +1,5 @@
-//
-//  CustomSessionConfiguration.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 18/11/15.
-//
+// CustomSessionConfiguration.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 

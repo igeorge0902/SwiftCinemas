@@ -1,21 +1,25 @@
-//
-//  SeatsDataManager.swift
-//  SwiftCinemas
-//
+// SeatsDataManager.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 import SwiftyJSON
 import UIKit
 
+@MainActor
 final class SeatsDataManager: SharedDataManager, HasAppServices {
-    static let shared = SeatsDataManager()
-    static var domain: String { "Seats" }
-
-    var appServices: AppServices!
-
-    private var mbooks: MbooksService { appServices.mbooks }
+    // MARK: Lifecycle
 
     private init() {}
+
+    // MARK: Internal
+
+    static let shared = SeatsDataManager()
+
+    static var domain: String {
+        "Seats"
+    }
+
+    var appServices: AppServices!
 
     // MARK: - Navigation Context (replaces global SeatsData_ and BasketData_)
 
@@ -112,15 +116,16 @@ final class SeatsDataManager: SharedDataManager, HasAppServices {
     func getRows(_ seats: [SeatModel]) -> [String] {
         Array(Set(seats.map { $0.seatRow })).sorted()
     }
+
+    // MARK: Private
+
+    private var mbooks: MbooksService {
+        appServices.mbooks
+    }
 }
 
 struct Seat {
-    let seatId: Int
-    let seatNumber: String
-    let seatRow: String
-    let isReserved: Bool
-    let price: Int
-    let tax: Double
+    // MARK: Lifecycle
 
     init(seatId: Int, seatNumber: String, seatRow: String, isReserved: Bool, price: Int, tax: Double) {
         self.seatId = seatId
@@ -137,17 +142,26 @@ struct Seat {
               let row = json["seatRow"].string,
               let reserved = json["isReserved"].string,
               let price = json["price"].int,
-              let tax = json["tax"].double else {
+              let tax = json["tax"].double
+        else {
             return nil
         }
-        self.seatId = id
-        self.seatNumber = number
-        self.seatRow = row
-        self.isReserved = reserved == "1"
+        seatId = id
+        seatNumber = number
+        seatRow = row
+        isReserved = reserved == "1"
         self.price = price
         self.tax = tax
     }
+
+    // MARK: Internal
+
+    let seatId: Int
+    let seatNumber: String
+    let seatRow: String
+    let isReserved: Bool
+    let price: Int
+    let tax: Double
 }
 
 typealias SeatModel = Seat
-

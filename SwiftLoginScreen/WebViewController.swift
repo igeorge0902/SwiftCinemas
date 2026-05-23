@@ -1,10 +1,5 @@
-//
-//  WebViewController.swift
-//
-//
-//  Created by Gaspar Gyorgy on 27/03/16.
-//  Copyright © 2016 George Gaspar. All rights reserved.
-//
+// WebViewController.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import UIKit
 import WebKit
@@ -63,7 +58,6 @@ class WebViewController: UIViewController, WKUIDelegate, WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didCommit _: WKNavigation!) {
         webView.configuration.websiteDataStore.httpCookieStore.getAllCookies { cookies in
-
             for cookie in cookies {
                 let cookieStorage = HTTPCookieStorage.shared
 
@@ -97,9 +91,9 @@ class WebViewController: UIViewController, WKUIDelegate, WKNavigationDelegate {
 
     func webView(_ webView: WKWebView, didFinish _: WKNavigation!) {
         let path = webView.url?.relativePath ?? ""
-       // if path == "/login/index.html" {
-       //     dismiss(animated: true, completion: nil)
-       // }
+        // if path == "/login/index.html" {
+        //     dismiss(animated: true, completion: nil)
+        // }
     }
 
     func webView(_: WKWebView,

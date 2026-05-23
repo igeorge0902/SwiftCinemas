@@ -1,3 +1,6 @@
+// CustomTableViewCell.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
+
 //
 //  CustomTableViewCell.swift
 //  SwiftLoginScreen
@@ -9,9 +12,7 @@ import Foundation
 import UIKit
 
 class CustomTableViewCell: UITableViewCell {
-    var textLabels: UILabel?
-    var profileImage: UIImageView?
-    var statusText: UITextView?
+    // MARK: Lifecycle
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -42,7 +43,14 @@ class CustomTableViewCell: UITableViewCell {
         addConstraintswithFormat("V:|-8-[v0(44)]-4-[v1(90)]", views: profileImage!, statusText!)
     }
 
+    @available(*, unavailable)
     required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+
+    // MARK: Internal
+
+    var textLabels: UILabel?
+    var profileImage: UIImageView?
+    var statusText: UITextView?
 }

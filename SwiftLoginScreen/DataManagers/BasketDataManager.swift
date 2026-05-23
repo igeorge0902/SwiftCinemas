@@ -1,22 +1,26 @@
-//
-//  BasketDataManager.swift
-//  SwiftCinemas
-//
+// BasketDataManager.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 import SwiftyJSON
 import UIKit
 
 /// Manages shopping basket, payments, and purchases
-final class BasketDataManager: SharedDataManager, HasAppServices {
-    static let shared = BasketDataManager()
-    static var domain: String { "Basket" }
-
-    var appServices: AppServices!
-
-    private var loginGateway: LoginGatewayService { appServices.loginGateway }
+@MainActor
+final class BasketDataManager: @MainActor SharedDataManager, @MainActor HasAppServices {
+    // MARK: Lifecycle
 
     private init() {}
+
+    // MARK: Internal
+
+    static let shared = BasketDataManager()
+
+    static var domain: String {
+        "Basket"
+    }
+
+    var appServices: AppServices!
 
     // MARK: - Navigation Context
 
@@ -116,5 +120,10 @@ final class BasketDataManager: SharedDataManager, HasAppServices {
         }
         return jsonString
     }
-}
 
+    // MARK: Private
+
+    private var loginGateway: LoginGatewayService {
+        appServices.loginGateway
+    }
+}

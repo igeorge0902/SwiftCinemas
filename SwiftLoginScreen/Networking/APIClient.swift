@@ -1,10 +1,5 @@
-//
-//  APIClient.swift
-//  SwiftCinemas
-//
-//  Created by GYORGY GASPAR on 2026. 03. 28..
-//  Copyright © 2026 George Gaspar. All rights reserved.
-//
+// APIClient.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import UIKit
 
@@ -27,30 +22,9 @@ extension HasAPIClient where Self: UIViewController {
     }
 }
 
+@MainActor
 final class APIClient: APIClientProtocol {
-
-    //private let session: URLSession
-    private var session: URLSession = {
-        let config = URLSessionConfiguration.default
-        config.httpCookieStorage = HTTPCookieStorage.shared
-        config.httpShouldSetCookies = true
-        config.requestCachePolicy = .reloadIgnoringLocalCacheData
-        config.timeoutIntervalForRequest = 20
-
-        let delegate = CustomURLSessionDelegate(
-            allowedHosts: [
-                URLManager.baseHost,
-                "localhost",
-                "igeorge1982.local"
-            ]
-        )
-
-        return URLSession(configuration: config, delegate: delegate, delegateQueue: nil)
-    }()
-    
-    private let cache: ResponseCache
-    private let headers: HeaderProvider
-    private let baseURL: URL
+    // MARK: Lifecycle
 
     init(
         baseURL: URL,
@@ -64,7 +38,9 @@ final class APIClient: APIClientProtocol {
         self.headers = headers
     }
 
-    func request<T: Decodable>(_ endpoint: Endpoint) async throws -> T {
+    // MARK: Internal
+
+    func request<T: Decodable & Sendable>(_ endpoint: Endpoint) async throws -> T {
         let data = try await requestData(endpoint)
 
         do {
@@ -103,7 +79,7 @@ final class APIClient: APIClientProtocol {
         }
 
         switch http.statusCode {
-        case 200...299:
+        case 200 ... 299:
             if let key = endpoint.cacheKey, endpoint.method.uppercased() == "GET" {
                 await MainActor.run {
                     self.cache.save(data, for: key)
@@ -124,4 +100,29 @@ final class APIClient: APIClientProtocol {
             )
         }
     }
+
+    // MARK: Private
+
+    /// private let session: URLSession
+    private var session: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.httpCookieStorage = HTTPCookieStorage.shared
+        config.httpShouldSetCookies = true
+        config.requestCachePolicy = .reloadIgnoringLocalCacheData
+        config.timeoutIntervalForRequest = 20
+
+        let delegate = CustomURLSessionDelegate(
+            allowedHosts: [
+                URLManager.baseHost,
+                "localhost",
+                "igeorge1982.local",
+            ]
+        )
+
+        return URLSession(configuration: config, delegate: delegate, delegateQueue: nil)
+    }()
+
+    private let cache: ResponseCache
+    private let headers: HeaderProvider
+    private let baseURL: URL
 }

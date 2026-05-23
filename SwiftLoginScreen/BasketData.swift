@@ -1,25 +1,10 @@
-//
-//  BasketData.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 2017. 04. 26..
-//  Copyright © 2017. George Gaspar. All rights reserved.
-//
+// BasketData.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 
 struct BasketItem {
-    let movieName: String
-    let seatId: Int
-    let seatRow: String
-    let seatNumber: String
-    let price: Int
-    let tax: Double
-    let screeningDateId: String
-    let moviePicture: String
-    let venuePicture: String
-    let venueName: String
-    let screeningDateText: String
+    // MARK: Lifecycle
 
     init(
         movieName: String,
@@ -58,7 +43,8 @@ struct BasketItem {
               let moviePicture = dictionary["movie_picture"] as? String,
               let venuePicture = dictionary["venue_picture"] as? String,
               let venueName = dictionary["venue_name"] as? String,
-              let screeningDateText = dictionary["screening_date"] as? String else {
+              let screeningDateText = dictionary["screening_date"] as? String
+        else {
             return nil
         }
 
@@ -77,6 +63,20 @@ struct BasketItem {
         )
     }
 
+    // MARK: Internal
+
+    let movieName: String
+    let seatId: Int
+    let seatRow: String
+    let seatNumber: String
+    let price: Int
+    let tax: Double
+    let screeningDateId: String
+    let moviePicture: String
+    let venuePicture: String
+    let venueName: String
+    let screeningDateText: String
+
     var dictionary: NSDictionary {
         [
             "movie_name": movieName,
@@ -93,4 +93,3 @@ struct BasketItem {
         ] as NSDictionary
     }
 }
-

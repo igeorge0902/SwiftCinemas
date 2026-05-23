@@ -1,33 +1,27 @@
-//
-//  URLManager.swift
-//  SwiftCinemas
-//
-//  Created by George Gaspar on 2026. 03. 20.
-//  Copyright © 2026. George Gaspar. All rights reserved.
-//
+// URLManager.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 
 /// Centralised URL configuration for all backend services.
 /// Change `baseHost` to point the app at a different environment.
 enum URLManager {
-    
     static let allowedHosts: Set<String> = [
         URLManager.baseHost,
         "localhost",
-        "igeorge1982.local"
+        "igeorge1982.local",
     ]
 
     // MARK: - Base host (single place to change)
 
     static let baseHost = "milo.crabdance.com"
-    static let baseURL  = "https://\(baseHost)"
+    static let baseURL = "https://\(baseHost)"
 
     // MARK: - Service root paths
 
-    static let loginPath  = "/login"
+    static let loginPath = "/login"
     static let mbooksPath = "/mbooks-1/rest/book"
-    static let imagePath  = "/simple-service-webapp/webapi/myresource"
+    static let imagePath = "/simple-service-webapp/webapi/myresource"
 
     // MARK: - WebSocket
 
@@ -50,4 +44,3 @@ enum URLManager {
         return baseURL + imagePath + path
     }
 }
-

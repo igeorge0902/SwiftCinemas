@@ -1,30 +1,27 @@
-//
-//  AdminVC.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 2020. 09. 30..
-//  Copyright © 2020. George Gaspar. All rights reserved.
-//
+// AdminVC.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 import UIKit
 
-var adminPage = false
-var adminUpdatePage = false
-var addMovie = ""
-var addMovieId = ""
-var addVenueId = ""
-var addVenue = ""
-var addScreeningID = ""
-var addScreeningDate = ""
-var addScreeningDateId = ""
-var addCategory = ""
-class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIViewControllerTransitioningDelegate, UIPopoverPresentationControllerDelegate, HasAppServices {
-    var appServices: AppServices!
+nonisolated(unsafe) var adminPage = false
+nonisolated(unsafe) var adminUpdatePage = false
+class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIViewControllerTransitioningDelegate, UIPopoverPresentationControllerDelegate, @MainActor HasAppServices {
+    // MARK: Lifecycle
+
     deinit {
         print(#function, "\(self)")
     }
 
+    // MARK: Internal
+
+    class HalfSizePresentationController: UIPresentationController {
+        override var frameOfPresentedViewInContainerView: CGRect {
+            CGRect(x: 0, y: 200, width: containerView!.bounds.width, height: containerView!.bounds.height)
+        }
+    }
+
+    var appServices: AppServices!
     @IBOutlet var movieName: UITextField!
     @IBOutlet var screeningDate: UITextField!
     @IBOutlet var nrOfRows: UITextField!
@@ -37,13 +34,6 @@ class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIVi
     let datePicker = UIDatePicker()
 
     @IBOutlet var scrollView: UIScrollView!
-    private var saveButton: UIButton?
-    private var topButtons: [UIButton] = []
-    private var saveButtonHeightConstraint: NSLayoutConstraint?
-    private var didConfigureScrollLayout = false
-    private var didBuildCardLayout = false
-    private weak var movieSelectButton: UIButton?
-    private weak var venueSelectButton: UIButton?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -93,30 +83,24 @@ class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIVi
         }
 
         view.setNeedsLayout()
-
     }
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         layoutTopNavigationButtons(topButtons, topOffset: 8)
         updateScrollInsetsForBottomAction()
-
     }
 
-    private func updateScrollInsetsForBottomAction() {
-        let buttonHeight = saveButtonHeightConstraint?.constant ?? 38
-        let reserve = buttonHeight + view.safeAreaInsets.bottom + 20
-        scrollView.contentInset.bottom = reserve
-        scrollView.verticalScrollIndicatorInsets.bottom = reserve
-
+    override func touchesBegan(_: Set<UITouch>, with _: UIEvent?) {
+        view.endEditing(true)
     }
 
     @objc func refresh() {
-        movieName.text = addMovie
+        movieName.text = MoviesDataManager.shared.selectedMovie?.name
     }
 
     @objc func refreshVenue() {
-        venueName.text = addVenue
+        venueName.text = LocationsDataManager.shared.selectedLocation?.title
     }
 
     @objc func navigateBack() {
@@ -274,23 +258,30 @@ class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIVi
         return true
     }
 
-    override func touchesBegan(_: Set<UITouch>, with _: UIEvent?) {
-        view.endEditing(true)
-    }
-
     func presentationController(forPresented presented: UIViewController, presenting _: UIViewController?, source _: UIViewController) -> UIPresentationController? {
         HalfSizePresentationController(presentedViewController: presented, presenting: presentingViewController)
-    }
-
-    class HalfSizePresentationController: UIPresentationController {
-        override var frameOfPresentedViewInContainerView: CGRect {
-            CGRect(x: 0, y: 200, width: containerView!.bounds.width, height: containerView!.bounds.height)
-        }
     }
 
     func adaptivePresentationStyle(for _: UIPresentationController) -> UIModalPresentationStyle {
         // Return no adaptive presentation style, use default presentation behaviour
         .none
+    }
+
+    // MARK: Private
+
+    private var saveButton: UIButton?
+    private var topButtons: [UIButton] = []
+    private var saveButtonHeightConstraint: NSLayoutConstraint?
+    private var didConfigureScrollLayout = false
+    private var didBuildCardLayout = false
+    private weak var movieSelectButton: UIButton?
+    private weak var venueSelectButton: UIButton?
+
+    private func updateScrollInsetsForBottomAction() {
+        let buttonHeight = saveButtonHeightConstraint?.constant ?? 38
+        let reserve = buttonHeight + view.safeAreaInsets.bottom + 20
+        scrollView.contentInset.bottom = reserve
+        scrollView.verticalScrollIndicatorInsets.bottom = reserve
     }
 
     private func styleSelectButtons() {
@@ -349,11 +340,10 @@ class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIVi
 
         guard let movieSelectButton, let venueSelectButton else { return }
 
-        [movieName, venueName, screeningDate, nrOfRows, nrOfSeatsInRow, ScreeningID, category, movieSelectButton, venueSelectButton]
-            .forEach {
-                $0.translatesAutoresizingMaskIntoConstraints = false
-                $0.removeFromSuperview()
-            }
+        for item in [movieName, venueName, screeningDate, nrOfRows, nrOfSeatsInRow, ScreeningID, category, movieSelectButton, venueSelectButton] {
+            item!.translatesAutoresizingMaskIntoConstraints = false
+            item!.removeFromSuperview()
+        }
 
         // Remove any leftover storyboard labels/containers that can overlap at the top.
         scrollView.subviews.forEach { $0.removeFromSuperview() }
@@ -404,7 +394,6 @@ class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIVi
             makeLabeledInputRow(label: "Screen ID", input: ScreeningID, trailingButton: nil),
             makeLabeledInputRow(label: "Genre (optional)", input: category, trailingButton: nil),
         ]))
-
     }
 
     private func makeCard(title: String, rows: [UIView]) -> UIView {

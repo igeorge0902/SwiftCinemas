@@ -1,20 +1,24 @@
-//
-//  DatesDataManager.swift
-//  SwiftCinemas
-//
+// DatesDataManager.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 import SwiftyJSON
 
+@MainActor
 final class DatesDataManager: SharedDataManager, HasAppServices {
-    static let shared = DatesDataManager()
-    static var domain: String { "Dates" }
-
-    var appServices: AppServices!
-
-    private var mbooks: MbooksService { appServices.mbooks }
+    // MARK: Lifecycle
 
     private init() {}
+
+    // MARK: Internal
+
+    static let shared = DatesDataManager()
+
+    static var domain: String {
+        "Dates"
+    }
+
+    var appServices: AppServices!
 
     // MARK: - Navigation Context
 
@@ -60,6 +64,12 @@ final class DatesDataManager: SharedDataManager, HasAppServices {
         return String.formatDate(date: Date.formatDate(dateString: normalized))
     }
 
+    // MARK: Private
+
+    private var mbooks: MbooksService {
+        appServices.mbooks
+    }
+
     private func sort(_ dates: [DateModel]) -> [DateModel] {
         dates.sorted {
             guard let lhs = parseDate($0.date), let rhs = parseDate($1.date) else {
@@ -77,15 +87,14 @@ final class DatesDataManager: SharedDataManager, HasAppServices {
 }
 
 struct ScreeningDate {
-    let screeningDateId: String
-    let date: String
-    let time: String?
+    // MARK: Lifecycle
 
     init?(json: JSON) {
         guard let screeningId = json["screeningDateId"].string
             ?? json["screeningDateId"].int.map(String.init)
             ?? json["screeningDatesId"].string
-            ?? json["screeningDatesId"].int.map(String.init) else {
+            ?? json["screeningDatesId"].int.map(String.init)
+        else {
             return nil
         }
 
@@ -93,12 +102,17 @@ struct ScreeningDate {
             ?? json["screeningDate"].string
             ?? ""
 
-        self.screeningDateId = screeningId
-        self.date = dateValue
-        self.time = json["time"].string
+        screeningDateId = screeningId
+        date = dateValue
+        time = json["time"].string
     }
+
+    // MARK: Internal
+
+    let screeningDateId: String
+    let date: String
+    let time: String?
 }
 
 typealias DateModel = ScreeningDate
 typealias ScreeningDateModel = ScreeningDate
-

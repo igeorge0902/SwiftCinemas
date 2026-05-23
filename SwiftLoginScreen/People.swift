@@ -1,9 +1,5 @@
-//
-//  People.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 16/11/15.
-//
+// People.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import CoreData
 import Foundation

@@ -1,36 +1,312 @@
-//
-//  PurchasesVC.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 2017. 09. 15..
-//  Copyright © 2017. George Gaspar. All rights reserved.
-//
+// PurchasesVC.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 import UIKit
 
 class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, HasAppServices {
-    private enum Notifications {
-        static let purchaseDeletedFromTickets = Notification.Name("purchaseDeletedFromTickets")
-    }
+    // MARK: Lifecycle
 
-    var appServices: AppServices!
     deinit {
         purchaseTableData.removeAll()
         print(#function, "\(self)")
     }
 
-    private lazy var tableCard = createTableCard()
+    // MARK: Internal
+
+    var appServices: AppServices!
     var sortBy = "purchase"
+    var purchaseTableData: [PurchaseSummaryModel] = []
+
+    override func viewWillAppear(_: Bool) {
+        super.viewWillAppear(true)
+        addPurchasesData()
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        injectAppServicesIfNeeded()
+
+        configureView()
+        configureNavigation()
+        configureSortButtons()
+        configureTable()
+
+        refresh()
+
+        NotificationCenter.default.addObserver(self, selector: #selector(refresh), name: NSNotification.Name(rawValue: "newDataNotif"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(handlePurchaseDeletedFromTickets(_:)), name: Notifications.purchaseDeletedFromTickets, object: nil)
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+
+        layoutTopNavigationButtons(navButtons, topOffset: 8)
+
+        let topButtonBottom = navButtons.map { $0.frame.maxY }.max()
+            ?? (view.safeAreaInsets.top + 42)
+
+        let sortTop = topButtonBottom + 8
+
+        let inset: CGFloat = 16
+        let spacing: CGFloat = 10
+
+        let sortWidth =
+            (view.bounds.width - (inset * 2) - spacing) / 2
+
+        sortButtons.first?.frame = CGRect(
+            x: inset,
+            y: sortTop,
+            width: sortWidth,
+            height: 34
+        )
+
+        sortButtons.dropFirst().first?.frame = CGRect(
+            x: inset + sortWidth + spacing,
+            y: sortTop,
+            width: sortWidth,
+            height: 34
+        )
+
+        label.frame = CGRect(
+            x: inset,
+            y: sortTop + 40,
+            width: view.bounds.width - (inset * 2),
+            height: 20
+        )
+
+        let tableTop = label.frame.maxY + 6
+
+        let bottomInset =
+            view.safeAreaInsets.bottom + 12
+
+        tableCard.frame = CGRect(
+            x: 12,
+            y: tableTop,
+            width: view.bounds.width - 24,
+            height: view.bounds.height
+                - tableTop
+                - bottomInset
+        )
+
+        tableView.frame = tableCard.bounds
+
+        view.bringSubviewToFront(refundBubbleLabel)
+        view.bringSubviewToFront(purchaseDeletedToastLabel)
+    }
+
+    override func viewDidAppear(_: Bool) {
+        super.viewDidAppear(true)
+    }
+
+    override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
+        if segue.identifier == "goto_tickets" {
+            // CheckoutDataManager.shared.selectedPurchaseId
+        }
+    }
+
+    @objc func sortByPurchaseDate() {
+        sortBy = "purchase"
+        updateSortLabel()
+        applySorting()
+        tableView.reloadData()
+    }
+
+    @objc func sortByScreeningDate() {
+        sortBy = "screening"
+        updateSortLabel()
+        applySorting()
+        tableView.reloadData()
+    }
+
+    @objc func refresh() {
+        purchaseTableData.removeAll()
+        addPurchasesData()
+    }
+
+    @objc func navigateBack() {
+        dismiss(animated: true, completion: nil)
+    }
+
+    func tableView(_: UITableView, titleForHeaderInSection section: Int) -> String? {
+        if sortBy == "purchase" {
+            purchaseTableData[section].purchaseDate
+        } else {
+            purchaseTableData[section].screeningDate
+        }
+    }
+
+    func tableView(
+        _: UITableView,
+        viewForHeaderInSection section: Int
+    ) -> UIView? {
+        let container = UIView()
+
+        let label = UILabel()
+
+        label.font = .systemFont(
+            ofSize: 14,
+            weight: .semibold
+        )
+
+        label.textColor = UIColor(
+            white: 0.45,
+            alpha: 1
+        )
+
+        label.text =
+            sortBy == "purchase"
+                ? purchaseTableData[section].purchaseDate
+                : purchaseTableData[section].screeningDate
+
+        label.translatesAutoresizingMaskIntoConstraints = false
+
+        container.addSubview(label)
+
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(
+                equalTo: container.leadingAnchor,
+                constant: 12
+            ),
+
+            label.bottomAnchor.constraint(
+                equalTo: container.bottomAnchor,
+                constant: -4
+            ),
+        ])
+
+        return container
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: "PurchaseRowCell", for: indexPath) as? PurchaseRowCell else {
+            return UITableViewCell()
+        }
+
+        let data = purchaseTableData[indexPath.section]
+
+        cell.titleText.text = data.movieName
+        cell.subtitleLabel.text = data.screeningDate
+
+        if refundArmedSection == indexPath.section {
+            cell.refundLabel.text = "Swipe left to refund"
+            cell.pillLabel.text = "REFUND"
+
+        } else {
+            cell.refundLabel.text = "Tickets purchased"
+            cell.pillLabel.text = "PAID"
+        }
+
+        let urlMovie = URLManager.image(data.moviePicture)
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            do {
+                let imgData = try await self.appServices.images.getData(urlString: urlMovie, realmCache: true)
+                let image = UIImage(data: imgData)
+                if let updatedCell = tableView.cellForRow(at: indexPath) as? PurchaseRowCell {
+                    updatedCell.movieImageView.image = image
+                }
+
+            } catch {
+                NSLog(
+                    "PurchasesVC image: %@",
+                    error.localizedDescription
+                )
+            }
+        }
+
+        return cell
+    }
+
+    func numberOfSections(in _: UITableView) -> Int {
+        purchaseTableData.count
+    }
+
+    func tableView(_: UITableView, numberOfRowsInSection _: Int) -> Int {
+        1
+    }
+
+    func tableView(_: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        if refundArmedSection == indexPath.section {
+            return 122
+        }
+        return 82
+    }
+
+    func tableView(_: UITableView, didSelectRowAt indexPath: IndexPath) {
+        CheckoutDataManager.shared.selectedPurchaseId = purchaseTableData[indexPath.section].purchaseId
+        performSegue(withIdentifier: "goto_tickets", sender: self)
+    }
+
+    func tableView(_: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        guard refundArmedSection == indexPath.section else {
+            return nil
+        }
+
+        let confirmAction = UIContextualAction(style: .destructive, title: "Confirm") { [weak self] _, _, success in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                do {
+                    let purchaseId = self.purchaseTableData[indexPath.section].purchaseId
+                    let movieName = self.purchaseTableData[indexPath.section].movieName
+                    if try await CheckoutDataManager.shared.refundPurchase(purchaseId: purchaseId) {
+                        self.purchaseTableData.remove(at: indexPath.section)
+                        self.refundedEntries.insert("#\(purchaseId) \(movieName)", at: 0)
+                        self.refundArmedSection = nil
+                        self.updateRefundBubble()
+                        self.tableView.reloadData()
+                    }
+                } catch {
+                    NSLog("delete purchase: %@", error.localizedDescription)
+                }
+            }
+            success(true)
+        }
+        confirmAction.backgroundColor = .systemRed
+
+        let cancelAction = UIContextualAction(style: .normal, title: "Cancel") { [weak self] _, _, success in
+            self?.showRefundHint(for: indexPath.section)
+            self?.tableView.reloadRows(at: [indexPath], with: .none)
+            success(true)
+        }
+        cancelAction.backgroundColor = .systemGray
+
+        let config = UISwipeActionsConfiguration(actions: [confirmAction, cancelAction])
+        config.performsFirstActionWithFullSwipe = false
+        return config
+    }
+
+    func addPurchasesData() {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                self.purchaseTableData = try await CheckoutDataManager.shared.fetchAllPurchases()
+                self.tableView.reloadData()
+            } catch {
+                NSLog("addPurchasesData: %@", error.localizedDescription)
+                self.presentAlert(withTitle: "Error", message: error.localizedDescription)
+            }
+        }
+    }
+
+    // MARK: Private
+
+    private enum Notifications {
+        static let purchaseDeletedFromTickets = Notification.Name("purchaseDeletedFromTickets")
+    }
+
+    private lazy var tableCard = createTableCard()
     private var label = UILabel()
     private var tableView = UITableView()
     private let refreshControl = UIRefreshControl()
-    var purchaseTableData: [PurchaseSummaryModel] = []
     private var navButtons: [UIButton] = []
     private var sortButtons: [UIButton] = []
     private var refundArmedSection: Int?
     private var refundedEntries: [String] = []
-    
+
     private lazy var purchaseDeletedToastLabel: UILabel = {
         let label = UILabel()
         label.isHidden = true
@@ -44,7 +320,7 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-    
+
     private lazy var refundBubbleLabel: UILabel = {
         let view = UILabel()
 
@@ -71,63 +347,6 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
         return view
     }()
 
-    override func viewWillAppear(_: Bool) {
-        super.viewWillAppear(true)
-        addPurchasesData()
-    }
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-
-        injectAppServicesIfNeeded()
-
-        configureView()
-        configureNavigation()
-        configureSortButtons()
-        configureTable()
-
-        refresh()
-
-        NotificationCenter.default.addObserver(self, selector: #selector(refresh), name: NSNotification.Name(rawValue: "newDataNotif"), object: nil)
-        NotificationCenter.default.addObserver(self, selector: #selector(handlePurchaseDeletedFromTickets(_:)), name: Notifications.purchaseDeletedFromTickets, object: nil)
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        layoutTopNavigationButtons(navButtons, topOffset: 8)
-
-        let topButtonBottom = navButtons.map { $0.frame.maxY }.max() ?? (view.safeAreaInsets.top + 42)
-        let sortTop = topButtonBottom + 8
-        let inset: CGFloat = 16
-        let spacing: CGFloat = 10
-        let sortWidth = (view.bounds.width - (inset * 2) - spacing) / 2
-        sortButtons.first?.frame = CGRect(x: inset, y: sortTop, width: sortWidth, height: 34)
-        sortButtons.dropFirst().first?.frame = CGRect(x: inset + sortWidth + spacing, y: sortTop, width: sortWidth, height: 34)
-
-        label.frame = CGRect(x: inset, y: sortTop + 40, width: view.bounds.width - (inset * 2), height: 20)
-
-        let tableTop = label.frame.maxY + 6
-
-        let bottomInset =
-            view.safeAreaInsets.bottom + 12
-
-        tableCard.frame = CGRect(
-            x: 12,
-            y: tableTop,
-            width: view.bounds.width - 24,
-            height: view.bounds.height
-                - tableTop
-                - bottomInset
-        )
-
-        tableView.frame = CGRect(
-            x: 0,
-            y: 0,
-            width: tableCard.bounds.width,
-            height: tableCard.bounds.height
-        )
-    }
-    
     private func createTableCard() -> UIView {
         let card = UIView()
         card.backgroundColor = .white
@@ -137,7 +356,7 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
         card.clipsToBounds = true
         return card
     }
-    
+
     private func configureView() {
         view.backgroundColor = UIColor(white: 0.95, alpha: 1)
 
@@ -147,9 +366,8 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
         view.addSubview(purchaseDeletedToastLabel)
         view.bringSubviewToFront(refundBubbleLabel)
         view.bringSubviewToFront(purchaseDeletedToastLabel)
-        
-        NSLayoutConstraint.activate([
 
+        NSLayoutConstraint.activate([
             refundBubbleLabel.leadingAnchor.constraint(
                 equalTo: view.leadingAnchor,
                 constant: 16
@@ -178,26 +396,22 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
             purchaseDeletedToastLabel.trailingAnchor.constraint(
                 equalTo: view.trailingAnchor,
                 constant: -12
-            )
+            ),
         ])
     }
-    
+
     private func configureTable() {
+        tableCard.clipsToBounds = false
 
         tableView.dataSource = self
         tableView.delegate = self
-
+        tableView.clipsToBounds = false
         tableView.rowHeight = 82
         tableView.separatorStyle = .none
-
         tableView.backgroundColor = UIColor(white: 0.97, alpha: 1)
-
         tableView.showsVerticalScrollIndicator = false
-
-        tableView.contentInset = UIEdgeInsets(top: 6,left: 0, bottom: 16, right: 0)
-
+        tableView.contentInset = UIEdgeInsets(top: 6, left: 0, bottom: 16, right: 0)
         tableView.register(PurchaseRowCell.self, forCellReuseIdentifier: "PurchaseRowCell")
-
         tableCard.addSubview(tableView)
 
         let longPress = UILongPressGestureRecognizer(target: self, action: #selector(handleLongPress(_:)))
@@ -205,11 +419,9 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
         tableView.addGestureRecognizer(longPress)
         tableView.refreshControl = refreshControl
     }
-    
+
     private func applySorting() {
-
         switch sortBy {
-
         case "screening":
             purchaseTableData.sort {
                 $0.screeningDate > $1.screeningDate
@@ -221,13 +433,13 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
             }
         }
     }
-    
+
     private func configureNavigation() {
         navButtons = addTopNavigationButtons([
-            (title: "Back", action: #selector(navigateBack))
+            (title: "Back", action: #selector(navigateBack)),
         ])
     }
-    
+
     private func configureSortButtons() {
         let screeningButton = makeControlButton(
             title: "By Screening",
@@ -250,11 +462,11 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
 
         updateSortLabel()
     }
-    
+
     private func updateSortLabel() {
         label.text = "Sorted by \(sortBy)"
     }
-    
+
     @objc private func handlePurchaseDeletedFromTickets(_ notification: Notification) {
         let purchaseId = notification.userInfo?["purchaseId"] as? String ?? ""
         let suffix = purchaseId.isEmpty ? "" : " #\(purchaseId)."
@@ -287,9 +499,9 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
     }
 
     @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
-
         guard gesture.state == .began, let indexPath = tableView.indexPathForRow(
-            at: gesture.location(in: tableView)) else {
+            at: gesture.location(in: tableView)
+        ) else {
             return
         }
 
@@ -298,7 +510,6 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
 
         var reloads: [IndexPath] = [indexPath]
         if let previousSection, previousSection != indexPath.section {
-
             reloads.append(
                 IndexPath(
                     row: 0,
@@ -328,151 +539,6 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
         showRefundHint(for: indexPath.section)
     }
 
-    override func viewDidAppear(_: Bool) {
-        super.viewDidAppear(true)
-    }
-
-    @objc func sortByPurchaseDate() {
-        sortBy = "purchase"
-        updateSortLabel()
-        applySorting()
-        tableView.reloadData()
-    }
-
-    @objc func sortByScreeningDate() {
-        sortBy = "screening"
-        updateSortLabel()
-        applySorting()
-        tableView.reloadData()
-    }
-
-    @objc func refresh() {
-        purchaseTableData.removeAll()
-        addPurchasesData()
-    }
-
-    @objc func navigateBack() {
-        dismiss(animated: true, completion: nil)
-    }
-
-    override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
-        if segue.identifier == "goto_tickets" {
-           // CheckoutDataManager.shared.selectedPurchaseId
-        }
-    }
-
-    func tableView(_: UITableView, titleForHeaderInSection section: Int) -> String? {
-        if sortBy == "purchase" {
-            purchaseTableData[section].purchaseDate
-        } else {
-            purchaseTableData[section].screeningDate
-        }
-    }
-
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: "PurchaseRowCell", for: indexPath) as? PurchaseRowCell else {
-            return UITableViewCell()
-        }
-
-        let data = purchaseTableData[indexPath.section]
-
-        cell.titleText.text = data.movieName
-        cell.subtitleLabel.text = data.screeningDate
-
-        if refundArmedSection == indexPath.section {
-
-            cell.refundLabel.text = "Swipe left to refund"
-            cell.pillLabel.text = "REFUND"
-
-        } else {
-
-            cell.refundLabel.text = "Tickets purchased"
-            cell.pillLabel.text = "PAID"
-        }
-
-        let urlMovie = URLManager.image(data.moviePicture)
-
-        Task { @MainActor [weak self] in
-
-            guard let self else { return }
-
-            do {
-                let imgData = try await self.appServices.images.getData(urlString: urlMovie,realmCache: true)
-                let image = UIImage(data: imgData)
-                if let updatedCell = tableView.cellForRow(at: indexPath) as? PurchaseRowCell {
-                    updatedCell.movieImageView.image = image
-                }
-
-            } catch {
-
-                NSLog(
-                    "PurchasesVC image: %@",
-                    error.localizedDescription
-                )
-            }
-        }
-
-        return cell
-    }
-
-    func numberOfSections(in _: UITableView) -> Int {
-        purchaseTableData.count
-    }
-
-    func tableView(_: UITableView, numberOfRowsInSection _: Int) -> Int {
-        1
-    }
-
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        if refundArmedSection == indexPath.section {
-            return 122
-        }
-        return 82
-    }
-
-    func tableView(_: UITableView, didSelectRowAt indexPath: IndexPath) {
-        CheckoutDataManager.shared.selectedPurchaseId = purchaseTableData[indexPath.section].purchaseId
-        performSegue(withIdentifier: "goto_tickets", sender: self)
-    }
-
-    func tableView(_: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
-        guard refundArmedSection == indexPath.section else {
-            return nil
-        }
-
-            let confirmAction = UIContextualAction(style: .destructive, title: "Confirm") { [weak self] _, _, success in
-                Task { @MainActor [weak self] in
-                    guard let self else { return }
-                    do {
-                        let purchaseId = self.purchaseTableData[indexPath.section].purchaseId
-                        let movieName = self.purchaseTableData[indexPath.section].movieName
-                        if try await CheckoutDataManager.shared.refundPurchase(purchaseId: purchaseId) {
-                            self.purchaseTableData.remove(at: indexPath.section)
-                            self.refundedEntries.insert("#\(purchaseId) \(movieName)", at: 0)
-                            self.refundArmedSection = nil
-                            self.updateRefundBubble()
-                            self.tableView.reloadData()
-                        }
-                    } catch {
-                        NSLog("delete purchase: %@", error.localizedDescription)
-                    }
-                }
-                success(true)
-            }
-            confirmAction.backgroundColor = .systemRed
-
-            let cancelAction = UIContextualAction(style: .normal, title: "Cancel") { [weak self] _, _, success in
-                self?.showRefundHint(for: indexPath.section)
-                self?.tableView.reloadRows(at: [indexPath], with: .none)
-                success(true)
-            }
-            cancelAction.backgroundColor = .systemGray
-
-        let config = UISwipeActionsConfiguration(actions: [confirmAction, cancelAction])
-        config.performsFirstActionWithFullSwipe = false
-        return config
-    }
-
     private func updateRefundBubble() {
         guard !refundedEntries.isEmpty else {
             refundBubbleLabel.isHidden = true
@@ -494,18 +560,5 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
         let historyText = history.isEmpty ? "" : "\n  \n  Refunded\n  " + history.joined(separator: "\n  ")
         refundBubbleLabel.text = header + historyText
         refundBubbleLabel.isHidden = false
-    }
-
-    func addPurchasesData() {
-        Task { @MainActor [weak self] in
-            guard let self else { return }
-            do {
-                self.purchaseTableData = try await CheckoutDataManager.shared.fetchAllPurchases()
-                self.tableView.reloadData()
-            } catch {
-                NSLog("addPurchasesData: %@", error.localizedDescription)
-                self.presentAlert(withTitle: "Error", message: error.localizedDescription)
-            }
-        }
     }
 }

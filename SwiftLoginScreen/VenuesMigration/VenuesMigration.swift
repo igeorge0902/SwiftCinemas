@@ -1,10 +1,13 @@
+// VenuesMigration.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
+
 import Combine
 import MapKit
-import SwiftyJSON
 import SwiftUI
+import SwiftyJSON
 import UIKit
 
-// Review slice for Venues SwiftUI migration. Legacy UIViewController flow stays untouched.
+/// Review slice for Venues SwiftUI migration. Legacy UIViewController flow stays untouched.
 enum VenuesMode {
     case standard
     case admin
@@ -18,6 +21,8 @@ enum VenuesFlowMode: String {
 }
 
 enum VenuesFeatureFlags {
+    // MARK: Internal
+
     static let flowModeKey = "venues.flow.mode"
     static let abBucketKey = "venues.flow.ab.bucket"
 
@@ -41,6 +46,8 @@ enum VenuesFeatureFlags {
         }
     }
 
+    // MARK: Private
+
     private static var abBucket: Bool {
         if UserDefaults.standard.object(forKey: abBucketKey) == nil {
             UserDefaults.standard.set(Bool.random(), forKey: abBucketKey)
@@ -56,9 +63,9 @@ struct VenuesInput {
     var selectDetails: String
     var imdb: String
     var mode: VenuesMode
-    
+
     /// Determines mode from manager-owned context.
-    static func fromManagerContext(
+    @MainActor static func fromManagerContext(
         movieId: Int,
         movieName: String,
         selectLargePicture: String,
@@ -71,7 +78,7 @@ struct VenuesInput {
         } else {
             mode = .standard
         }
-        
+
         return VenuesInput(
             movieId: movieId,
             movieName: movieName,
@@ -100,6 +107,28 @@ struct VenuesUnifiedItem: Identifiable, Equatable {
 
 @MainActor
 final class VenuesMigrationViewModel: ObservableObject {
+    // MARK: Lifecycle
+
+    init(input: VenuesInput, appServices: AppServices) {
+        self.input = input
+        mbooks = appServices.mbooks
+        imageServices = appServices.images
+        backObserver = NotificationCenter.default
+            .publisher(for: NSNotification.Name(rawValue: "navigateBack"))
+            .sink { [weak self] _ in
+                self?.onDismiss?()
+            }
+    }
+
+    deinit {
+        //  backObserver?.cancel()
+        //  LocationsDataManager.shared.isVenuesFromMapFlow = false
+        //  LocationsDataManager.shared.locationsToDisplay = []
+        //  LocationsDataManager.shared.locationsForMapPicker = []
+    }
+
+    // MARK: Internal
+
     @Published var venues: [VenuesUnifiedItem] = []
     @Published var locations: [Location] = []
     @Published var mapLocations: [Location] = []
@@ -111,28 +140,12 @@ final class VenuesMigrationViewModel: ObservableObject {
     )
 
     let input: VenuesInput
-    private let mbooks: MbooksService
     let imageServices: ImageResourceService
-    private var backObserver: AnyCancellable?
     var onDismiss: (() -> Void)?
     var onNavigateToDetails: ((VenuesUnifiedItem) -> Void)?
 
-    init(input: VenuesInput, appServices: AppServices) {
-        self.input = input
-        self.mbooks = appServices.mbooks
-        self.imageServices = appServices.images
-        backObserver = NotificationCenter.default
-            .publisher(for: NSNotification.Name(rawValue: "navigateBack"))
-            .sink { [weak self] _ in
-                self?.onDismiss?()
-            }
-    }
-
-    deinit {
-        backObserver?.cancel()
-        LocationsDataManager.shared.isVenuesFromMapFlow = false
-        LocationsDataManager.shared.locationsToDisplay = []
-        LocationsDataManager.shared.locationsForMapPicker = []
+    var legacySelectedVenueName: String {
+        (originalVenueName?.string as NSString?) as String? ?? ""
     }
 
     func loadInitialData() async {
@@ -228,12 +241,15 @@ final class VenuesMigrationViewModel: ObservableObject {
         }
     }
 
-    var legacySelectedVenueName: String {
-        (originalVenueName?.string as NSString?) as String? ?? ""
-    }
+    // MARK: Private
+
+    private let mbooks: MbooksService
+    private var backObserver: AnyCancellable?
 }
 
 struct VenuesMigrationView: View {
+    // MARK: Internal
+
     @ObservedObject var viewModel: VenuesMigrationViewModel
 
     var body: some View {
@@ -253,6 +269,8 @@ struct VenuesMigrationView: View {
             await viewModel.loadInitialData()
         }
     }
+
+    // MARK: Private
 
     private var topBar: some View {
         HStack {
@@ -280,6 +298,7 @@ struct VenuesMigrationView: View {
     }
 
     // MARK: - Standard Mode
+
     // Layout: full-width list of venues (with pictures) on top,
     // details panel pinned to the bottom (horizontal split is REMOVED per spec).
     private var standardModeView: some View {
@@ -347,6 +366,7 @@ struct VenuesMigrationView: View {
     }
 
     // MARK: - Admin Mode
+
     private var adminModeView: some View {
         List(viewModel.locations, id: \.locationId) { location in
             Button {
@@ -364,6 +384,7 @@ struct VenuesMigrationView: View {
     }
 
     // MARK: - Map Mode
+
     private var mapModeView: some View {
         VStack(spacing: 0) {
             VenuesLegacyMapView(
@@ -429,11 +450,11 @@ private struct VenueListRow: View {
 
 /// Image + name row used by standard mode where venue pictures are available.
 private struct VenuePictureRow: View {
+    // MARK: Internal
+
     let venue: VenuesUnifiedItem
     let isSelected: Bool
     let imageServices: ImageResourceService
-
-    @State private var image: UIImage? = nil
 
     var body: some View {
         HStack(spacing: 12) {
@@ -487,12 +508,34 @@ private struct VenuePictureRow: View {
             }
         }
     }
+
+    // MARK: Private
+
+    @State private var image: UIImage? = nil
 }
 
 struct VenuesLegacyMapView: UIViewRepresentable {
+    final class Coordinator: NSObject, MKMapViewDelegate {
+        // MARK: Lifecycle
+
+        init(parent: VenuesLegacyMapView) {
+            self.parent = parent
+        }
+
+        // MARK: Internal
+
+        var parent: VenuesLegacyMapView
+
+        func mapView(_: MKMapView, didSelect view: MKAnnotationView) {
+            guard let place = view.annotation as? Location else { return }
+            parent.onSelect(place)
+        }
+    }
+
     let locations: [Location]
     @Binding var region: MKCoordinateRegion
     @Binding var selectedLocation: Location?
+
     let onSelect: (Location) -> Void
 
     func makeCoordinator() -> Coordinator {
@@ -518,24 +561,10 @@ struct VenuesLegacyMapView: UIViewRepresentable {
 
         context.coordinator.parent = self
     }
-
-    final class Coordinator: NSObject, MKMapViewDelegate {
-        var parent: VenuesLegacyMapView
-
-        init(parent: VenuesLegacyMapView) {
-            self.parent = parent
-        }
-
-        func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-            guard let place = view.annotation as? Location else { return }
-            parent.onSelect(place)
-        }
-    }
 }
 
 final class VenuesMigrationHostVC: UIViewController, HasAppServices {
-    var appServices: AppServices!
-    private let input: VenuesInput
+    // MARK: Lifecycle
 
     init(input: VenuesInput, appServices: AppServices) {
         self.input = input
@@ -543,9 +572,14 @@ final class VenuesMigrationHostVC: UIViewController, HasAppServices {
         super.init(nibName: nil, bundle: nil)
     }
 
-    required init?(coder: NSCoder) {
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+
+    // MARK: Internal
+
+    var appServices: AppServices!
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -574,6 +608,10 @@ final class VenuesMigrationHostVC: UIViewController, HasAppServices {
 
         host.didMove(toParent: self)
     }
+
+    // MARK: Private
+
+    private let input: VenuesInput
 
     private func presentVenuesDetails(for venue: VenuesUnifiedItem) {
         let storyboard = UIStoryboard(name: "Storyboard", bundle: nil)
@@ -608,9 +646,9 @@ enum VenuesMigrationFactory {
         configuredInput.mode = mode
         return VenuesMigrationHostVC(input: configuredInput, appServices: appServices)
     }
-    
+
     /// Make controller using manager context.
-    static func makeFromManagerContext(
+    @MainActor static func makeFromManagerContext(
         movieId: Int,
         movieName: String,
         selectLargePicture: String,
@@ -628,4 +666,3 @@ enum VenuesMigrationFactory {
         return VenuesMigrationHostVC(input: input, appServices: appServices)
     }
 }
-

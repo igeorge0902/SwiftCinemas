@@ -1,22 +1,25 @@
-//
-//  VenuesDataManager.swift
-//  SwiftCinemas
-//
+// VenuesDataManager.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 import SwiftyJSON
 import UIKit
 
+@MainActor
 final class VenuesDataManager: SharedDataManager, HasAppServices {
-    static let shared = VenuesDataManager()
-    static var domain: String { "Venues" }
-
-    var appServices: AppServices!
-
-    private var mbooks: MbooksService { appServices.mbooks }
-    private let realmCache: ResponseCache = RealmResponseCache()
+    // MARK: Lifecycle
 
     private init() {}
+
+    // MARK: Internal
+
+    static let shared = VenuesDataManager()
+
+    static var domain: String {
+        "Venues"
+    }
+
+    var appServices: AppServices!
 
     // MARK: - Navigation Context
 
@@ -202,6 +205,14 @@ final class VenuesDataManager: SharedDataManager, HasAppServices {
         }
     }
 
+    // MARK: Private
+
+    private let realmCache: ResponseCache = RealmResponseCache()
+
+    private var mbooks: MbooksService {
+        appServices.mbooks
+    }
+
     private func extractCategoryText(from json: JSON) -> String? {
         let direct = json["category"].string
             ?? json["genre"].string
@@ -291,7 +302,8 @@ final class VenuesDataManager: SharedDataManager, HasAppServices {
         await MainActor.run {
             guard let data = self.realmCache.cachedResponse(for: venueCacheKey(venueId: venueId)),
                   let object = try? JSONSerialization.jsonObject(with: data, options: []),
-                  let dictionary = object as? [String: Any] else {
+                  let dictionary = object as? [String: Any]
+            else {
                 return nil
             }
             return VenueModel(json: JSON(dictionary))
@@ -305,12 +317,7 @@ struct Screen {
 }
 
 struct Venue {
-    let venuesId: Int
-    let name: String
-    let address: String
-    let venuesPicture: String
-    let screenId: String
-    let locationId: Int
+    // MARK: Lifecycle
 
     init(venuesId: Int, name: String, address: String, venuesPicture: String, screenId: String, locationId: Int) {
         self.venuesId = venuesId
@@ -333,38 +340,49 @@ struct Venue {
 
         guard let id,
               let name,
-              let locId else {
+              let locId
+        else {
             return nil
         }
-        self.venuesId = id
+        venuesId = id
         self.name = name
         self.address = address
-        self.venuesPicture = picture
+        venuesPicture = picture
         self.screenId = screenId
-        self.locationId = locId
+        locationId = locId
     }
-}
 
-struct VenueMovie {
-    let movieId: String
-    let name: String
+    // MARK: Internal
 
-    init?(json: JSON) {
-        guard let id = json["movieId"].string ?? json["movieId"].int.map(String.init),
-              let name = json["name"].string else {
-            return nil
-        }
-        self.movieId = id
-        self.name = name
-    }
-}
-
-struct VenueSelectionVenue {
     let venuesId: Int
     let name: String
     let address: String
     let venuesPicture: String
     let screenId: String
+    let locationId: Int
+}
+
+struct VenueMovie {
+    // MARK: Lifecycle
+
+    init?(json: JSON) {
+        guard let id = json["movieId"].string ?? json["movieId"].int.map(String.init),
+              let name = json["name"].string
+        else {
+            return nil
+        }
+        movieId = id
+        self.name = name
+    }
+
+    // MARK: Internal
+
+    let movieId: String
+    let name: String
+}
+
+struct VenueSelectionVenue {
+    // MARK: Lifecycle
 
     init?(json: JSON) {
         let venuesId = json["venuesId"].int ?? Int(json["venuesId"].string ?? "")
@@ -376,7 +394,8 @@ struct VenueSelectionVenue {
             ?? ""
 
         guard let venuesId,
-              let name else {
+              let name
+        else {
             return nil
         }
 
@@ -386,6 +405,14 @@ struct VenueSelectionVenue {
         self.venuesPicture = venuesPicture
         self.screenId = screenId
     }
+
+    // MARK: Internal
+
+    let venuesId: Int
+    let name: String
+    let address: String
+    let venuesPicture: String
+    let screenId: String
 }
 
 struct VenueMovieSelection {
@@ -398,4 +425,3 @@ struct VenueMovieSelection {
 typealias VenueModel = Venue
 typealias VenueMovieModel = VenueMovie
 typealias ScreenDataModel = Screen
-

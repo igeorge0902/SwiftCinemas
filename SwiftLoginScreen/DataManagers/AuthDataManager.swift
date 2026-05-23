@@ -1,22 +1,24 @@
-//
-//  AuthDataManager.swift
-//  SwiftCinemas
-//
+// AuthDataManager.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 import UIKit
 
+@MainActor
 final class AuthDataManager: SharedDataManager, HasAppServices {
-    static let shared = AuthDataManager()
-    static var domain: String { "Auth" }
-
-    var appServices: AppServices!
-
-    private var apiClient: APIClient { appServices.apiClient }
-    private var loginGateway: LoginGatewayService { appServices.loginGateway }
-    private let session: URLSession = .sharedCustomSession
+    // MARK: Lifecycle
 
     private init() {}
+
+    // MARK: Internal
+
+    static let shared = AuthDataManager()
+
+    static var domain: String {
+        "Auth"
+    }
+
+    var appServices: AppServices!
 
     /// Sign in with username and password
     /// - Note: Throws AppError on failure; stores session automatically
@@ -42,8 +44,7 @@ final class AuthDataManager: SharedDataManager, HasAppServices {
     func fetchUser() async throws -> [String: Any] {
         do {
             let data = try await loginGateway.getUser()
-            let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
-            return json
+            return try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
         } catch {
             throw handleError(error)
         }
@@ -166,6 +167,18 @@ final class AuthDataManager: SharedDataManager, HasAppServices {
         }
     }
 
+    // MARK: Private
+
+    private let session: URLSession = .sharedCustomSession
+
+    private var apiClient: APIClient {
+        appServices.apiClient
+    }
+
+    private var loginGateway: LoginGatewayService {
+        appServices.loginGateway
+    }
+
     private func validateVoucher(voucher: String) async throws {
         guard let url = URL(string: URLManager.login("/voucher")) else {
             throw AppError.decodingFailed
@@ -206,4 +219,3 @@ struct SessionTokenModel {
     let sessionId: String
     let deviceId: String
 }
-

@@ -1,3 +1,6 @@
+// SecureStore.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
+
 import Foundation
 import Security
 
@@ -43,4 +46,3 @@ enum SecureStore {
         SecItemDelete(query as CFDictionary)
     }
 }
-

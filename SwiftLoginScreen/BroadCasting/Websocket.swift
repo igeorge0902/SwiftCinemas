@@ -1,16 +1,12 @@
-//
-//  Websocket.swift
-//  SwiftCinemas
-//
-//  Created by Gaspar Gyorgy on 2025. 03. 08..
-//  Copyright © 2025. George Gaspar. All rights reserved.
-//
+// Websocket.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 
-class WebSocketManager: NSObject {
+final class WebSocketManager: NSObject {
+    // MARK: Internal
+
     var webSocketTask: URLSessionWebSocketTask?
-    private var pingTimer: DispatchSourceTimer?
 
     func connect() {
         let url = URL(string: URLManager.webSocketURL)!
@@ -31,14 +27,14 @@ class WebSocketManager: NSObject {
         webSocketTask?.receive { [weak self] result in
             guard let self = self else { return }
             switch result {
-            case .failure(let error):
+            case let .failure(error):
                 print("WebSocket error: \(error.localizedDescription)")
                 self.reconnectWebSocket()
-            case .success(let message):
+            case let .success(message):
                 switch message {
-                case .string(let text):
+                case let .string(text):
                     print("Received: \(text)")
-                case .data(let data):
+                case let .data(data):
                     print("Received binary data: \(data)")
                 @unknown default:
                     fatalError()
@@ -47,6 +43,10 @@ class WebSocketManager: NSObject {
             }
         }
     }
+
+    // MARK: Private
+
+    private var pingTimer: DispatchSourceTimer?
 
     // MARK: - Keepalive ping
 
@@ -77,11 +77,11 @@ class WebSocketManager: NSObject {
 }
 
 extension WebSocketManager: URLSessionWebSocketDelegate {
-    func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
+    func urlSession(_: URLSession, webSocketTask _: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason _: Data?) {
         print("WebSocket closed: \(closeCode)")
         reconnectWebSocket()
     }
-    
+
     func reconnectWebSocket() {
         stopPing()
         webSocketTask?.cancel(with: .goingAway, reason: nil)

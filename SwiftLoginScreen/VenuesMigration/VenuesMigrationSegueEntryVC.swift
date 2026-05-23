@@ -1,9 +1,12 @@
+// VenuesMigrationSegueEntryVC.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
+
 import UIKit
 
 /// Storyboard-compatible entry point for SwiftUI venues migration.
 /// Reads legacy UIKit input properties (set via prepare(for:sender:))
 /// and launches migration flow based on feature flag.
-final class VenuesMigrationSegueEntryVC: UIViewController, HasAppServices {
+final class VenuesMigrationSegueEntryVC: UIViewController, @MainActor HasAppServices {
     var appServices: AppServices!
 
     // Properties set by prepare(for:sender:) from source ViewController
@@ -46,4 +49,3 @@ final class VenuesMigrationSegueEntryVC: UIViewController, HasAppServices {
         present(migrationVC, animated: false)
     }
 }
-

@@ -1,8 +1,5 @@
-//
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 18/11/15.
-//
+// CustomURLSession.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 

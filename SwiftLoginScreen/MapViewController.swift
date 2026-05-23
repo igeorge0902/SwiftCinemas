@@ -1,25 +1,25 @@
-//
-//  MapViewController.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 26/06/16.
-//  Copyright © 2016 George Gaspar. All rights reserved.
-//
+// MapViewController.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import MapKit
 import UIKit
 
+class MapViewController: UIViewController, MKMapViewDelegate, @MainActor CLLocationManagerDelegate, UIViewControllerTransitioningDelegate, UIPopoverPresentationControllerDelegate, @MainActor HasAppServices, @MainActor HandleMapSearch {
+    // MARK: Lifecycle
 
-class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerDelegate, UIViewControllerTransitioningDelegate, UIPopoverPresentationControllerDelegate, HasAppServices, HandleMapSearch {
-    var appServices: AppServices!
     deinit {
-        LocationsDataManager.shared.locationsToDisplay = []
-        LocationsDataManager.shared.locationsForMapPicker = []
-        LocationsDataManager.shared.isVenuesFromMapFlow = false
-        LocationsDataManager.shared.isMapFromVenueDetails = false
         print(#function, "\(self)")
     }
 
+    // MARK: Internal
+
+    class HalfSizePresentationController: UIPresentationController {
+        override var frameOfPresentedViewInContainerView: CGRect {
+            CGRect(x: 0, y: 200, width: containerView!.bounds.width, height: containerView!.bounds.height)
+        }
+    }
+
+    var appServices: AppServices!
     var icons: [String: String] = Dictionary()
     var imageView: UIImageView!
     var locationManager: CLLocationManager!
@@ -49,7 +49,6 @@ class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerD
 
         if status == .notDetermined || status == .denied {
             DispatchQueue.main.async { () in
-
                 // present an alert indicating location authorization required
                 let message = "\(status)\n\nPlease allow the app to access your location through the Settings."
                 self.showMessage(message)
@@ -109,6 +108,21 @@ class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerD
         }
     }
 
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        if isMovingFromParent {
+            LocationsDataManager.shared.isVenuesFromMapFlow = false
+            LocationsDataManager.shared.locationsToDisplay = []
+            LocationsDataManager.shared.locationsForMapPicker = []
+        }
+    }
+
+    override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
+        if segue.identifier == "goto_venues_for_movies" {
+            LocationsDataManager.shared.selectedLocationId = locationId_
+        }
+    }
 
     @objc func navigateBack() {
         dismiss(animated: true, completion: nil)
@@ -144,22 +158,20 @@ class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerD
         }
     }
 
-
     func addData() {
         Task { @MainActor [weak self] in
             guard let self else { return }
             let locationsManager = LocationsDataManager.shared
             do {
-   
                 if locationsManager.isVenuesFromMapFlow {
                     let all = try await locationsManager.fetchLocations()
                     locationsManager.locationsToDisplay = locationsManager.isMapFromVenueDetails ? all.filter { $0.locationId == locationsManager.selectedLocationId } : all
                     locationsManager.locationsForMapPicker = locationsManager.locationsToDisplay
                 }
-                
+
                 if locationsManager.isMapFromVenueDetails {
                     if let venueId = self.selectVenueId ?? locationsManager.selectedVenueId {
-                        locationsManager.locationsToDisplay = [try await locationsManager.fetchLocationForVenue(venuesId: String(venueId))]
+                        locationsManager.locationsToDisplay = try [await locationsManager.fetchLocationForVenue(venuesId: String(venueId))]
                     }
                 }
 
@@ -309,12 +321,6 @@ class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerD
         NSLog("Exit region")
     }
 
-    override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
-        if segue.identifier == "goto_venues_for_movies" {
-            LocationsDataManager.shared.selectedLocationId = locationId_
-        }
-    }
-
     func showActionSheetTapped() {
         // Create the AlertController
         let actionSheetController = UIAlertController(title: "Action Sheet", message: "Choose an option!", preferredStyle: .actionSheet)
@@ -326,7 +332,6 @@ class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerD
         actionSheetController.addAction(cancelAction)
         // Create and add first option action
         let takeAction = UIAlertAction(title: "Go to Venue", style: .default) { _ in
-
             self.performSegue(withIdentifier: "goto_venues_for_movies", sender: self)
             // Code for launching the camera goes here
         }
@@ -351,12 +356,6 @@ class MapViewController: UIViewController, MKMapViewDelegate, CLLocationManagerD
 
     func presentationController(forPresented presented: UIViewController, presenting _: UIViewController?, source _: UIViewController) -> UIPresentationController? {
         HalfSizePresentationController(presentedViewController: presented, presenting: presentingViewController)
-    }
-
-    class HalfSizePresentationController: UIPresentationController {
-        override var frameOfPresentedViewInContainerView: CGRect {
-            CGRect(x: 0, y: 200, width: containerView!.bounds.width, height: containerView!.bounds.height)
-        }
     }
 
     func adaptivePresentationStyle(for _: UIPresentationController) -> UIModalPresentationStyle {

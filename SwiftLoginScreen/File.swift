@@ -1,39 +1,11 @@
-//
-//  File.swift
-//  Browser
-//
-//  Created by Joyce Echessa on 1/6/15.
-//  Copyright (c) 2015 Appcoda. All rights reserved.
-//
+// File.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import UIKit
 import WebKit
 
 class WV2: UIViewController, WKNavigationDelegate {
     var webView: WKWebView?
-
-    /* Start the network activity indicator when the web view is loading */
-    func webView(webView _: WKWebView,
-                 didStartProvisionalNavigation _: WKNavigation)
-    {
-        UIApplication.sharedApplication().networkActivityIndicatorVisible = true
-    }
-
-    /* Stop the network activity indicator when the loading finishes */
-    func webView(webView _: WKWebView,
-                 didFinishNavigation _: WKNavigation)
-    {
-        UIApplication.sharedApplication().networkActivityIndicatorVisible = false
-    }
-
-    func webView(webView _: WKWebView,
-                 decidePolicyForNavigationResponse navigationResponse: WKNavigationResponse,
-                 decisionHandler: (WKNavigationResponsePolicy) -> Void)
-    {
-        print(navigationResponse.response.MIMEType)
-
-        decisionHandler(.Allow)
-    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -57,5 +29,28 @@ class WV2: UIViewController, WKNavigationDelegate {
             theWebView.navigationDelegate = self
             view.addSubview(theWebView)
         }
+    }
+
+    /** Start the network activity indicator when the web view is loading */
+    func webView(webView _: WKWebView,
+                 didStartProvisionalNavigation _: WKNavigation)
+    {
+        UIApplication.sharedApplication().networkActivityIndicatorVisible = true
+    }
+
+    /** Stop the network activity indicator when the loading finishes */
+    func webView(webView _: WKWebView,
+                 didFinishNavigation _: WKNavigation)
+    {
+        UIApplication.sharedApplication().networkActivityIndicatorVisible = false
+    }
+
+    func webView(webView _: WKWebView,
+                 decidePolicyForNavigationResponse navigationResponse: WKNavigationResponse,
+                 decisionHandler: (WKNavigationResponsePolicy) -> Void)
+    {
+        print(navigationResponse.response.MIMEType)
+
+        decisionHandler(.Allow)
     }
 }

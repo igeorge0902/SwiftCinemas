@@ -1,34 +1,13 @@
-//
-//  MoviesVC.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 30/05/16.
-//  Copyright © 2016 George Gaspar. All rights reserved.
-//
+// MoviesVC.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import UIKit
 
-// data modell for updating Screen
-var ScreenData_2: [AdminScreeningModel] {
-    get { AdminScreeningsDataManager.shared.screeningsForAdminUpdate }
-    set { AdminScreeningsDataManager.shared.screeningsForAdminUpdate = newValue }
-}
-
-var endOfFile = false
-var veil = true
-var shouldShowSearchResults = false
-class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UISearchResultsUpdating, UISearchBarDelegate, HasAppServices {
-    var appServices: AppServices!
-
-    private enum PopoverUIStyle {
-        static let selectedRowBackground = UIColor(white: 0.95, alpha: 1)
-        static let defaultRowBackground = UIColor.white
-        static let searchBorder = UIColor(white: 0.84, alpha: 1)
-        static let chipTitle = UIColor(white: 0.2, alpha: 1)
-        static let chipActiveBackground = UIColor(white: 0.90, alpha: 1)
-        static let chipBackground = UIColor(white: 0.94, alpha: 1)
-        static let chipBorder = UIColor(white: 0.86, alpha: 1)
-    }
+nonisolated(unsafe) var endOfFile = false
+nonisolated(unsafe) var veil = true
+nonisolated(unsafe) var shouldShowSearchResults = false
+class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UISearchResultsUpdating, UISearchBarDelegate, @MainActor HasAppServices {
+    // MARK: Lifecycle
 
     deinit {
         endOfFile = false
@@ -38,11 +17,14 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         print(#function, "\(self)")
     }
 
+    // MARK: Internal
+
+    var appServices: AppServices!
+
+    var AdminUpadteData: [AdminScreeningModel] = []
     var SearchData: [MovieDataModel] = []
     var TableData: [MovieDataModel] = []
     var CategoryData = [String]()
-   // var searchController: UISearchController?
-    private let searchBar = UISearchBar()
     var tableView: UITableView?
     var searchBarFrame: UIView?
     var categoryScrollView: UIScrollView?
@@ -54,17 +36,18 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
     var favoritesByMovieId: [Int: Bool] = [:]
     var ratingsByMovieId: [Int: String] = [:]
     let fallbackCategories = ["All", "Action", "Drama", "Crime", "Romance", "Troll"]
-    private var selectedPopoverMovieRow: Int?
 
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "goto_venues",
            let indexPath = tableView?.indexPathForSelectedRow,
-           let movie = selectedMovie(at: indexPath) {
+           let movie = selectedMovie(at: indexPath)
+        {
             MoviesDataManager.shared.selectedMovie = movie
         }
         if segue.identifier == "goto_movie_detail",
            let tag = (sender as? UIButton)?.tag,
-           tag < TableData.count || tag < SearchData.count {
+           tag < TableData.count || tag < SearchData.count
+        {
             let movie = TableData.indices.contains(tag) ? TableData[tag] : SearchData[tag]
             MoviesDataManager.shared.selectedMovie = movie
         }
@@ -81,7 +64,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         searchBar.autocapitalizationType = .none
         searchBar.searchBarStyle = .minimal
         searchBar.backgroundImage = UIImage()
-        
+
         definesPresentationContext = true
         category_ = "nil"
 
@@ -93,7 +76,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         sbFrame.backgroundColor = .white
         searchBar.frame = sbFrame.bounds
         sbFrame.addSubview(searchBar)
-        
+
         styleSearchBarForPopover()
         sbFrame.layer.borderColor = PopoverUIStyle.searchBorder.cgColor
         sbFrame.layer.borderWidth = 1
@@ -144,15 +127,11 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         super.viewDidAppear(animated)
     }
 
-    private func applyPopoverRowSelection(_ cell: UITableViewCell, indexPath: IndexPath) {
-        cell.contentView.backgroundColor = selectedPopoverMovieRow == indexPath.row
-            ? PopoverUIStyle.selectedRowBackground
-            : PopoverUIStyle.defaultRowBackground
-    }
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
 
-    private func selectPopoverMovieRow(_ indexPath: IndexPath) {
-        selectedPopoverMovieRow = indexPath.row
-        tableView?.reloadData()
+        AdminDataManager.shared.screeningsForAdminUpdate = []
+        AdminDataManager.shared.selectedScreen = nil
     }
 
     @objc func navigateBack() {
@@ -207,7 +186,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                ScreenData_2 = try await AdminDataManager.shared.fetchScreenings(category: query?["category"])
+                AdminUpadteData = try await AdminDataManager.shared.fetchScreenings(category: query?["category"])
                 self.tableView?.reloadData()
             } catch {
                 NSLog("addLoadMoviesonVenue(category): %@", error.localizedDescription)
@@ -221,7 +200,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                ScreenData_2 = try await AdminDataManager.shared.searchScreenings(match: search)
+                AdminUpadteData = try await AdminDataManager.shared.searchScreenings(match: search)
                 self.tableView?.reloadData()
             } catch {
                 NSLog("addLoadMoviesonVenue(search): %@", error.localizedDescription)
@@ -264,13 +243,13 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
     }
 
     @objc func addLoadMoviesonVenue() {
-        ScreenData_2.removeAll()
+        AdminUpadteData.removeAll()
 
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                ScreenData_2 = try await AdminDataManager.shared.fetchScreenings()
-                if !ScreenData_2.isEmpty {
+                AdminUpadteData = try await AdminDataManager.shared.fetchScreenings()
+                if !AdminUpadteData.isEmpty {
                     NotificationCenter.default.post(name: NSNotification.Name(rawValue: "venueSelected"), object: nil)
                 }
                 self.tableView?.reloadData()
@@ -290,15 +269,6 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
             self?.searchBar.becomeFirstResponder()
         }
         return true
-    }
-
-    @objc private func focusSearchBar() {
-        searchBar.becomeFirstResponder()
-    }
-    
-    @objc private func dismissSearchKeyboard() {
-        searchBar.resignFirstResponder()
-        view.endEditing(true)
     }
 
     func searchBarShouldEndEditing(_: UISearchBar) -> Bool {
@@ -329,7 +299,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
                 }
             }
             if adminUpdatePage {
-                ScreenData_2.removeAll()
+                AdminUpadteData.removeAll()
                 if section_ == 0 {
                     addLoadMoviesonVenue(search: searchText)
                 } else if section_ == 1 {
@@ -359,7 +329,9 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         print(searchString!)
     }
 
-    func tableView(_: UITableView, viewForHeaderInSection _: Int) -> UIView? { nil }
+    func tableView(_: UITableView, viewForHeaderInSection _: Int) -> UIView? {
+        nil
+    }
 
     @objc func valueChanged(_ segmentedControl: UISegmentedControl) {
         print("Coming in : \(segmentedControl.selectedSegmentIndex)")
@@ -370,7 +342,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
             SearchData.removeAll()
             TableData.removeAll()
             CategoryData.removeAll()
-            ScreenData_2.removeAll()
+            AdminUpadteData.removeAll()
             if adminUpdatePage {
                 addLoadMoviesonVenue()
             } else {
@@ -381,7 +353,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
             CategoryData = ["Action", "Drama", "Crime", "Romance", "Troll"]
             SearchData.removeAll()
             TableData.removeAll()
-            ScreenData_2.removeAll()
+            AdminUpadteData.removeAll()
             tableView!.reloadData()
         } else if segmentedControl.selectedSegmentIndex == 2 {}
     }
@@ -414,16 +386,16 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         var adminRow: AdminScreeningModel?
 
         if adminUpdatePage {
-            if ScreenData_2.count > 0 {
-                adminRow = ScreenData_2[indexPath.row]
+            if AdminUpadteData.count > 0 {
+                adminRow = AdminUpadteData[indexPath.row]
             } else if TableData.count > 0 {
                 movieData = TableData[indexPath.row]
             } else if SearchData.count > 0 {
                 movieData = SearchData[indexPath.row]
             }
         } else {
-            if ScreenData_2.count > 0 {
-                adminRow = ScreenData_2[indexPath.row]
+            if AdminUpadteData.count > 0 {
+                adminRow = AdminUpadteData[indexPath.row]
             } else if TableData.count > 0 {
                 movieData = TableData[indexPath.row]
             } else if SearchData.count > 0 {
@@ -439,6 +411,141 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         }
 
         return cell!
+    }
+
+    func numberOfSections(in _: UITableView) -> Int {
+        if adminUpdatePage {
+            return 1
+        }
+        return 1
+    }
+
+    func tableView(_: UITableView, numberOfRowsInSection _: Int) -> Int {
+        if adminUpdatePage {
+            if SearchData.count > 0 {
+                return SearchData.count
+            }
+            if AdminUpadteData.count > 0 {
+                return AdminUpadteData.count
+            }
+            return TableData.count
+        }
+        if SearchData.count > 0 {
+            return SearchData.count
+        }
+        return TableData.count
+    }
+
+    func tableView(_: UITableView, heightForFooterInSection _: Int) -> CGFloat {
+        0.01
+    }
+
+    func tableView(_: UITableView, heightForHeaderInSection _: Int) -> CGFloat {
+        0.01
+    }
+
+    func tableView(_: UITableView, didSelectRowAt indexPath: IndexPath) {
+        searchBar.isHidden = false
+
+        if adminPage, CategoryData.count == 0 {
+            if TableData.count > 0 {
+                MoviesDataManager.shared.selectedMovie = TableData[indexPath.row]
+            } else {
+                MoviesDataManager.shared.selectedMovie = SearchData[indexPath.row]
+            }
+            NotificationCenter.default.post(name: NSNotification.Name(rawValue: "newScreenMovieSelected"), object: nil)
+        }
+
+        if adminUpdatePage, CategoryData.count == 0 {
+            if AdminUpadteData.count > 0 {
+                AdminDataManager.shared.selectedScreen = AdminUpadteData[indexPath.row]
+            }
+
+            NotificationCenter.default.post(name: NSNotification.Name(rawValue: "movieSelected"), object: nil)
+        }
+
+        if adminPage || adminUpdatePage {} else {
+            if veil, shouldShowSearchResults {
+                dismiss(animated: true, completion: nil)
+            }
+            veil = false
+            shouldShowSearchResults = false
+            if let movie = selectedMovie(at: indexPath) {
+                MoviesDataManager.shared.selectedMovie = movie
+            }
+            if VenuesFeatureFlags.shouldUseMigration(), let movie = selectedMovie(at: indexPath) {
+                presentVenuesMigration(for: movie)
+            } else {
+                performSegue(withIdentifier: "goto_venues", sender: self)
+            }
+        }
+    }
+
+    func tableView(_: UITableView, willDisplay _: UITableViewCell, forRowAt indexPath: IndexPath) {
+        searchBar.isHidden = false
+
+        if TableData.count > 10 || SearchData.count > 10 {
+            if indexPath.row == TableData.count - 3 {
+                if endOfFile == false {
+                    addData(category: category_ ?? "nil")
+                }
+                if indexPath.row == SearchData.count - 3, endOfFile == false {
+                    addData_(searchString ?? "", category: category_ ?? "nil")
+                }
+            }
+        }
+        if adminUpdatePage {
+            if TableData.count > 10 || SearchData.count > 10 {
+                if indexPath.row == TableData.count - 3 {
+                    if endOfFile == false {
+                        addData(category: category_ ?? "nil")
+                    }
+                    if indexPath.row == SearchData.count - 3, endOfFile == false {
+                        addData_(searchString ?? "", category: category_ ?? "nil")
+                    }
+                }
+            }
+        }
+    }
+
+    @objc func movieDetail(button: UIButton, event _: UIEvent) {
+        if veil, shouldShowSearchResults {
+            dismiss(animated: true, completion: nil)
+        }
+        veil = false
+        shouldShowSearchResults = false
+        performSegue(withIdentifier: "goto_movie_detail", sender: button)
+    }
+
+    // MARK: Private
+
+    private enum PopoverUIStyle {
+        static let selectedRowBackground = UIColor(white: 0.95, alpha: 1)
+        static let defaultRowBackground = UIColor.white
+        static let searchBorder = UIColor(white: 0.84, alpha: 1)
+        static let chipTitle = UIColor(white: 0.2, alpha: 1)
+        static let chipActiveBackground = UIColor(white: 0.90, alpha: 1)
+        static let chipBackground = UIColor(white: 0.94, alpha: 1)
+        static let chipBorder = UIColor(white: 0.86, alpha: 1)
+    }
+
+    // var searchController: UISearchController?
+    private let searchBar = UISearchBar()
+    private var selectedPopoverMovieRow: Int?
+
+    private func applyPopoverRowSelection(_ cell: UITableViewCell, indexPath: IndexPath) {
+        cell.contentView.backgroundColor = selectedPopoverMovieRow == indexPath.row
+            ? PopoverUIStyle.selectedRowBackground
+            : PopoverUIStyle.defaultRowBackground
+    }
+
+    @objc private func focusSearchBar() {
+        searchBar.becomeFirstResponder()
+    }
+
+    @objc private func dismissSearchKeyboard() {
+        searchBar.resignFirstResponder()
+        view.endEditing(true)
     }
 
     private func configureCell(cell: ListViewCell?, with data: MovieDataModel?, _ venueData: AdminScreeningModel?, categories: String?, indexPath _: IndexPath, shouldLoadImage: Bool) {
@@ -604,85 +711,6 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         searchBar.setSearchFieldBackgroundImage(UIImage(), for: .normal)
     }
 
-    func numberOfSections(in _: UITableView) -> Int {
-        if adminUpdatePage {
-            return 1
-        }
-        return 1
-    }
-
-    func tableView(_: UITableView, numberOfRowsInSection _: Int) -> Int {
-        if adminUpdatePage {
-            if SearchData.count > 0 {
-                return SearchData.count
-            }
-            if ScreenData_2.count > 0 {
-                return ScreenData_2.count
-            }
-            return TableData.count
-        }
-        if SearchData.count > 0 {
-            return SearchData.count
-        }
-        return TableData.count
-    }
-
-    func tableView(_: UITableView, heightForFooterInSection _: Int) -> CGFloat {
-        0.01
-    }
-
-    func tableView(_: UITableView, heightForHeaderInSection _: Int) -> CGFloat {
-        0.01
-    }
-
-    func tableView(_: UITableView, didSelectRowAt indexPath: IndexPath) {
-        searchBar.isHidden = false
-
-        if adminPage, CategoryData.count == 0 {
-            selectPopoverMovieRow(indexPath)
-            if TableData.count > 0 {
-                addMovie = TableData[indexPath.row].name
-            } else {
-                addMovie = SearchData[indexPath.row].name
-            }
-            NotificationCenter.default.post(name: NSNotification.Name(rawValue: "newScreenMovieSelected"), object: nil)
-        }
-
-        if adminUpdatePage, CategoryData.count == 0 {
-            selectPopoverMovieRow(indexPath)
-            if ScreenData_2.count > 0 {
-                addMovie = ScreenData_2[indexPath.row].movie
-                addVenue = ScreenData_2[indexPath.row].venue
-                addScreeningID = ScreenData_2[indexPath.row].screeningId
-                addScreeningDate = ScreenData_2[indexPath.row].date
-                addScreeningDateId = ScreenData_2[indexPath.row].screeningDatesId
-                addMovieId = ScreenData_2[indexPath.row].movieId
-                addVenueId = ScreenData_2[indexPath.row].venueId
-                addCategory = ScreenData_2[indexPath.row].category
-            }
-
-            NotificationCenter.default.post(name: NSNotification.Name(rawValue: "movieSelected"), object: nil)
-        }
-
-        
-            if adminPage || adminUpdatePage {} else {
-                if veil, shouldShowSearchResults {
-                    dismiss(animated: true, completion: nil)
-                }
-                veil = false
-                shouldShowSearchResults = false
-                if let movie = selectedMovie(at: indexPath) {
-                    MoviesDataManager.shared.selectedMovie = movie
-                }
-                if VenuesFeatureFlags.shouldUseMigration(), let movie = selectedMovie(at: indexPath) {
-                    presentVenuesMigration(for: movie)
-                } else {
-                    performSegue(withIdentifier: "goto_venues", sender: self)
-                }
-            }
-        
-    }
-
     private func selectedMovie(at indexPath: IndexPath) -> MovieDataModel? {
         if TableData.count > 0 {
             return TableData[indexPath.row]
@@ -708,42 +736,6 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         let migrationVC = VenuesMigrationFactory.make(input: input, mode: .standard, appServices: appServices)
         migrationVC.modalPresentationStyle = .fullScreen
         present(migrationVC, animated: true)
-    }
-
-    func tableView(_: UITableView, willDisplay _: UITableViewCell, forRowAt indexPath: IndexPath) {
-        searchBar.isHidden = false
-
-        if TableData.count > 10 || SearchData.count > 10 {
-            if indexPath.row == TableData.count - 3 {
-                if endOfFile == false {
-                    addData(category: category_ ?? "nil")
-                }
-                if indexPath.row == SearchData.count - 3, endOfFile == false {
-                    addData_(searchString ?? "", category: category_ ?? "nil")
-                }
-            }
-        }
-        if adminUpdatePage {
-            if TableData.count > 10 || SearchData.count > 10 {
-                if indexPath.row == TableData.count - 3 {
-                    if endOfFile == false {
-                        addData(category: category_ ?? "nil")
-                    }
-                    if indexPath.row == SearchData.count - 3, endOfFile == false {
-                        addData_(searchString ?? "", category: category_ ?? "nil")
-                    }
-                }
-            }
-        }
-    }
-
-    @objc func movieDetail(button: UIButton, event _: UIEvent) {
-        if veil, shouldShowSearchResults {
-            dismiss(animated: true, completion: nil)
-        }
-        veil = false
-        shouldShowSearchResults = false
-        performSegue(withIdentifier: "goto_movie_detail", sender: button)
     }
 
     private func buildCategoryChipsBar() {
@@ -777,7 +769,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
 
     private func renderCategoryChips() {
         guard let stack = categoryStack else { return }
-        stack.arrangedSubviews.forEach { v in
+        for v in stack.arrangedSubviews {
             stack.removeArrangedSubview(v)
             v.removeFromSuperview()
         }

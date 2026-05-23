@@ -1,24 +1,5 @@
-/*
- * Copyright (c) 2014 Razeware LLC
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
+// JSON.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 // Inspired by https://github.com/lingoer/SwiftyJSON
 
@@ -31,6 +12,8 @@ enum JSONValue {
     case jsonNumber(NSNumber)
     case jsonBool(Bool)
     case jsonNull
+
+    // MARK: Internal
 
     var object: [String: JSONValue]? {
         switch self {
@@ -88,24 +71,6 @@ enum JSONValue {
         }
     }
 
-    subscript(i: Int) -> JSONValue? {
-        switch self {
-        case let .jsonArray(value):
-            value[i]
-        default:
-            nil
-        }
-    }
-
-    subscript(key: String) -> JSONValue? {
-        switch self {
-        case let .jsonObject(value):
-            value[key]
-        default:
-            nil
-        }
-    }
-
     static func fromObject(_ object: AnyObject) -> JSONValue? {
         switch object {
         case let value as NSString:
@@ -144,6 +109,24 @@ enum JSONValue {
 
         default:
             return nil
+        }
+    }
+
+    subscript(i: Int) -> JSONValue? {
+        switch self {
+        case let .jsonArray(value):
+            value[i]
+        default:
+            nil
+        }
+    }
+
+    subscript(key: String) -> JSONValue? {
+        switch self {
+        case let .jsonObject(value):
+            value[key]
+        default:
+            nil
         }
     }
 }

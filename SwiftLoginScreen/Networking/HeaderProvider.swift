@@ -1,14 +1,9 @@
-//
-//  HeaderProvider.swift
-//  SwiftCinemas
-//
-//  Created by GYORGY GASPAR on 2026. 03. 28..
-//  Copyright © 2026 George Gaspar. All rights reserved.
-//
+// HeaderProvider.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import UIKit
 
-protocol HeaderProvider {
+protocol HeaderProvider: Sendable {
     func headers() -> [String: String]
 }
 
@@ -21,7 +16,7 @@ final class SessionHeaderProvider: HeaderProvider {
         return [
             "Ciphertext": xtoken,
             "X-Token": "client-secret",
-            "X-Device": UIDevice.current.identifierForVendor!.uuidString
+            "X-Device": UIDevice.current.identifierForVendor!.uuidString,
         ]
     }
 }
@@ -32,14 +27,18 @@ struct MergedHeaderProvider: HeaderProvider {
 
     func headers() -> [String: String] {
         var h = base.headers()
-        for (k, v) in extra { h[k] = v }
+        for (k, v) in extra {
+            h[k] = v
+        }
         return h
     }
 }
 
 /// Image/binary GETs used `headers: nil` in ``GeneralRequestManager`` — no ciphertext.
 struct MinimalGETHeaderProvider: HeaderProvider {
-    func headers() -> [String: String] { [:] }
+    func headers() -> [String: String] {
+        [:]
+    }
 }
 
 struct RapidMovieDatabaseHeaderProvider: HeaderProvider {
@@ -47,7 +46,7 @@ struct RapidMovieDatabaseHeaderProvider: HeaderProvider {
         [
             "RapidAPI Project": "default-application_4096793",
             "x-rapidapi-host": "movie-database-imdb-alternative.p.rapidapi.com",
-            "x-rapidapi-key": "60b13d7e5bmshfdf31342761c35cp1c3a50jsn0fd6be87de26"
+            "x-rapidapi-key": "60b13d7e5bmshfdf31342761c35cp1c3a50jsn0fd6be87de26",
         ]
     }
 }
@@ -64,7 +63,7 @@ struct HMACLoginHeaderProvider: HeaderProvider {
             "Accept": "application/json",
             "Content-Length": contentLength,
             "X-HMAC-HASH": hmacHash,
-            "X-MICRO-TIME": microTime
+            "X-MICRO-TIME": microTime,
         ]
     }
 }

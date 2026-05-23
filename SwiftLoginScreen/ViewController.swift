@@ -1,10 +1,5 @@
-//
-//  ViewController.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 2021. 08. 10..
-//  Copyright © 2021. George Gaspar. All rights reserved.
-//
+// ViewController.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import MapKit
 import UIKit
@@ -14,13 +9,21 @@ protocol HandleMapSearch {
 }
 
 class ViewController: UIViewController, UIPopoverPresentationControllerDelegate {
-    deinit {
-        LocationsDataManager.shared.activeMapView = nil
+    // MARK: Lifecycle
+
+    deinit {}
+
+    // MARK: Internal
+
+    class HalfSizePresentationController: UIPresentationController {
+        override var frameOfPresentedViewInContainerView: CGRect {
+            CGRect(x: 0, y: 200, width: containerView!.bounds.width, height: containerView!.bounds.height)
+        }
     }
 
     @IBOutlet var mapView: MKMapView!
     let locationManager = CLLocationManager()
-    var selectedPin: MKPlacemark? = nil
+    var selectedPin: MKPlacemark?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -47,6 +50,14 @@ class ViewController: UIViewController, UIPopoverPresentationControllerDelegate 
 
         view.addSubview(btnVen)
         view.addSubview(btnNav)
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        if isMovingFromParent {
+            LocationsDataManager.shared.activeMapView = nil
+        }
     }
 
     @objc func navigateBack() {
@@ -84,19 +95,14 @@ class ViewController: UIViewController, UIPopoverPresentationControllerDelegate 
         HalfSizePresentationController(presentedViewController: presented, presenting: presentingViewController)
     }
 
-    class HalfSizePresentationController: UIPresentationController {
-        override var frameOfPresentedViewInContainerView: CGRect {
-            CGRect(x: 0, y: 200, width: containerView!.bounds.width, height: containerView!.bounds.height)
-        }
-    }
-
     func adaptivePresentationStyle(for _: UIPresentationController) -> UIModalPresentationStyle {
         // Return no adaptive presentation style, use default presentation behaviour
         .none
     }
 }
 
-extension ViewController: CLLocationManagerDelegate {
+@MainActor
+extension ViewController: @MainActor CLLocationManagerDelegate {
     func locationManager(_: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         if status == .authorizedWhenInUse {
             locationManager.requestLocation()
@@ -116,7 +122,7 @@ extension ViewController: CLLocationManagerDelegate {
     }
 }
 
-extension ViewController: HandleMapSearch {
+extension ViewController: @MainActor HandleMapSearch {
     func dropPinZoomIn(placemark: MKPlacemark) {
         // cache the pin
         selectedPin = placemark

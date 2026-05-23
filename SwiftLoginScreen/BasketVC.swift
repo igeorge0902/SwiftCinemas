@@ -1,32 +1,29 @@
-//
-//  BasketVC.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 2017. 04. 26..
-//  Copyright © 2017. George Gaspar. All rights reserved.
-//
+// BasketVC.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import BraintreeDropIn
 import Foundation
 import UIKit
 
-// import FacebookCore
-
 class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, HasAppServices {
-    var appServices: AppServices!
+    // MARK: Lifecycle
+
     deinit {
         tableView_?.reloadData()
         print(#function, "\(self)")
     }
 
+    // MARK: Internal
+
+    var appServices: AppServices!
     var collectionView: UICollectionView!
     var clientToken: String?
+
+    lazy var layout = UICollectionViewFlowLayout()
 
     var values: [BasketItem] {
         [BasketItem](BasketDataManager.shared.basketItemsBySeatId.values.sorted { $0.movieName < $1.movieName })
     }
-    lazy var layout = UICollectionViewFlowLayout()
-    private var topNavigationButtons: [UIButton] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -73,6 +70,11 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
 
     override func viewDidAppear(_: Bool) {
         super.viewDidAppear(true)
+    }
+
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Dispose of any resources that can be recreated.
     }
 
     @objc func navigateBack() {
@@ -275,19 +277,18 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
         }
     }
 
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
+    // MARK: Private
+
+    private var topNavigationButtons: [UIButton] = []
 }
 
-// Helper function inserted by Swift 4.2 migrator.
+/// Helper function inserted by Swift 4.2 migrator.
 private func convertToOptionalNSAttributedStringKeyDictionary(_ input: [String: Any]?) -> [NSAttributedString.Key: Any]? {
     guard let input else { return nil }
     return Dictionary(uniqueKeysWithValues: input.map { key, value in (NSAttributedString.Key(rawValue: key), value) })
 }
 
-// Helper function inserted by Swift 4.2 migrator.
+/// Helper function inserted by Swift 4.2 migrator.
 private func convertFromNSAttributedStringKey(_ input: NSAttributedString.Key) -> String {
     input.rawValue
 }

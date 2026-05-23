@@ -1,10 +1,5 @@
-//
-//  ciphertext.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 30/12/15.
-//  Copyright © 2015 George Gaspar. All rights reserved.
-//
+// ciphertext.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 
@@ -12,6 +7,7 @@ import Foundation
 typealias cipher = String
 let cipherText = cipher("")
 
+@MainActor
 extension String {
     func getCipherText(_ plaintext: String) -> String {
         let iterationCount = 1000
@@ -23,8 +19,6 @@ extension String {
 
         let AES = CryptoJS.AES()
 
-        let ciphertext = AES.encrypt_(keySize, iterationCount: iterationCount, salt: salt, iv: iv, passPhrase: passPhrase, plainText: plainText)
-
-        return ciphertext
+        return AES.encrypt_(keySize, iterationCount: iterationCount, salt: salt, iv: iv, passPhrase: passPhrase, plainText: plainText)
     }
 }

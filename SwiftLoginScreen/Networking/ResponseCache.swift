@@ -1,10 +1,5 @@
-//
-//  ResponseCache.swift
-//  SwiftCinemas
-//
-//  Created by GYORGY GASPAR on 2026. 03. 28..
-//  Copyright © 2026 George Gaspar. All rights reserved.
-//
+// ResponseCache.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 import Realm
@@ -15,7 +10,7 @@ protocol ResponseCache {
 }
 
 class InMemoryCache: ResponseCache {
-    private var storage: [String: Data] = [:]
+    // MARK: Internal
 
     func cachedResponse(for key: String) -> Data? {
         storage[key]
@@ -24,12 +19,16 @@ class InMemoryCache: ResponseCache {
     func save(_ data: Data, for key: String) {
         storage[key] = data
     }
+
+    // MARK: Private
+
+    private var storage: [String: Data] = [:]
 }
 
 /// Persists GET response bodies in Realm (``CachedResponse``), same 1-hour TTL as ``GeneralRequestManager``.
 /// Must be called on the main thread only (``APIClient`` dispatches via `MainActor`).
 final class RealmResponseCache: ResponseCache {
-    private let ttl: TimeInterval = 3600
+    // MARK: Internal
 
     func cachedResponse(for key: String) -> Data? {
         let p = NSPredicate(format: "url == %@", key)
@@ -67,4 +66,8 @@ final class RealmResponseCache: ResponseCache {
         realm.add(obj)
         try? realm.commitWriteTransaction()
     }
+
+    // MARK: Private
+
+    private let ttl: TimeInterval = 3600
 }

@@ -1,18 +1,12 @@
-//
-//  TableViewCell.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 16/07/16.
-//  Copyright © 2016 George Gaspar. All rights reserved.
-//
+// TableViewCell.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 import SwiftyJSON
 import UIKit
 
 class TableViewCell: UITableViewCell, UICollectionViewDelegateFlowLayout {
-    var collectionView: UICollectionView!
-    var cell: SeatCells!
+    // MARK: Lifecycle
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -37,6 +31,11 @@ class TableViewCell: UITableViewCell, UICollectionViewDelegateFlowLayout {
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
     }
+
+    // MARK: Internal
+
+    var collectionView: UICollectionView!
+    var cell: SeatCells!
 
     override func layoutSubviews() {
         super.layoutSubviews()

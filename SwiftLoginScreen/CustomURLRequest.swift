@@ -1,15 +1,11 @@
-//
-//  CustomURLRequest.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 18/11/15.
-//
+// CustomURLRequest.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 
 extension URLRequest {
-    /// Helper for making a URL request.
-    /// JSON encodes parameters if any are provided. You may want to change this if your server uses, say, XML.
+    // Helper for making a URL request.
+    // JSON encodes parameters if any are provided. You may want to change this if your server uses, say, XML.
 
     static func requestWithURL(_ URL: Foundation.URL, method: String, queryParameters: [String: String]?, bodyParameters: NSDictionary?, headers: [String: String]?, cachePolicy _: NSURLRequest.CachePolicy?, timeoutInterval _: TimeInterval?, isCacheable _: String?, contentType: String?, bodyToPost: Data?) -> URLRequest {
         // If there's a querystring, append it to the URL.

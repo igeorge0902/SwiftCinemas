@@ -1,25 +1,38 @@
-//
-//  AdminUpdateVC.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 2020. 09. 30..
-//  Copyright © 2020. George Gaspar. All rights reserved.
-//
+// AdminUpdateVC.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 import UIKit
 
-var originalVenueName: NSAttributedString!
-class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIViewControllerTransitioningDelegate, UIPopoverPresentationControllerDelegate, HasAppServices {
-    var appServices: AppServices!
+nonisolated(unsafe) var originalVenueName: NSAttributedString!
+class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIViewControllerTransitioningDelegate, UIPopoverPresentationControllerDelegate, @MainActor HasAppServices {
+    // MARK: Lifecycle
+
     deinit {
         print(#function, "\(self)")
         adminUpdatePage = false
-        ScreenData_2.removeAll()
     }
 
+    // MARK: Internal
+
+    class HalfSizePresentationController: UIPresentationController {
+        override var frameOfPresentedViewInContainerView: CGRect {
+            CGRect(x: 0, y: 200, width: containerView!.bounds.width, height: containerView!.bounds.height)
+        }
+    }
+
+    var appServices: AppServices!
     var movieSelected = false
     // var originalVenueName: NSAttributedString!
+
+    var addMovie: String = ""
+    var addMovieId: String = ""
+    var addVenueId: String = ""
+    var addVenue: String = ""
+    var addScreeningID: String = ""
+    var addScreeningDate: String = ""
+    var addScreeningDateId: String = ""
+    var addCategory: String = ""
 
     @IBOutlet var movieName: UITextField!
     @IBOutlet var screeningDate: UITextField!
@@ -33,17 +46,6 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
     let datePicker = UIDatePicker()
 
     @IBOutlet var scrollView: UIScrollView!
-    private var topButtons: [UIButton] = []
-    private var saveButton: UIButton?
-    private var deleteButton: UIButton?
-    private var saveButtonHeightConstraint: NSLayoutConstraint?
-    private var deleteButtonHeightConstraint: NSLayoutConstraint?
-    private var hasBottomButtonConstraints = false
-    private var originalVenueTitle = ""
-    private var didConfigureScrollLayout = false
-    private var didBuildCardLayout = false
-    private weak var movieSelectButton: UIButton?
-    private weak var venueSelectButton: UIButton?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -67,7 +69,7 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
         styleSelectButtons()
         showDatePicker()
 
-        NotificationCenter.default.addObserver(self, selector: #selector(AdminUpdateVC.refresh), name: NSNotification.Name(rawValue: "movieSelected"), object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(AdminUpdateVC.refreshMovie), name: NSNotification.Name(rawValue: "movieSelected"), object: nil)
 
         NotificationCenter.default.addObserver(self, selector: #selector(AdminUpdateVC.refreshVenue), name: NSNotification.Name(rawValue: "newScreenVenueSelected"), object: nil)
 
@@ -92,94 +94,10 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
         updateScrollInsetsForBottomActions()
     }
 
-    private func ensureBottomButtons() {
-        if saveButton == nil {
-            let button = UIButton(type: .system)
-            button.setTitle("Save", for: .normal)
-            stylePrimaryButton(button, fontSize: 14)
-            button.translatesAutoresizingMaskIntoConstraints = false
-            button.addTarget(self, action: #selector(AdminUpdateVC.updateScreen), for: .touchUpInside)
-            view.addSubview(button)
-            saveButtonHeightConstraint = button.heightAnchor.constraint(equalToConstant: 38)
-            saveButton = button
-        }
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
 
-        if deleteButton == nil {
-            let button = UIButton(type: .system)
-            button.setTitle("Delete", for: .normal)
-            styleDestructiveButton(button, fontSize: 14)
-            button.translatesAutoresizingMaskIntoConstraints = false
-            button.addTarget(self, action: #selector(AdminUpdateVC.deleteScreen), for: .touchUpInside)
-            view.addSubview(button)
-            deleteButtonHeightConstraint = button.heightAnchor.constraint(equalToConstant: 38)
-            deleteButton = button
-        }
-
-        if let saveButton, let deleteButton, !hasBottomButtonConstraints {
-            NSLayoutConstraint.activate([
-                saveButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-                saveButton.trailingAnchor.constraint(equalTo: view.centerXAnchor, constant: -5),
-                deleteButton.leadingAnchor.constraint(equalTo: view.centerXAnchor, constant: 5),
-                deleteButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-                saveButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -10),
-                deleteButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -10),
-                saveButtonHeightConstraint ?? saveButton.heightAnchor.constraint(equalToConstant: 38),
-                deleteButtonHeightConstraint ?? deleteButton.heightAnchor.constraint(equalToConstant: 38),
-            ])
-            hasBottomButtonConstraints = true
-        }
-    }
-
-    private func updateScrollInsetsForBottomActions() {
-        let saveHeight = saveButtonHeightConstraint?.constant ?? 38
-        let deleteHeight = deleteButtonHeightConstraint?.constant ?? 38
-        let reserve = max(saveHeight, deleteHeight) + view.safeAreaInsets.bottom + 20
-        scrollView.contentInset.bottom = reserve
-        scrollView.verticalScrollIndicatorInsets.bottom = reserve
-    }
-
-    private func applyPrefillFromSelectionContext() {
-        let selected = selectedScreeningFromContext()
-
-        movieName.text = selected?.movie ?? addMovie
-        venueName.text = selected?.venue ?? addVenue
-        ScreeningID.text = selected?.screeningId ?? addScreeningID
-        screeningDate.text = selected?.date ?? addScreeningDate
-        category.text = selected?.category ?? addCategory
-
-        if let selected {
-            addMovie = selected.movie
-            addVenue = selected.venue
-            addScreeningID = selected.screeningId
-            addScreeningDate = selected.date
-            addScreeningDateId = selected.screeningDatesId
-            addMovieId = selected.movieId
-            addVenueId = selected.venueId
-            addCategory = selected.category
-        }
-
-        let originalVenue = selected?.venue ?? addVenue
-        let myTextAttribute = [convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 13.0)!]
-        originalVenueName = NSMutableAttributedString(string: originalVenue, attributes: convertToOptionalNSAttributedStringKeyDictionary(myTextAttribute))
-        originalVenueTitle = originalVenue
-        venueChanged.isHidden = true
-    }
-
-    private func selectedScreeningFromContext() -> AdminScreeningModel? {
-        let list = AdminDataManager.shared.screeningsForAdminUpdate
-        if !addScreeningDateId.isEmpty,
-           let match = list.first(where: { $0.screeningDatesId == addScreeningDateId }) {
-            return match
-        }
-        if !addScreeningID.isEmpty,
-           let match = list.first(where: { $0.screeningId == addScreeningID }) {
-            return match
-        }
-        if !addMovie.isEmpty,
-           let match = list.first(where: { $0.movie == addMovie }) {
-            return match
-        }
-        return list.first
+        AdminScreeningsDataManager.shared.screeningsForAdminUpdate = []
     }
 
     @objc func keyboardwillshow() {
@@ -205,11 +123,12 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
         category.text = ""
     }
 
-    @objc func refresh() {
+    @objc func refreshMovie() {
         applyPrefillFromSelectionContext()
     }
 
     @objc func refreshVenue() {
+        addVenue = (LocationsDataManager.shared.selectedLocation?.title)!
         let changed = !originalVenueTitle.isEmpty && addVenue != originalVenueTitle
         venueName.text = changed ? "\(addVenue) (changed)" : addVenue
         venueName.textColor = .systemGray
@@ -338,10 +257,10 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
 
         let testdata: [String: Any] = [
             "venue": venue as String,
-            "venueId": addVenueId as String,
-            "movieId": addMovieId as String,
+            "venueId": addVenueId,
+            "movieId": addMovieId,
             "date": date as String,
-            "ScreeningDatesId": addScreeningDateId as String,
+            "ScreeningDatesId": addScreeningDateId,
             "screenId": ScreeningID_ as String,
             "category": category_ as String,
         ]
@@ -364,7 +283,7 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
 
     @objc func deleteScreen() {
         let testdata: [String: Any] = [
-            "ScreeningDatesId": addScreeningDateId as String,
+            "ScreeningDatesId": addScreeningDateId as Any,
         ]
 
         Task { @MainActor [weak self] in
@@ -397,15 +316,96 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
         HalfSizePresentationController(presentedViewController: presented, presenting: presentingViewController)
     }
 
-    class HalfSizePresentationController: UIPresentationController {
-        override var frameOfPresentedViewInContainerView: CGRect {
-            CGRect(x: 0, y: 200, width: containerView!.bounds.width, height: containerView!.bounds.height)
-        }
-    }
-
     func adaptivePresentationStyle(for _: UIPresentationController) -> UIModalPresentationStyle {
         // Return no adaptive presentation style, use default presentation behaviour
         .none
+    }
+
+    // MARK: Private
+
+    private var topButtons: [UIButton] = []
+    private var saveButton: UIButton?
+    private var deleteButton: UIButton?
+    private var saveButtonHeightConstraint: NSLayoutConstraint?
+    private var deleteButtonHeightConstraint: NSLayoutConstraint?
+    private var hasBottomButtonConstraints = false
+    private var originalVenueTitle = ""
+    private var didConfigureScrollLayout = false
+    private var didBuildCardLayout = false
+    private weak var movieSelectButton: UIButton?
+    private weak var venueSelectButton: UIButton?
+
+    private func ensureBottomButtons() {
+        if saveButton == nil {
+            let button = UIButton(type: .system)
+            button.setTitle("Save", for: .normal)
+            stylePrimaryButton(button, fontSize: 14)
+            button.translatesAutoresizingMaskIntoConstraints = false
+            button.addTarget(self, action: #selector(AdminUpdateVC.updateScreen), for: .touchUpInside)
+            view.addSubview(button)
+            saveButtonHeightConstraint = button.heightAnchor.constraint(equalToConstant: 38)
+            saveButton = button
+        }
+
+        if deleteButton == nil {
+            let button = UIButton(type: .system)
+            button.setTitle("Delete", for: .normal)
+            styleDestructiveButton(button, fontSize: 14)
+            button.translatesAutoresizingMaskIntoConstraints = false
+            button.addTarget(self, action: #selector(AdminUpdateVC.deleteScreen), for: .touchUpInside)
+            view.addSubview(button)
+            deleteButtonHeightConstraint = button.heightAnchor.constraint(equalToConstant: 38)
+            deleteButton = button
+        }
+
+        if let saveButton, let deleteButton, !hasBottomButtonConstraints {
+            NSLayoutConstraint.activate([
+                saveButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+                saveButton.trailingAnchor.constraint(equalTo: view.centerXAnchor, constant: -5),
+                deleteButton.leadingAnchor.constraint(equalTo: view.centerXAnchor, constant: 5),
+                deleteButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+                saveButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -10),
+                deleteButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -10),
+                saveButtonHeightConstraint ?? saveButton.heightAnchor.constraint(equalToConstant: 38),
+                deleteButtonHeightConstraint ?? deleteButton.heightAnchor.constraint(equalToConstant: 38),
+            ])
+            hasBottomButtonConstraints = true
+        }
+    }
+
+    private func updateScrollInsetsForBottomActions() {
+        let saveHeight = saveButtonHeightConstraint?.constant ?? 38
+        let deleteHeight = deleteButtonHeightConstraint?.constant ?? 38
+        let reserve = max(saveHeight, deleteHeight) + view.safeAreaInsets.bottom + 20
+        scrollView.contentInset.bottom = reserve
+        scrollView.verticalScrollIndicatorInsets.bottom = reserve
+    }
+
+    private func applyPrefillFromSelectionContext() {
+        let selected = AdminDataManager.shared.selectedScreen
+
+        movieName.text = selected?.movie ?? addMovie
+        venueName.text = selected?.venue ?? addVenue
+        ScreeningID.text = selected?.screeningId ?? addScreeningID
+        screeningDate.text = selected?.date ?? addScreeningDate
+        category.text = selected?.category ?? addCategory
+
+        if let selected {
+            addMovie = selected.movie
+            addVenue = selected.venue
+            addScreeningID = selected.screeningId
+            addScreeningDate = selected.date
+            addScreeningDateId = selected.screeningDatesId
+            addMovieId = selected.movieId
+            addVenueId = selected.venueId
+            addCategory = selected.category
+        }
+
+        let originalVenue = selected?.venue ?? addVenue
+        let myTextAttribute = [convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 13.0)!]
+        originalVenueName = NSMutableAttributedString(string: originalVenue, attributes: convertToOptionalNSAttributedStringKeyDictionary(myTextAttribute))
+        originalVenueTitle = originalVenue
+        venueChanged.isHidden = true
     }
 
     private func styleSelectButtons() {
@@ -468,11 +468,10 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
 
         guard let movieSelectButton, let venueSelectButton else { return }
 
-        [movieName, venueName, screeningDate, ScreeningID, category, movieSelectButton, venueSelectButton]
-            .forEach {
-                $0.translatesAutoresizingMaskIntoConstraints = false
-                $0.removeFromSuperview()
-            }
+        for item in [movieName, venueName, screeningDate, ScreeningID, category, movieSelectButton, venueSelectButton] {
+            item!.translatesAutoresizingMaskIntoConstraints = false
+            item!.removeFromSuperview()
+        }
 
         // Remove any leftover storyboard labels/containers that can overlap at the top.
         scrollView.subviews.forEach { $0.removeFromSuperview() }
@@ -581,12 +580,12 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
         return result
     }
 
-    // Helper function inserted by Swift 4.2 migrator.
+    /// Helper function inserted by Swift 4.2 migrator.
     private func convertFromNSAttributedStringKey(_ input: NSAttributedString.Key) -> String {
         input.rawValue
     }
 
-    // Helper function inserted by Swift 4.2 migrator.
+    /// Helper function inserted by Swift 4.2 migrator.
     private func convertToOptionalNSAttributedStringKeyDictionary(_ input: [String: Any]?) -> [NSAttributedString.Key: Any]? {
         guard let input else { return nil }
         return Dictionary(uniqueKeysWithValues: input.map { key, value in (NSAttributedString.Key(rawValue: key), value) })

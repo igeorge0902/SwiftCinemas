@@ -1,18 +1,13 @@
-//
-//  GeoFence.swift
-//  SwiftCinemas
-//
-//  Created by Gaspar Gyorgy on 2025. 02. 22..
-//  Copyright © 2025. George Gaspar. All rights reserved.
-//
+// GeoFence.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import CoreLocation
 import UserNotifications
 
 class GeofenceManager: NSObject, CLLocationManagerDelegate {
-    private let locationManager = CLLocationManager()
+    // MARK: Internal
 
-    // Add a geofence at a specific location
+    /// Add a geofence at a specific location
     func addGeofence(latitude: Double, longitude: Double, radius: Double, identifier: String) {
         let region = CLCircularRegion(center: CLLocationCoordinate2D(latitude: latitude, longitude: longitude), radius: radius, identifier: identifier)
         region.notifyOnEntry = true
@@ -23,4 +18,8 @@ class GeofenceManager: NSObject, CLLocationManagerDelegate {
             print("Geofence added at \(latitude), \(longitude) with \(radius)m radius")
         }
     }
+
+    // MARK: Private
+
+    private let locationManager = CLLocationManager()
 }

@@ -1,13 +1,7 @@
-//
-//  Helpers.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 26/07/16.
-//  Copyright © 2016 George Gaspar. All rights reserved.
-//
+// Helpers.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import UIKit
-
 
 extension UIAlertController {
     static func popUp(title: String, message: String) {
@@ -42,4 +36,3 @@ extension Date {
         return dateFormatter.date(from: dateString)!
     }
 }
-

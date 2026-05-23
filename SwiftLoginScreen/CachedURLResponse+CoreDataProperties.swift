@@ -1,12 +1,5 @@
-//
-//  CachedURLResponse+CoreDataProperties.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 15/11/15.
-//
-//  Choose "Create NSManagedObject Subclass…" from the Core Data editor menu
-//  to delete and recreate this implementation file for your updated model.
-//
+// CachedURLResponse+CoreDataProperties.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import CoreData
 import Foundation

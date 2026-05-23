@@ -1,20 +1,11 @@
-//
-//  SeatCells.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 16/07/16.
-//  Copyright © 2016 George Gaspar. All rights reserved.
-//
+// SeatCells.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 import UIKit
 
 class SeatCells: UICollectionViewCell {
-    var textLabel: UILabel!
-    var priceLabel: UILabel!
-
-    var profileImage: UIImageView!
-    var text: UITextView!
+    // MARK: Lifecycle
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -31,7 +22,16 @@ class SeatCells: UICollectionViewCell {
         contentView.addSubview(priceLabel)
     }
 
+    @available(*, unavailable)
     required init?(coder _: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+
+    // MARK: Internal
+
+    var textLabel: UILabel!
+    var priceLabel: UILabel!
+
+    var profileImage: UIImageView!
+    var text: UITextView!
 }

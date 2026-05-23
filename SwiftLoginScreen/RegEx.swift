@@ -1,10 +1,5 @@
-//
-//  RegEx.swift
-//
-//
-//  Created by Gaspar Gyorgy on 05/09/15.
-//  Copyright (c) 2015 Gaspar Gyorgy. All rights reserved.
-//
+// RegEx.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 

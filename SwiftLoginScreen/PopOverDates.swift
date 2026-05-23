@@ -1,18 +1,16 @@
-//
-//  PopOverDates.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 09/09/16.
-//  Copyright © 2016 George Gaspar. All rights reserved.
-//
-//
+// PopOverDates.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import UIKit
 
 class PopOverDates: UIViewController, UIPickerViewDelegate, UIPickerViewDataSource {
+    // MARK: Lifecycle
+
     deinit {
         print(#function, "\(self)")
     }
+
+    // MARK: Internal
 
     lazy var pickerView: UIPickerView = .init()
 
@@ -39,6 +37,11 @@ class PopOverDates: UIViewController, UIPickerViewDelegate, UIPickerViewDataSour
 
     override func viewDidAppear(_: Bool) {
         super.viewDidAppear(true)
+    }
+
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Dispose of any resources that can be recreated.
     }
 
     func numberOfComponents(in _: UIPickerView) -> Int {
@@ -73,10 +76,4 @@ class PopOverDates: UIViewController, UIPickerViewDelegate, UIPickerViewDataSour
             DatesDataManager.shared.selectedScreeningDateId = selectedDate.screeningDateId
         }
     }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
 }
-

@@ -1,22 +1,27 @@
-//
-//  iOSCalenderVC.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 25/09/16.
-//  Copyright © 2016 George Gaspar. All rights reserved.
-//
+// iOSCalenderVC.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import EventKit
 import Foundation
 import UIKit
 
 class iOSCalendarVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UIViewControllerTransitioningDelegate {
+    // MARK: Lifecycle
+
     deinit {
         attendeesArray.removeAll()
         attendeesDictionary.removeAll()
         attendeesIndexDictionary.removeAll()
         print(#function, "\(self)")
         print(#function, "\(self)")
+    }
+
+    // MARK: Internal
+
+    class HalfSizePresentationController: UIPresentationController {
+        override var frameOfPresentedViewInContainerView: CGRect {
+            CGRect(x: 0, y: 200, width: containerView!.bounds.width, height: containerView!.bounds.height)
+        }
     }
 
     var tableView: UITableView?
@@ -60,6 +65,11 @@ class iOSCalendarVC: UIViewController, UITableViewDataSource, UITableViewDelegat
         super.viewDidAppear(true)
     }
 
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Dispose of any resources that can be recreated.
+    }
+
     @objc func navigateBack() {
         dismiss(animated: true, completion: nil)
     }
@@ -91,7 +101,7 @@ class iOSCalendarVC: UIViewController, UITableViewDataSource, UITableViewDelegat
         showAlert(movieName, message: "Event added to calendar: ".appending(String.formatDate(date: datE)))
     }
 
-    // Helper for showing an alert
+    /// Helper for showing an alert
     func showAlert(_ title: String, message: String) {
         let alert = UIAlertController(
             title: title,
@@ -148,16 +158,5 @@ class iOSCalendarVC: UIViewController, UITableViewDataSource, UITableViewDelegat
 
     func presentationController(forPresented presented: UIViewController, presenting _: UIViewController?, source _: UIViewController) -> UIPresentationController? {
         HalfSizePresentationController(presentedViewController: presented, presenting: presentingViewController)
-    }
-
-    class HalfSizePresentationController: UIPresentationController {
-        override var frameOfPresentedViewInContainerView: CGRect {
-            CGRect(x: 0, y: 200, width: containerView!.bounds.width, height: containerView!.bounds.height)
-        }
-    }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
 }

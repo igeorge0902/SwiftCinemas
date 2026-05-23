@@ -1,14 +1,10 @@
-//
-//  Responses.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 18/11/15.
-//
+// Responses.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 
-/// This wraps up all the response from a URL request together,
-/// so it'll be easy for you to add any helpers/fields as you need it.
+// This wraps up all the response from a URL request together,
+// so it'll be easy for you to add any helpers/fields as you need it.
 
 struct Responses {
     // Actual fields.
@@ -16,7 +12,7 @@ struct Responses {
     let response: URLResponse!
     var error: NSError?
 
-    // Helpers.
+    /// Helpers.
     var HTTPResponse: HTTPURLResponse! {
         response as? HTTPURLResponse
     }

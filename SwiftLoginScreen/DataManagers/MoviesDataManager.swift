@@ -1,24 +1,25 @@
-//
-//  MoviesDataManager.swift
-//  SwiftCinemas
-//
+// MoviesDataManager.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 import SwiftyJSON
 import UIKit
 
+@MainActor
 final class MoviesDataManager: SharedDataManager, HasAppServices {
-    static let shared = MoviesDataManager()
-    static var domain: String { "Movies" }
-
-    var appServices: AppServices!
-
-    private var mbooks: MbooksService { appServices.mbooks }
-    private var images: ImageResourceService { appServices.images }
-    private var rapidMovieDatabase: RapidMovieDatabaseService { appServices.rapidMovieDatabase }
-    private let realmCache: ResponseCache = RealmResponseCache()
+    // MARK: Lifecycle
 
     private init() {}
+
+    // MARK: Internal
+
+    static let shared = MoviesDataManager()
+
+    static var domain: String {
+        "Movies"
+    }
+
+    var appServices: AppServices!
 
     // MARK: - Navigation Context
 
@@ -139,6 +140,22 @@ final class MoviesDataManager: SharedDataManager, HasAppServices {
         }
     }
 
+    // MARK: Private
+
+    private let realmCache: ResponseCache = RealmResponseCache()
+
+    private var mbooks: MbooksService {
+        appServices.mbooks
+    }
+
+    private var images: ImageResourceService {
+        appServices.images
+    }
+
+    private var rapidMovieDatabase: RapidMovieDatabaseService {
+        appServices.rapidMovieDatabase
+    }
+
     private func persistMoviesToRealmCache(_ movies: [MovieDataModel]) async {
         await MainActor.run {
             for movie in movies {
@@ -170,12 +187,7 @@ struct MovieMetadata {
 }
 
 struct Movie {
-    let movieId: Int
-    let movieIdString: String
-    let name: String
-    let detail: String
-    let largePicture: String
-    let imdbUrl: String
+    // MARK: Lifecycle
 
     init(movieId: Int, movieIdString: String, name: String, detail: String, largePicture: String, imdbUrl: String) {
         self.movieId = movieId
@@ -190,7 +202,8 @@ struct Movie {
         let idStr = json["movieId"].string ?? json["movieId"].int.map(String.init)
         guard let idStr,
               let id = Int(idStr),
-              let name = json["name"].string else {
+              let name = json["name"].string
+        else {
             return nil
         }
 
@@ -204,14 +217,22 @@ struct Movie {
             ?? json["imdbUrl"].string
             ?? ""
 
-        self.movieId = id
-        self.movieIdString = idStr
+        movieId = id
+        movieIdString = idStr
         self.name = name
         self.detail = detail
-        self.largePicture = picture
-        self.imdbUrl = imdb
+        largePicture = picture
+        imdbUrl = imdb
     }
+
+    // MARK: Internal
+
+    let movieId: Int
+    let movieIdString: String
+    let name: String
+    let detail: String
+    let largePicture: String
+    let imdbUrl: String
 }
 
 typealias MovieDataModel = Movie
-

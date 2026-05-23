@@ -1,24 +1,23 @@
-//
-//  AttendeesVC.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 25/09/16.
-//  Copyright © 2016 George Gaspar. All rights reserved.
-//
+// AttendeesVC.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Contacts
 import Foundation
 import UIKit
 
-var attendeesArray: [NSDictionary] = .init()
-var attendeesIndexDictionary = [IndexPath: NSDictionary]()
-var attendeesDictionary = [Int: NSDictionary]()
+nonisolated(unsafe) var attendeesArray: [NSDictionary] = .init()
+nonisolated(unsafe) var attendeesIndexDictionary = [IndexPath: NSDictionary]()
+nonisolated(unsafe) var attendeesDictionary = [Int: NSDictionary]()
 class AttendeesVC: UIViewController, UITableViewDataSource, UITableViewDelegate {
-    var movieId: Int?
+    // MARK: Lifecycle
 
     deinit {
         print(#function, "\(self)")
     }
+
+    // MARK: Internal
+
+    var movieId: Int?
 
     var tableView: UITableView?
     var contacts = [CNContact]()
@@ -202,7 +201,6 @@ class AttendeesVC: UIViewController, UITableViewDataSource, UITableViewDelegate 
 
             // Create and add first option action
             let takePictureAction = UIAlertAction(title: homeEmailAddress, style: .default) { _ in
-
                 let attendees = ["email": homeEmailAddress, "displayName": currentContact.givenName, "responseStatus": "needsAction"] as [String: Any]
 
                 attendeesIndexDictionary.updateValue(attendees as NSDictionary, forKey: indexPath)
@@ -219,7 +217,6 @@ class AttendeesVC: UIViewController, UITableViewDataSource, UITableViewDelegate 
         }
 
         let removeAction = UIAlertAction(title: "Remove", style: .default) { _ in
-
             attendeesIndexDictionary.removeValue(forKey: indexPath)
             attendeesDictionary.removeValue(forKey: indexPath.row)
             cell?.detailTextLabel?.text = ""

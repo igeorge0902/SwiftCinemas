@@ -1,10 +1,5 @@
-//
-//  UserData.swift
-//  SwiftCinemas
-//
-//  Created by GYORGY GASPAR on 2026. 03. 29..
-//  Copyright © 2026 George Gaspar. All rights reserved.
-//
+// UserData.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 struct UserData: Decodable {
     let user: String

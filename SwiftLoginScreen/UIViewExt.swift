@@ -1,10 +1,5 @@
-//
-//  UIViewExt.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 2019. 11. 16..
-//  Copyright © 2019. George Gaspar. All rights reserved.
-//
+// UIViewExt.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 import UIKit

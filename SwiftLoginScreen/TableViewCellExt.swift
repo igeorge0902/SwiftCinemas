@@ -1,10 +1,5 @@
-//
-//  TableViewCellExt.swift
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 26/07/16.
-//  Copyright © 2016 George Gaspar. All rights reserved.
-//
+// TableViewCellExt.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import Foundation
 import UIKit

@@ -1,32 +1,29 @@
-//
-//  PopOver.swift (Crown Jewel)
-//  SwiftLoginScreen
-//
-//  Created by Gaspar Gyorgy on 13/07/16.
-//  Copyright © 2016 George Gaspar. All rights reserved.
-//
+// PopOver.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
 import UIKit
 
 // import FacebookCore
 // import Braintree
 
-var tickets = [String: String]()
+nonisolated(unsafe) var tickets = [String: String]()
 /**
  Legacy seat selection globals were replaced by manager-owned context.
  */
-var tableView_: UITableView?
+nonisolated(unsafe) var tableView_: UITableView?
 class PopOver: UIViewController, UITableViewDelegate, UITableViewDataSource, UIViewControllerTransitioningDelegate {
-    lazy var storedOffsets = [Int: CGFloat]()
-    lazy var label = UILabel()
+    // MARK: Lifecycle
 
     // lazy var braintreeClient = BTAPIClient(authorization: "sandbox_dpdzm97y_j3ndqpzrhy4gp2p7")!
 
     deinit {
-        SeatsDataManager.shared.selectedSeatIds = []
-        SeatsDataManager.shared.selectedSeatNumbers = []
         print(#function, "\(self)")
     }
+
+    // MARK: Internal
+
+    lazy var storedOffsets = [Int: CGFloat]()
+    lazy var label = UILabel()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -77,6 +74,24 @@ class PopOver: UIViewController, UITableViewDelegate, UITableViewDataSource, UIV
         view.addSubview(tableView_!)
     }
 
+    override func viewDidAppear(_: Bool) {
+        super.viewDidAppear(true)
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+
+        if isMovingFromParent {
+            SeatsDataManager.shared.selectedSeatIds = []
+            SeatsDataManager.shared.selectedSeatNumbers = []
+        }
+    }
+
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Dispose of any resources that can be recreated.
+    }
+
     func numberOfSections(in _: UITableView) -> Int {
         1
     }
@@ -122,10 +137,6 @@ class PopOver: UIViewController, UITableViewDelegate, UITableViewDataSource, UIV
         tableView_?.reloadData()
     }
 
-    override func viewDidAppear(_: Bool) {
-        super.viewDidAppear(true)
-    }
-
     @objc func openBasket() {
         if BasketDataManager.shared.basketItemsBySeatId.isEmpty {
             presentAlert(withTitle: "Warning!", message: "No free seat(s) to be reserved!")
@@ -140,11 +151,6 @@ class PopOver: UIViewController, UITableViewDelegate, UITableViewDataSource, UIV
 
             present(pvc, animated: true, completion: nil)
         }
-    }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
 }
 
@@ -239,7 +245,8 @@ extension PopOver: UICollectionViewDelegate, UICollectionViewDataSource {
                   let movieName = MoviesDataManager.shared.selectedMovie?.name,
                   let moviePicturePath = MoviesDataManager.shared.selectedMovie?.largePicture,
                   let venueName = VenuesDataManager.shared.selectedVenue?.name,
-                  let dateString = DatesDataManager.shared.selectedScreeningDateText?.split(separator: ".").first else {
+                  let dateString = DatesDataManager.shared.selectedScreeningDateText?.split(separator: ".").first
+            else {
                 return
             }
 
@@ -294,7 +301,7 @@ extension PopOver: UICollectionViewDelegate, UICollectionViewDataSource {
         return true
     }
 
-    // do something when user touches cell
+    /// do something when user touches cell
     func collectionView(_ collectionView: UICollectionView, didHighlightItemAt indexPath: IndexPath) {
         let cell = collectionView.cellForItem(at: indexPath)
 
@@ -302,7 +309,7 @@ extension PopOver: UICollectionViewDelegate, UICollectionViewDataSource {
         cell?.layer.borderWidth = 4
     }
 
-    // do something when user releases touch
+    /// do something when user releases touch
     func collectionView(_ collectionView: UICollectionView, didUnhighlightItemAt indexPath: IndexPath) {
         let cell = collectionView.cellForItem(at: indexPath)
 
@@ -310,12 +317,12 @@ extension PopOver: UICollectionViewDelegate, UICollectionViewDataSource {
     }
 }
 
-// Helper function inserted by Swift 4.2 migrator.
+/// Helper function inserted by Swift 4.2 migrator.
 private func convertFromNSAttributedStringKey(_ input: NSAttributedString.Key) -> String {
     input.rawValue
 }
 
-// Helper function inserted by Swift 4.2 migrator.
+/// Helper function inserted by Swift 4.2 migrator.
 private func convertToOptionalNSAttributedStringKeyDictionary(_ input: [String: Any]?) -> [NSAttributedString.Key: Any]? {
     guard let input else { return nil }
     return Dictionary(uniqueKeysWithValues: input.map { key, value in (NSAttributedString.Key(rawValue: key), value) })

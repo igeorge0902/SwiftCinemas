@@ -1,22 +1,26 @@
-//
-//  LocationsDataManager.swift
-//  SwiftCinemas
-//
+// LocationsDataManager.swift
+// Created by Gyorgy Gaspar on 2026.05.23.
 
-import Foundation
 import Contacts
+import Foundation
 import MapKit
 import SwiftyJSON
 
+@MainActor
 final class LocationsDataManager: SharedDataManager, HasAppServices {
-    static let shared = LocationsDataManager()
-    static var domain: String { "Locations" }
-
-    var appServices: AppServices!
-
-    private var mbooks: MbooksService { appServices.mbooks }
+    // MARK: Lifecycle
 
     private init() {}
+
+    // MARK: Internal
+
+    static let shared = LocationsDataManager()
+
+    static var domain: String {
+        "Locations"
+    }
+
+    var appServices: AppServices!
 
     // MARK: - Navigation Context
 
@@ -61,7 +65,7 @@ final class LocationsDataManager: SharedDataManager, HasAppServices {
         selectedLocation = location
         selectedLocationId = location.locationId
         if let title = location.title {
-            addVenue = title
+            //  _ = title
         }
 
         if let mapView = activeMapView {
@@ -132,22 +136,23 @@ final class LocationsDataManager: SharedDataManager, HasAppServices {
         }
 
         if let match = locationsToDisplay.first(where: { $0.locationId == locationId })
-            ?? locationsForMapPicker.first(where: { $0.locationId == locationId }) {
+            ?? locationsForMapPicker.first(where: { $0.locationId == locationId })
+        {
             return match.coordinate
         }
 
         return nil
     }
+
+    // MARK: Private
+
+    private var mbooks: MbooksService {
+        appServices.mbooks
+    }
 }
 
 final class Location: NSObject, MKAnnotation {
-    let locationId: Int
-    let title: String?
-    let address: String
-    let formattedAddress: String
-    let capacity: Int?
-    let coordinate: CLLocationCoordinate2D
-    let thumbnail: String?
+    // MARK: Lifecycle
 
     init?(json: JSON) {
         let id = json["locationId"].int ?? Int(json["locationId"].string ?? "")
@@ -161,24 +166,39 @@ final class Location: NSObject, MKAnnotation {
         guard let id,
               let name,
               let latitude,
-              let longitude else {
+              let longitude
+        else {
             return nil
         }
 
-        self.locationId = id
-        self.title = name
+        locationId = id
+        title = name
         self.address = address
-        self.formattedAddress = formatted
+        formattedAddress = formatted
         self.capacity = capacity
-        self.coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-        self.thumbnail = json["thumbnail"].string ?? "No picture"
+        coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+        thumbnail = json["thumbnail"].string ?? "No picture"
 
         super.init()
     }
 
-    @objc dynamic var subtitle: String? { address }
+    // MARK: Internal
 
-    func pinColor() -> MKPinAnnotationColor { .red }
+    let locationId: Int
+    let title: String?
+    let address: String
+    let formattedAddress: String
+    let capacity: Int?
+    let coordinate: CLLocationCoordinate2D
+    let thumbnail: String?
+
+    @objc dynamic var subtitle: String? {
+        address
+    }
+
+    func pinColor() -> MKPinAnnotationColor {
+        .red
+    }
 
     func mapItem() -> MKMapItem {
         let placemark = MKPlacemark(coordinate: coordinate,
@@ -190,4 +210,3 @@ final class Location: NSObject, MKAnnotation {
 }
 
 typealias LocationModel = Location
-
