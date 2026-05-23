@@ -1,0 +1,19 @@
+SwiftLoginScreen/MoviesVC.swift
+  s_b5e0f3d03996fd::t_5ac4b1bf400200 92,94-96,105-112,290,296-301,306,312,317
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "31aa3fdb3e572315e3219473e76b98411bb960eb",
+  "prompts": {},
+  "sessions": {
+    "s_b5e0f3d03996fd": {
+      "agent_id": {
+        "tool": "github-copilot-jetbrains",
+        "id": "1779356573017",
+        "model": "unknown"
+      },
+      "human_author": "GASPAR, GYORGY <gyorgy.gaspar@lhsystems.com>"
+    }
+  }
+}
