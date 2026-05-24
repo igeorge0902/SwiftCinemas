@@ -1,15 +1,24 @@
-// CryptoJS.swift
-// Created by Gyorgy Gaspar on 2026.05.23.
+//
+//  CryptoJS.swift
+//
+//  Created by Emartin on 2015-08-25.
+//  Copyright (c) 2015 Emartin. All rights reserved.
+//
 
 import Foundation
 import JavaScriptCore
 
+
 @MainActor
 open class CryptoJS {
-    // MARK: Open
+
+    let cryptoJScontext = JSContext()
 
     open class AES: CryptoJS {
-        // MARK: Lifecycle
+
+        fileprivate var encryptFunction: JSValue!
+        fileprivate var decryptFunction: JSValue!
+        fileprivate var encryptFunction_: JSValue!
 
         override init() {
             super.init()
@@ -18,8 +27,9 @@ open class CryptoJS {
             let cryptoJSpath = Bundle.main.path(forResource: "aes", ofType: "js")
             let cryptoJSpathPBKDF2 = Bundle.main.path(forResource: "pbkdf2", ofType: "js")
 
-            if cryptoJSpath != nil, cryptoJSpathPBKDF2 != nil {
-                // let cryptoJS = String(contentsOfFile: cryptoJSpath!, encoding:NSUTF8StringEncoding, error: nil)
+
+            if(( cryptoJSpath ) != nil && ( cryptoJSpathPBKDF2 ) != nil){
+                //let cryptoJS = String(contentsOfFile: cryptoJSpath!, encoding:NSUTF8StringEncoding, error: nil)
                 do {
                     let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding: String.Encoding.utf8)
                     let cryptoJSPBKDF2 = try String(contentsOfFile: cryptoJSpathPBKDF2!, encoding: String.Encoding.utf8)
@@ -27,67 +37,73 @@ open class CryptoJS {
                     print("Loaded aes.js")
                     print("Loaded pbkdf2.js")
 
+
                     // Evaluate .js
                     _ = cryptoJScontext?.evaluateScript(cryptoJS)
                     _ = cryptoJScontext?.evaluateScript(cryptoJSPBKDF2)
+
 
                     // Reference functions
                     encryptFunction = cryptoJScontext?.objectForKeyedSubscript("encrypt")
                     decryptFunction = cryptoJScontext?.objectForKeyedSubscript("decrypt")
                     encryptFunction_ = cryptoJScontext?.objectForKeyedSubscript("encrypt_")
-                } catch {
+
+
+
+                }
+                catch {
                     print("Unable to load aes.js")
                 }
-            } else {
+            }else{
                 print("Unable to find aes.js")
             }
+
         }
 
-        // MARK: Open
 
-        open func encrypt_(_ keySize: Int, iterationCount: Int, salt: String, iv: String, passPhrase: String, plainText: String) -> String {
-            cryptoJScontext?.exceptionHandler = { _, exception in
+        open func encrypt_(_ keySize: Int, iterationCount: Int, salt: String,iv: String, passPhrase: String, plainText: String)->String {
+
+
+            cryptoJScontext?.exceptionHandler = { cryptoJScontext, exception in
                 print("AES JS RunTime Error: \(exception!)")
             }
 
             return "\(encryptFunction_.call(withArguments: [keySize, iterationCount, salt, iv, passPhrase, plainText])!)"
+
         }
 
-        open func encrypt(_ secretMessage: String, secretKey: String, options: AnyObject? = nil) -> String {
+        open func encrypt(_ secretMessage: String,secretKey: String, options: AnyObject?=nil)->String {
             if let unwrappedOptions: AnyObject = options {
                 return "\(encryptFunction.call(withArguments: [secretMessage, secretKey, unwrappedOptions])!)"
-            } else {
+            }else{
                 return "\(encryptFunction.call(withArguments: [secretMessage, secretKey])!)"
             }
         }
 
-        open func decrypt(_ encryptedMessage: String, secretKey: String, options: AnyObject? = nil) -> String {
+        open func decrypt(_ encryptedMessage: String,secretKey: String, options: AnyObject?=nil)->String {
             if let unwrappedOptions: AnyObject = options {
                 return "\(decryptFunction.call(withArguments: [encryptedMessage, secretKey, unwrappedOptions])!)"
-            } else {
+            }else{
                 return "\(decryptFunction.call(withArguments: [encryptedMessage, secretKey])!)"
             }
         }
 
-        // MARK: Fileprivate
-
-        fileprivate var encryptFunction: JSValue!
-        fileprivate var decryptFunction: JSValue!
-        fileprivate var encryptFunction_: JSValue!
     }
 
-    open class MD5: CryptoJS {
-        // MARK: Lifecycle
+    open class MD5: CryptoJS{
 
-        override init() {
+        fileprivate var MD5: JSValue!
+
+        override init(){
             super.init()
 
             // Retrieve the content of md5.js
             let cryptoJSpath = Bundle.main.path(forResource: "md5", ofType: "js")
 
-            if cryptoJSpath != nil {
+            if(( cryptoJSpath ) != nil){
+
                 do {
-                    let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding: String.Encoding.utf8)
+                    let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding:String.Encoding.utf8)
 
                     print("Loaded md5.js")
 
@@ -95,39 +111,38 @@ open class CryptoJS {
                     _ = cryptoJScontext?.evaluateScript(cryptoJS)
 
                     // Reference functions
-                    MD5 = cryptoJScontext?.objectForKeyedSubscript("MD5")
-                } catch {
+                    self.MD5 = cryptoJScontext?.objectForKeyedSubscript("MD5")
+                }
+                catch {
                     print("Unable to load md5.js")
                 }
 
-            } else {
+            }else{
                 print("Unable to find md5.js")
             }
+
         }
 
-        // MARK: Open
-
-        open func hash(_ string: String) -> String {
-            return "\(MD5.call(withArguments: [string])!)"
+        open func hash(_ string: String)->String {
+            return "\(self.MD5.call(withArguments: [string])!)"
         }
 
-        // MARK: Fileprivate
-
-        fileprivate var MD5: JSValue!
     }
 
-    open class SHA1: CryptoJS {
-        // MARK: Lifecycle
+    open class SHA1: CryptoJS{
 
-        override init() {
+        fileprivate var SHA1: JSValue!
+
+        override init(){
             super.init()
 
             // Retrieve the content of sha1.js
             let cryptoJSpath = Bundle.main.path(forResource: "sha1", ofType: "js")
 
-            if cryptoJSpath != nil {
+            if(( cryptoJSpath ) != nil){
+
                 do {
-                    let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding: String.Encoding.utf8)
+                    let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding:String.Encoding.utf8)
 
                     print("Loaded sha1.js")
 
@@ -135,39 +150,38 @@ open class CryptoJS {
                     _ = cryptoJScontext?.evaluateScript(cryptoJS)
 
                     // Reference functions
-                    SHA1 = cryptoJScontext?.objectForKeyedSubscript("SHA1")
-                } catch {
+                    self.SHA1 = cryptoJScontext?.objectForKeyedSubscript("SHA1")
+                }
+                catch {
                     print("Unable to load sha1.js")
                 }
 
-            } else {
+            }else{
                 print("Unable to find sha1.js")
             }
+
         }
 
-        // MARK: Open
-
-        open func hash(_ string: String) -> String {
-            return "\(SHA1.call(withArguments: [string])!)"
+        open func hash(_ string: String)->String {
+            return "\(self.SHA1.call(withArguments: [string])!)"
         }
 
-        // MARK: Fileprivate
-
-        fileprivate var SHA1: JSValue!
     }
 
-    open class SHA224: CryptoJS {
-        // MARK: Lifecycle
+    open class SHA224: CryptoJS{
 
-        override init() {
+        fileprivate var SHA224: JSValue!
+
+        override init(){
             super.init()
 
             // Retrieve the content of sha224.js
             let cryptoJSpath = Bundle.main.path(forResource: "sha224", ofType: "js")
 
-            if cryptoJSpath != nil {
+            if(( cryptoJSpath ) != nil){
+
                 do {
-                    let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding: String.Encoding.utf8)
+                    let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding:String.Encoding.utf8)
 
                     print("Loaded sha224.js")
 
@@ -175,39 +189,38 @@ open class CryptoJS {
                     _ = cryptoJScontext?.evaluateScript(cryptoJS)
 
                     // Reference functions
-                    SHA224 = cryptoJScontext?.objectForKeyedSubscript("SHA224")
-                } catch {
+                    self.SHA224 = cryptoJScontext?.objectForKeyedSubscript("SHA224")
+                }
+                catch {
                     print("Unable to load sha224.js")
                 }
 
-            } else {
+            }else{
                 print("Unable to find sha224.js")
             }
+
         }
 
-        // MARK: Open
-
-        open func hash(_ string: String) -> String {
-            return "\(SHA224.call(withArguments: [string])!)"
+        open func hash(_ string: String)->String {
+            return "\(self.SHA224.call(withArguments: [string])!)"
         }
 
-        // MARK: Fileprivate
-
-        fileprivate var SHA224: JSValue!
     }
 
-    open class SHA256: CryptoJS {
-        // MARK: Lifecycle
+    open class SHA256: CryptoJS{
 
-        override init() {
+        fileprivate var SHA256: JSValue!
+
+        override init(){
             super.init()
 
             // Retrieve the content of sha256.js
             let cryptoJSpath = Bundle.main.path(forResource: "sha256", ofType: "js")
 
-            if cryptoJSpath != nil {
+            if(( cryptoJSpath ) != nil){
+
                 do {
-                    let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding: String.Encoding.utf8)
+                    let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding:String.Encoding.utf8)
 
                     print("Loaded sha256.js")
 
@@ -215,39 +228,38 @@ open class CryptoJS {
                     _ = cryptoJScontext?.evaluateScript(cryptoJS)
 
                     // Reference functions
-                    SHA256 = cryptoJScontext?.objectForKeyedSubscript("SHA256")
-                } catch {
+                    self.SHA256 = cryptoJScontext?.objectForKeyedSubscript("SHA256")
+                }
+                catch {
                     print("Unable to load sha256.js")
                 }
 
-            } else {
+            }else{
                 print("Unable to find sha256.js")
             }
+
         }
 
-        // MARK: Open
-
-        open func hash(_ string: String) -> String {
-            return "\(SHA256.call(withArguments: [string])!)"
+        open func hash(_ string: String)->String {
+            return "\(self.SHA256.call(withArguments: [string])!)"
         }
 
-        // MARK: Fileprivate
-
-        fileprivate var SHA256: JSValue!
     }
 
-    open class SHA384: CryptoJS {
-        // MARK: Lifecycle
+    open class SHA384: CryptoJS{
 
-        override init() {
+        fileprivate var SHA384: JSValue!
+
+        override init(){
             super.init()
 
             // Retrieve the content of sha384.js
             let cryptoJSpath = Bundle.main.path(forResource: "sha384", ofType: "js")
 
-            if cryptoJSpath != nil {
+            if(( cryptoJSpath ) != nil){
+
                 do {
-                    let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding: String.Encoding.utf8)
+                    let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding:String.Encoding.utf8)
 
                     print("Loaded sha384.js")
 
@@ -255,39 +267,37 @@ open class CryptoJS {
                     _ = cryptoJScontext?.evaluateScript(cryptoJS)
 
                     // Reference functions
-                    SHA384 = cryptoJScontext?.objectForKeyedSubscript("SHA384")
-                } catch {
+                    self.SHA384 = cryptoJScontext?.objectForKeyedSubscript("SHA384")
+                }
+                catch {
                     print("Unable to load sha384.js")
                 }
 
-            } else {
+            }else{
                 print("Unable to find sha384.js")
             }
+
         }
 
-        // MARK: Open
-
-        open func hash(_ string: String) -> String {
-            return "\(SHA384.call(withArguments: [string])!)"
+        open func hash(_ string: String)->String {
+            return "\(self.SHA384.call(withArguments: [string])!)"
         }
 
-        // MARK: Fileprivate
-
-        fileprivate var SHA384: JSValue!
     }
 
-    open class SHA512: CryptoJS {
-        // MARK: Lifecycle
+    open class SHA512: CryptoJS{
 
-        override init() {
+        fileprivate var SHA512: JSValue!
+
+        override init(){
             super.init()
 
             // Retrieve the content of sha512.js
             let cryptoJSpath = Bundle.main.path(forResource: "sha512", ofType: "js")
 
-            if cryptoJSpath != nil {
+            if(( cryptoJSpath ) != nil){
                 do {
-                    let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding: String.Encoding.utf8)
+                    let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding:String.Encoding.utf8)
 
                     print("Loaded sha512.js")
 
@@ -295,39 +305,38 @@ open class CryptoJS {
                     _ = cryptoJScontext?.evaluateScript(cryptoJS)
 
                     // Reference functions
-                    SHA512 = cryptoJScontext?.objectForKeyedSubscript("SHA512")
-                } catch {
+                    self.SHA512 = cryptoJScontext?.objectForKeyedSubscript("SHA512")
+                }
+                catch {
                     print("Unable to load sha512.js")
                 }
 
-            } else {
+            }else{
                 print("Unable to find sha512.js")
             }
+
         }
 
-        // MARK: Open
-
-        open func hash(_ string: String) -> String {
-            return "\(SHA512.call(withArguments: [string])!)"
+        open func hash(_ string: String)->String {
+            return "\(self.SHA512.call(withArguments: [string])!)"
         }
 
-        // MARK: Fileprivate
-
-        fileprivate var SHA512: JSValue!
     }
 
-    open class SHA3: CryptoJS {
-        // MARK: Lifecycle
+    open class SHA3: CryptoJS{
 
-        override init() {
+        fileprivate var SHA3: JSValue!
+
+        override init(){
             super.init()
 
             // Retrieve the content of sha3.js
             let cryptoJSpath = Bundle.main.path(forResource: "sha3", ofType: "js")
 
-            if cryptoJSpath != nil {
+            if(( cryptoJSpath ) != nil){
+
                 do {
-                    let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding: String.Encoding.utf8)
+                    let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding:String.Encoding.utf8)
 
                     print("Loaded sha3.js")
 
@@ -335,40 +344,41 @@ open class CryptoJS {
                     _ = cryptoJScontext?.evaluateScript(cryptoJS)
 
                     // Reference functions
-                    SHA3 = cryptoJScontext?.objectForKeyedSubscript("SHA3")
-                } catch {
+                    self.SHA3 = cryptoJScontext?.objectForKeyedSubscript("SHA3")
+                }
+                catch {
                     print("Unable to load sha3.js")
                 }
             }
+
         }
 
-        // MARK: Open
-
-        open func hash(_ string: String, outputLength: Int? = nil) -> String {
+        open func hash(_ string: String,outputLength: Int?=nil)->String {
             if let unwrappedOutputLength = outputLength {
-                return "\(SHA3.call(withArguments: [string, unwrappedOutputLength])!)"
+                return "\(self.SHA3.call(withArguments: [string,unwrappedOutputLength])!)"
             } else {
-                return "\(SHA3.call(withArguments: [string])!)"
+                return "\(self.SHA3.call(withArguments: [string])!)"
             }
         }
 
-        // MARK: Fileprivate
-
-        fileprivate var SHA3: JSValue!
     }
 
-    open class hmacSHA512: CryptoJS {
-        // MARK: Lifecycle
+    open class hmacSHA512: CryptoJS{
 
-        override init() {
+        fileprivate var hmacSHA512: JSValue!
+        fileprivate var hmacSHA512_: JSValue!
+
+
+        override init(){
             super.init()
 
             // Retrieve the content of hmac-sha512.js
             let cryptoJSpath = Bundle.main.path(forResource: "hmac-sha512", ofType: "js")
 
-            if cryptoJSpath != nil {
+            if(( cryptoJSpath ) != nil){
+
                 do {
-                    let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding: String.Encoding.utf8)
+                    let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding:String.Encoding.utf8)
 
                     print("Loaded hmac-sha512.js")
 
@@ -376,50 +386,54 @@ open class CryptoJS {
                     _ = cryptoJScontext?.evaluateScript(cryptoJS)
 
                     // Reference functions
-                    hmacSHA512 = cryptoJScontext?.objectForKeyedSubscript("HmacSHA512")
-                    hmacSHA512_ = cryptoJScontext?.objectForKeyedSubscript("HmacSHA512_")
-                } catch {
+                    self.hmacSHA512 = cryptoJScontext?.objectForKeyedSubscript("HmacSHA512")
+                    self.hmacSHA512_ = cryptoJScontext?.objectForKeyedSubscript("HmacSHA512_")
+
+                }
+                catch {
                     print("Unable to load hmac-sha512.js")
                 }
             }
+
         }
 
-        // MARK: Open
+        open func hmac(_ string: String, secret: String)->String {
 
-        open func hmac(_ string: String, secret: String) -> String {
-            cryptoJScontext?.exceptionHandler = { _, exception in
+
+            cryptoJScontext?.exceptionHandler = { cryptoJScontext, exception in
                 print("hmacSHA512 JS RunTime Error: \(exception!)")
             }
 
-            return "\(hmacSHA512.call(withArguments: [string, secret])!)"
+            return "\(self.hmacSHA512.call(withArguments: [string, secret])!)"
         }
 
-        open func hmac_(_ string: String, secret: String) -> String {
-            cryptoJScontext?.exceptionHandler = { _, exception in
+        open func hmac_(_ string: String, secret: String)->String {
+
+
+            cryptoJScontext?.exceptionHandler = { cryptoJScontext, exception in
                 print("hmacSHA512_ JS RunTime Error: \(exception!)")
             }
 
             return "\(hmacSHA512_.call(withArguments: [string, secret])!)"
         }
 
-        // MARK: Fileprivate
-
-        fileprivate var hmacSHA512: JSValue!
-        fileprivate var hmacSHA512_: JSValue!
     }
 
-    open class RIPEMD160: CryptoJS {
-        // MARK: Lifecycle
 
-        override init() {
+    open class RIPEMD160: CryptoJS{
+
+        fileprivate var RIPEMD160: JSValue!
+
+        override init(){
             super.init()
 
             // Retrieve the content of ripemd160.js
             let cryptoJSpath = Bundle.main.path(forResource: "ripemd160", ofType: "js")
 
-            if cryptoJSpath != nil {
+            if(( cryptoJSpath ) != nil){
+
                 do {
-                    let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding: String.Encoding.utf8)
+                    let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding:String.Encoding.utf8)
 
                     print("Loaded ripemd160.js")
 
@@ -427,139 +441,143 @@ open class CryptoJS {
                     _ = cryptoJScontext?.evaluateScript(cryptoJS)
 
                     // Reference functions
-                    RIPEMD160 = cryptoJScontext?.objectForKeyedSubscript("RIPEMD160")
-                } catch {
+                    self.RIPEMD160 = cryptoJScontext?.objectForKeyedSubscript("RIPEMD160")
+                }
+                catch {
                     print("Unable to load ripemd160.js")
                 }
+
             }
+
         }
 
-        // MARK: Open
-
-        open func hash(_ string: String, outputLength: Int? = nil) -> String {
+        open func hash(_ string: String,outputLength: Int?=nil)->String {
             if let unwrappedOutputLength = outputLength {
-                return "\(RIPEMD160.call(withArguments: [string, unwrappedOutputLength])!)"
+                return "\(self.RIPEMD160.call(withArguments: [string,unwrappedOutputLength])!)"
             } else {
-                return "\(RIPEMD160.call(withArguments: [string])!)"
+                return "\(self.RIPEMD160.call(withArguments: [string])!)"
             }
         }
 
-        // MARK: Fileprivate
-
-        fileprivate var RIPEMD160: JSValue!
     }
 
-    open class mode: CryptoJS {
-        // MARK: Open
+    open class mode: CryptoJS{
 
-        open class CFB: CryptoJS {
-            override init() {
+        var CFB:String = "CFB"
+        var CTR:String = "CTR"
+        var OFB:String = "OFB"
+        var ECB:String = "ECB"
+
+        open class CFB: CryptoJS{
+            override init(){
                 super.init()
                 // Retrieve the content of the script
                 let cryptoJSpath = Bundle.main.path(forResource: "mode-\(CryptoJS.mode().CFB.lowercased())", ofType: "js")
 
-                if cryptoJSpath != nil {
+                if(( cryptoJSpath ) != nil){
                     do {
-                        let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding: String.Encoding.utf8)
+                        let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding:String.Encoding.utf8)
                         print("Loaded mode-\(CryptoJS.mode().CFB).js")
                         // Evaluate script
                         _ = cryptoJScontext?.evaluateScript(cryptoJS)
-                    } catch {
+                    }
+                    catch {
                         print("Unable to load mode-\(CryptoJS.mode().CFB).js")
                     }
                 }
             }
         }
-
-        open class CTR: CryptoJS {
-            override init() {
+        open class CTR: CryptoJS{
+            override init(){
                 super.init()
                 // Retrieve the content of the script
                 let cryptoJSpath = Bundle.main.path(forResource: "mode-\(CryptoJS.mode().CTR.lowercased())", ofType: "js")
 
-                if cryptoJSpath != nil {
+                if(( cryptoJSpath ) != nil){
                     do {
-                        let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding: String.Encoding.utf8)
+                        let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding:String.Encoding.utf8)
                         print("Loaded mode-\(CryptoJS.mode().CTR).js")
                         // Evaluate script
                         _ = cryptoJScontext?.evaluateScript(cryptoJS)
-                    } catch {
+                    }
+                    catch {
                         print("Unable to load mode-\(CryptoJS.mode().CTR).js")
                     }
                 }
             }
         }
 
-        open class OFB: CryptoJS {
-            override init() {
+        open class OFB: CryptoJS{
+            override init(){
                 super.init()
                 // Retrieve the content of the script
                 let cryptoJSpath = Bundle.main.path(forResource: "mode-\(CryptoJS.mode().OFB.lowercased())", ofType: "js")
 
-                if cryptoJSpath != nil {
+                if(( cryptoJSpath ) != nil){
                     do {
-                        let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding: String.Encoding.utf8)
+                        let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding:String.Encoding.utf8)
                         print("Loaded mode-\(CryptoJS.mode().OFB).js")
                         // Evaluate script
                         _ = cryptoJScontext?.evaluateScript(cryptoJS)
-                    } catch {
+                    }
+                    catch {
                         print("Unable to load mode-\(CryptoJS.mode().OFB).js")
                     }
                 }
             }
         }
 
-        open class ECB: CryptoJS {
-            override init() {
+        open class ECB: CryptoJS{
+            override init(){
                 super.init()
                 // Retrieve the content of the script
                 let cryptoJSpath = Bundle.main.path(forResource: "mode-\(CryptoJS.mode().ECB.lowercased())", ofType: "js")
 
-                if cryptoJSpath != nil {
+                if(( cryptoJSpath ) != nil){
                     do {
-                        let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding: String.Encoding.utf8)
+                        let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding:String.Encoding.utf8)
                         print("Loaded mode-\(CryptoJS.mode().ECB).js")
                         // Evaluate script
                         _ = cryptoJScontext?.evaluateScript(cryptoJS)
-                    } catch {
+                    }
+                    catch {
                         print("Unable to load mode-\(CryptoJS.mode().ECB).js")
                     }
                 }
             }
         }
-
-        // MARK: Internal
-
-        var CFB: String = "CFB"
-        var CTR: String = "CTR"
-        var OFB: String = "OFB"
-        var ECB: String = "ECB"
     }
 
-    open class pad: CryptoJS {
-        // MARK: Open
+    open class pad: CryptoJS{
 
-        open class AnsiX923: CryptoJS {
-            override init() {
+        var AnsiX923:String = "AnsiX923"
+        var Iso97971:String = "Iso97971"
+        var Iso10126:String = "Iso10126"
+        var ZeroPadding:String = "ZeroPadding"
+        var NoPadding:String = "NoPadding"
+
+        open class AnsiX923: CryptoJS{
+            override init(){
                 super.init()
                 // Retrieve the content of the script
                 let cryptoJSpath = Bundle.main.path(forResource: "pad-\(CryptoJS.pad().AnsiX923.lowercased())", ofType: "js")
 
-                if cryptoJSpath != nil {
+                if(( cryptoJSpath ) != nil){
                     do {
-                        let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding: String.Encoding.utf8)
+                        let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding:String.Encoding.utf8)
                         print("Loaded pad-\(CryptoJS.pad().AnsiX923).js")
                         // Evaluate script
                         _ = cryptoJScontext?.evaluateScript(cryptoJS)
-                    } catch {
+                    }
+                    catch {
                         print("Unable to load pad-\(CryptoJS.pad().AnsiX923).js")
                     }
                 }
             }
         }
 
-        open class Iso97971: CryptoJS {
-            override init() {
+        open class Iso97971: CryptoJS{
+            override init(){
                 super.init()
 
                 // Load dependencies
@@ -568,86 +586,79 @@ open class CryptoJS {
                 // Retrieve the content of the script
                 let cryptoJSpath = Bundle.main.path(forResource: "pad-\(CryptoJS.pad().Iso97971.lowercased())", ofType: "js")
 
-                if cryptoJSpath != nil {
+                if(( cryptoJSpath ) != nil){
                     do {
-                        let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding: String.Encoding.utf8)
+                        let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding:String.Encoding.utf8)
                         print("Loaded pad-\(CryptoJS.pad().Iso97971).js")
                         // Evaluate script
                         _ = cryptoJScontext?.evaluateScript(cryptoJS)
-                    } catch {
+                    }
+                    catch {
                         print("Unable to load pad-\(CryptoJS.pad().Iso97971).js")
                     }
                 }
             }
         }
 
-        open class Iso10126: CryptoJS {
-            override init() {
+        open class Iso10126: CryptoJS{
+            override init(){
                 super.init()
                 // Retrieve the content of the script
                 let cryptoJSpath = Bundle.main.path(forResource: "pad-\(CryptoJS.pad().Iso10126.lowercased())", ofType: "js")
 
-                if cryptoJSpath != nil {
+                if(( cryptoJSpath ) != nil){
                     do {
-                        let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding: String.Encoding.utf8)
+                        let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding:String.Encoding.utf8)
                         print("Loaded pad-\(CryptoJS.pad().Iso10126).js")
                         // Evaluate script
                         _ = cryptoJScontext?.evaluateScript(cryptoJS)
-                    } catch {
+                    }
+                    catch {
                         print("Unable to load pad-\(CryptoJS.pad().Iso10126).js")
                     }
                 }
             }
         }
 
-        open class ZeroPadding: CryptoJS {
-            override init() {
+        open class ZeroPadding: CryptoJS{
+            override init(){
                 super.init()
                 // Retrieve the content of the script
                 let cryptoJSpath = Bundle.main.path(forResource: "pad-\(CryptoJS.pad().ZeroPadding.lowercased())", ofType: "js")
 
-                if cryptoJSpath != nil {
+                if(( cryptoJSpath ) != nil){
                     do {
-                        let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding: String.Encoding.utf8)
+                        let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding:String.Encoding.utf8)
                         print("Loaded pad-\(CryptoJS.pad().ZeroPadding).js")
                         // Evaluate script
                         _ = cryptoJScontext?.evaluateScript(cryptoJS)
-                    } catch {
+                    }
+                    catch {
                         print("Unable to load pad-\(CryptoJS.pad().ZeroPadding).js")
                     }
                 }
             }
         }
 
-        open class NoPadding: CryptoJS {
-            override init() {
+        open class NoPadding: CryptoJS{
+            override init(){
                 super.init()
                 // Retrieve the content of the script
                 let cryptoJSpath = Bundle.main.path(forResource: "pad-\(CryptoJS.pad().NoPadding.lowercased())", ofType: "js")
 
-                if cryptoJSpath != nil {
+                if(( cryptoJSpath ) != nil){
                     do {
-                        let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding: String.Encoding.utf8)
+                        let cryptoJS = try String(contentsOfFile: cryptoJSpath!, encoding:String.Encoding.utf8)
                         print("Loaded pad-\(CryptoJS.pad().NoPadding).js")
                         // Evaluate script
                         _ = cryptoJScontext?.evaluateScript(cryptoJS)
-                    } catch {
+                    }
+                    catch {
                         print("Unable to load pad-\(CryptoJS.pad().NoPadding).js")
                     }
                 }
             }
         }
-
-        // MARK: Internal
-
-        var AnsiX923: String = "AnsiX923"
-        var Iso97971: String = "Iso97971"
-        var Iso10126: String = "Iso10126"
-        var ZeroPadding: String = "ZeroPadding"
-        var NoPadding: String = "NoPadding"
     }
 
-    // MARK: Internal
-
-    let cryptoJScontext = JSContext()
 }

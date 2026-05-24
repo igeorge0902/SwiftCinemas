@@ -80,7 +80,7 @@ class HomeVC: UIViewController, UIViewControllerTransitioningDelegate, HasAppSer
         }
         let movie = trendingMovies[indexPath.item]
         cell.configure(title: movie.name)
-        if let url = URL(string: URLManager.image(movie.largePicture)) {
+        if let url = URL(string: movie.largePicture) {
             loadImage(from: url, into: cell.posterImageView)
         }
         return cell

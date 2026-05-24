@@ -597,8 +597,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         )
 
         if shouldLoadImage {
-            let urlString = URLManager.image(data.largePicture)
-            if let url = URL(string: urlString) {
+            if let url = URL(string: data.largePicture) {
                 loadImage(from: url, for: cell)
             }
         } else {

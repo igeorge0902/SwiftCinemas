@@ -31,16 +31,16 @@ enum URLManager {
 
     /// Full URL for the login/auth gateway.  e.g. `URLManager.login("/HelloWorld")`
     static func login(_ path: String) -> String {
-        return baseURL + loginPath + path
+        return loginPath + path
     }
 
     /// Full URL for the movie/booking API.  e.g. `URLManager.mbooks("/movies/paging")`
     static func mbooks(_ path: String) -> String {
-        return baseURL + mbooksPath + path
+        return mbooksPath + path
     }
 
     /// Full URL for an image resource.  e.g. `URLManager.image("/movies/poster.jpg")`
     static func image(_ path: String) -> String {
-        return baseURL + imagePath + path
+        return imagePath + path
     }
 }

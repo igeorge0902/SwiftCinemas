@@ -47,9 +47,8 @@ final class MbooksService {
     // MARK: Internal
 
     /// Full URL string including query — matches legacy Realm `CachedResponse.url` keys.
-    static func mbooksURLString(suffix: String, query: [String: String]?) -> String {
-        let normalized = suffix.hasPrefix("/") ? suffix : "/" + suffix
-        var c = URLComponents(string: URLManager.mbooks(normalized))!
+    static func mbooksURLString(url: String, query: [String: String]?) -> String {
+        var c = URLComponents(string: URLManager.mbooks(url))!
         if let q = query, !q.isEmpty {
             c.queryItems = q.map { URLQueryItem(name: $0.key, value: $0.value) }
         }
@@ -57,51 +56,51 @@ final class MbooksService {
     }
 
     func moviesPaging(query: [String: String]) async throws -> Data {
-        try await get(suffix: "movies/paging", query: query, realmCache: true)
+        try await get(url: "/movies/paging", query: query, realmCache: true)
     }
 
     func moviesSearch(query: [String: String]) async throws -> Data {
-        try await get(suffix: "movies/search", query: query, realmCache: false)
+        try await get(url: "/movies/search", query: query, realmCache: false)
     }
 
     func adminMoviesOnVenuesCategorized(query: [String: String]?) async throws -> Data {
-        try await get(suffix: "admin/moviesonvenuescategorized", query: query, realmCache: true)
+        try await get(url: "/admin/moviesonvenuescategorized", query: query, realmCache: true)
     }
 
     func adminMoviesOnVenuesSearch(query: [String: String]) async throws -> Data {
-        try await get(suffix: "admin/moviesonvenuessearch", query: query, realmCache: true)
+        try await get(url: "/admin/moviesonvenuessearch", query: query, realmCache: true)
     }
 
     func adminMoviesOnVenues() async throws -> Data {
-        try await getExpectingJSONBodyHeader(suffix: "admin/moviesonvenues", query: nil, realmCache: false)
+        try await getExpectingJSONBodyHeader(url: "/admin/moviesonvenues", query: nil, realmCache: false)
     }
 
     func venue(movieId: String) async throws -> Data {
-        try await get(suffix: "venue/\(movieId)", query: nil, realmCache: true)
+        try await get(url: "/venue/\(movieId)", query: nil, realmCache: true)
     }
 
     func locations() async throws -> Data {
-        try await get(suffix: "locations", query: nil, realmCache: false)
+        try await get(url: "/locations", query: nil, realmCache: false)
     }
 
     func locationsVenue(venuesId: String) async throws -> Data {
-        try await get(suffix: "locations/venue", query: ["venuesId": venuesId], realmCache: false)
+        try await get(url: "/locations/venue", query: ["venuesId": venuesId], realmCache: false)
     }
 
     func venueMovies(locationId: String) async throws -> Data {
-        try await get(suffix: "venue/movies", query: ["locationId": locationId], realmCache: false)
+        try await get(url: "/venue/movies", query: ["locationId": locationId], realmCache: false)
     }
 
     func dates(locationId: Int, movieId: Int) async throws -> Data {
-        try await get(suffix: "dates/\(locationId)/\(movieId)", query: nil, realmCache: false)
+        try await get(url: "/dates/\(locationId)/\(movieId)", query: nil, realmCache: false)
     }
 
     func dates(screenId: String) async throws -> Data {
-        try await get(suffix: "dates/\(screenId)", query: nil, realmCache: false)
+        try await get(url: "/dates/\(screenId)", query: nil, realmCache: false)
     }
 
     func seats(screeningDateId: String) async throws -> Data {
-        try await get(suffix: "seats/\(screeningDateId)", query: nil, realmCache: false)
+        try await get(url: "/seats/\(screeningDateId)", query: nil, realmCache: false)
     }
 
     /// Trending movies endpoint used by HomeVC. Defaults to top 5 rows.
@@ -110,63 +109,52 @@ final class MbooksService {
         if let days {
             query["days"] = String(days)
         }
-        return try await get(suffix: "trending-movies", query: query, realmCache: false)
+        return try await get(url: "/trending-movies", query: query, realmCache: false)
     }
 
     func adminAddScreen(body: [String: Any]) async throws -> Data {
-        try await postJSON(suffix: "admin/addscreen", body: body)
+        try await postJSON(url: "/admin/addscreen", body: body)
     }
 
     func adminUpdateScreen(body: [String: Any]) async throws -> Data {
-        try await postJSON(suffix: "admin/updatescreen", body: body)
+        try await postJSON(url: "/admin/updatescreen", body: body)
     }
 
     func adminDeleteScreen(body: [String: Any]) async throws -> Data {
-        try await deleteJSON(suffix: "admin/deletescreen", body: body)
+        try await deleteJSON(url: "/admin/deletescreen", body: body)
     }
 
     // MARK: Private
 
-    private static let bookRoot = "mbooks-1/rest/book"
-
     private let apiClient: APIClient
     private let session = SessionHeaderProvider()
 
-    private func get(suffix: String, query: [String: String]?, realmCache: Bool) async throws -> Data {
-        let p = suffix.hasPrefix("/") ? String(suffix.dropFirst()) : suffix
-        let fullPath = "\(Self.bookRoot)/\(p)"
+    private func get(url: String, query: [String: String]?, realmCache: Bool) async throws -> Data {
         let items = query?.map { URLQueryItem(name: $0.key, value: $0.value) }
-        let cacheKey = realmCache ? Self.mbooksURLString(suffix: "/" + p, query: query) : nil
-        let endpoint = Endpoint(path: fullPath, method: "GET", query: items, body: nil, cacheKey: cacheKey, absoluteURL: nil)
+        let cacheKey = realmCache ? Self.mbooksURLString(url: URLManager.mbooks(url), query: query) : nil
+        let endpoint = Endpoint(path: URLManager.mbooks(url), method: "GET", query: items, body: nil, cacheKey: cacheKey, absoluteURL: nil)
         return try await apiClient.requestData(endpoint, headers: session)
     }
 
-    private func postJSON(suffix: String, body: [String: Any]) async throws -> Data {
-        let p = suffix.hasPrefix("/") ? String(suffix.dropFirst()) : suffix
-        let fullPath = "\(Self.bookRoot)/\(p)"
+    private func postJSON(url: String, body: [String: Any]) async throws -> Data {
         let data = try JSONSerialization.data(withJSONObject: body, options: [])
         let hp = MergedHeaderProvider(base: session, extra: ["Content-Type": "application/json"])
-        let endpoint = Endpoint(path: fullPath, method: "POST", query: nil, body: data, cacheKey: nil, absoluteURL: nil)
+        let endpoint = Endpoint(path: URLManager.mbooks(url), method: "POST", query: nil, body: data, cacheKey: nil, absoluteURL: nil)
         return try await apiClient.requestData(endpoint, headers: hp)
     }
 
-    private func deleteJSON(suffix: String, body: [String: Any]) async throws -> Data {
-        let p = suffix.hasPrefix("/") ? String(suffix.dropFirst()) : suffix
-        let fullPath = "\(Self.bookRoot)/\(p)"
+    private func deleteJSON(url: String, body: [String: Any]) async throws -> Data {
         let data = try JSONSerialization.data(withJSONObject: body, options: [])
         let hp = MergedHeaderProvider(base: session, extra: ["Content-Type": "application/json"])
-        let endpoint = Endpoint(path: fullPath, method: "DELETE", query: nil, body: data, cacheKey: nil, absoluteURL: nil)
+        let endpoint = Endpoint(path: URLManager.mbooks(url), method: "DELETE", query: nil, body: data, cacheKey: nil, absoluteURL: nil)
         return try await apiClient.requestData(endpoint, headers: hp)
     }
 
-    /// GET with `Content-Type: application/json` (legacy ``GeneralRequestManager`` behaviour for admin movie pickers).
-    private func getExpectingJSONBodyHeader(suffix: String, query: [String: String]?, realmCache: Bool) async throws -> Data {
-        let p = suffix.hasPrefix("/") ? String(suffix.dropFirst()) : suffix
-        let fullPath = "\(Self.bookRoot)/\(p)"
+    private func getExpectingJSONBodyHeader(url: String, query: [String: String]?, realmCache: Bool) async throws -> Data {
         let items = query?.map { URLQueryItem(name: $0.key, value: $0.value) }
-        let cacheKey = realmCache ? Self.mbooksURLString(suffix: "/" + p, query: query) : nil
+        let cacheKey = realmCache ? Self.mbooksURLString(url: URLManager.mbooks(url), query: query) : nil
         let hp = MergedHeaderProvider(base: session, extra: ["Content-Type": "application/json"])
-        let endpoint = Endpoint(path: fullPath, method: "GET", query: items, body: nil, cacheKey: cacheKey, absoluteURL: nil)
+        let endpoint = Endpoint(path: URLManager.mbooks(url), method: "GET", query: items, body: nil, cacheKey: cacheKey, absoluteURL: nil)
         return try await apiClient.requestData(endpoint, headers: hp)
     }
 }
@@ -335,8 +323,8 @@ final class LoginGatewayService {
     private let apiClient: APIClient
     private let session = SessionHeaderProvider()
 
-    private func loginPath(_ suffix: String) -> String {
-        let s = suffix.hasPrefix("/") ? String(suffix.dropFirst()) : suffix
+    private func loginPath(_ url: String) -> String {
+        let s = url.hasPrefix("/") ? String(url.dropFirst()) : url
         return "login/\(s)"
     }
 }
@@ -354,11 +342,8 @@ final class ImageResourceService {
     // MARK: Internal
 
     func getData(urlString: String, realmCache: Bool) async throws -> Data {
-        guard let url = URL(string: urlString) else {
-            throw AppError.decodingFailed
-        }
-        let key = realmCache ? urlString : nil
-        let endpoint = Endpoint(path: "", method: "GET", query: nil, body: nil, cacheKey: key, absoluteURL: url)
+        let cacheKey = realmCache ? URLManager.image(urlString) : nil
+        let endpoint = Endpoint(path: URLManager.image(urlString), method: "GET", body: nil, cacheKey: cacheKey, absoluteURL: nil)
         return try await apiClient.requestData(endpoint, headers: MinimalGETHeaderProvider())
     }
 
