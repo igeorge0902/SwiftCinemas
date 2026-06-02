@@ -198,13 +198,11 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
             cell.pillLabel.text = "PAID"
         }
 
-        let urlMovie = URLManager.image(data.moviePicture)
-
         Task { @MainActor [weak self] in
             guard let self else { return }
 
             do {
-                let imgData = try await self.appServices.images.getData(urlString: urlMovie, realmCache: true)
+                let imgData = try await self.appServices.images.getData(urlString: data.moviePicture, realmCache: true)
                 let image = UIImage(data: imgData)
                 if let updatedCell = tableView.cellForRow(at: indexPath) as? PurchaseRowCell {
                     updatedCell.movieImageView.image = image

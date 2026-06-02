@@ -524,12 +524,11 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
 
     private func loadMovieImage() {
         guard let selectLargePicture = selectLargePicture else { return }
-        let urlString = URLManager.image(selectLargePicture)
 
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let data = try await self.appServices.images.getData(urlString: urlString, realmCache: true)
+                let data = try await self.appServices.images.getData(urlString: selectLargePicture, realmCache: true)
                 guard let image = UIImage(data: data) else { return }
                 self.moviePicture = image
                 self.setupMovieImageView()
@@ -541,12 +540,11 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
 
     private func loadVenueImage() {
         if let selectVenuesPicture = selectVenuesPicture, !selectVenuesPicture.isEmpty {
-            let urlString = URLManager.image(selectVenuesPicture)
 
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 do {
-                    let data = try await self.appServices.images.getData(urlString: urlString, realmCache: true)
+                    let data = try await self.appServices.images.getData(urlString: selectVenuesPicture, realmCache: true)
                     guard let image = UIImage(data: data) else { return }
                     self.venuePicture = image
                     self.setupVenueImageView()

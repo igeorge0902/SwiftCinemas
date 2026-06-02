@@ -499,9 +499,8 @@ private struct VenuePictureRow: View {
         .contentShape(Rectangle())
         .task(id: venue.venuesPicture) {
             guard let pic = venue.venuesPicture, !pic.isEmpty else { return }
-            let urlString = URLManager.image(pic)
             do {
-                let data = try await imageServices.getData(urlString: urlString, realmCache: true)
+                let data = try await imageServices.getData(urlString: pic, realmCache: true)
                 image = UIImage(data: data)
             } catch {
                 NSLog("VenuePictureRow image load: %@", error.localizedDescription)
