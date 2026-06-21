@@ -1,0 +1,60 @@
+podfile
+  s_b0dc28f5c555a3::t_2606755a91036c 10
+SwiftLoginScreen/LoginVC.swift
+  s_b0dc28f5c555a3::t_808fcd432e821d 80-86
+SwiftLoginScreen/DataManagers/AuthDataManager.swift
+  s_b0dc28f5c555a3::t_79858e3cda19b5 123-127,140
+SwiftLoginScreen/SignupVC.swift
+  s_b0dc28f5c555a3::t_93e04bd90dbed7 71-77
+SwiftLoginScreen/ciphertext.swift
+  s_8da4acdc5334ad::t_2fdc2416efa95b 25-37
+SwiftLoginScreen/CryptoJS.swift
+  s_b0dc28f5c555a3::t_1c977d50c9d09e 8,12-13,16-18,24,27-30,33-50,52-60,63-65,67
+  s_5ac1a28e2dcfe4::t_0902ae7a56ce8a 14-15,19-22
+  s_5ac1a28e2dcfe4::t_233a6c5acc5988 51
+SwiftLoginScreen/DataManagers/BasketDataManager.swift
+  s_8da4acdc5334ad::t_88f2c89614ab2a 10
+SwiftLoginScreen/MapViewController.swift
+  s_8da4acdc5334ad::t_188f8a1e300072 7,9,13,15,21,28,30,32,35,39,46,49,57,60,66,73,79,85,89,92,96,99,103,110,113,120,126,130,140,152,160,171,177,181,195,201,206,213,220,222,224,227,231,233,235,240,243,246,250,252,256,258,263,269,280,287,292,296,338-366
+  s_8da4acdc5334ad::t_80ef6789669a0d 369
+SwiftLoginScreen/Networking/BackendServices.swift
+  s_5ac1a28e2dcfe4::t_3c28c7c5a8c828 186-190,203
+SwiftLoginScreen/VenuesMigration/VenuesMigrationSegueEntryVC.swift
+  s_8da4acdc5334ad::t_b5587d1f31046f 9-10
+SwiftLoginScreen/WebViewController.swift
+  s_8da4acdc5334ad::t_9f2c73bb308b46 83
+README.md
+  s_5ac1a28e2dcfe4::t_152cb5157a312c 64
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "8ff7510d16120590c06328f34dbf2106edb03443",
+  "prompts": {},
+  "sessions": {
+    "s_5ac1a28e2dcfe4": {
+      "agent_id": {
+        "tool": "github-copilot-jetbrains",
+        "id": "1781027188277",
+        "model": "unknown"
+      },
+      "human_author": "GASPAR, GYORGY <gyorgy.gaspar@lhsystems.com>"
+    },
+    "s_8da4acdc5334ad": {
+      "agent_id": {
+        "tool": "github-copilot-jetbrains",
+        "id": "1782047372641",
+        "model": "unknown"
+      },
+      "human_author": "GASPAR, GYORGY <gyorgy.gaspar@lhsystems.com>"
+    },
+    "s_b0dc28f5c555a3": {
+      "agent_id": {
+        "tool": "github-copilot-jetbrains",
+        "id": "1781025952178",
+        "model": "unknown"
+      },
+      "human_author": "GASPAR, GYORGY <gyorgy.gaspar@lhsystems.com>"
+    }
+  }
+}
