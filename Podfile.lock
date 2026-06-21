@@ -1225,6 +1225,7 @@ PODS:
     - Braintree/ThreeDSecure (~> 5.27)
     - Braintree/UnionPay (~> 5.27)
     - Braintree/Venmo (~> 5.27)
+  - CryptoSwift (1.10.0)
   - FirebaseAppCheckInterop (12.11.0)
   - FirebaseAuth (12.11.0):
     - FirebaseAppCheckInterop (~> 12.11.0)
@@ -1416,6 +1417,7 @@ PODS:
 DEPENDENCIES:
   - Braintree
   - BraintreeDropIn
+  - CryptoSwift
   - FirebaseAuth
   - FirebaseFirestore
   - FirebaseMessaging
@@ -1429,6 +1431,7 @@ SPEC REPOS:
     - BoringSSL-GRPC
     - Braintree
     - BraintreeDropIn
+    - CryptoSwift
     - FirebaseAppCheckInterop
     - FirebaseAuth
     - FirebaseAuthInterop
@@ -1458,6 +1461,7 @@ SPEC CHECKSUMS:
   BoringSSL-GRPC: dded2a44897e45f28f08ae87a55ee4bcd19bc508
   Braintree: 9e88d36e660d95a89f920cec2351392d647c3fe5
   BraintreeDropIn: dda213a718343fe1eaff1d593547c2feecf0ce3c
+  CryptoSwift: e2e7776512f250e66205955da748e7a4e4abffe0
   FirebaseAppCheckInterop: d9b5acb52c1141697215d08f719c332ed4740d8e
   FirebaseAuth: d510c93904adc3d172d01c163bff76d6ecdacf3f
   FirebaseAuthInterop: 8a470f4fee5a66c628e9cc4ffd3f3afa73672178
@@ -1482,6 +1486,6 @@ SPEC CHECKSUMS:
   Starscream: 19b5533ddb925208db698f0ac508a100b884a1b9
   SwiftyJSON: f5b1bf1cd8dd53cd25887ac0eabcfd92301c6a5a
 
-PODFILE CHECKSUM: f3dcb116635600523b39c28eba9aebf54057af3d
+PODFILE CHECKSUM: ce3d8b481ecb255770c2e46f295c1544ea31844d
 
 COCOAPODS: 1.16.2

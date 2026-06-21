@@ -101,7 +101,6 @@ class ViewController: UIViewController, UIPopoverPresentationControllerDelegate 
     }
 }
 
-@MainActor
 extension ViewController: @MainActor CLLocationManagerDelegate {
     func locationManager(_: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
         if status == .authorizedWhenInUse {

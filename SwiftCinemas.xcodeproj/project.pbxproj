@@ -70,12 +70,9 @@
 		A46A6DD01BFA139300F4EB6F /* CachedResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = A46A6DCF1BFA139300F4EB6F /* CachedResponse.swift */; };
 		A46A6DD41BFA15E100F4EB6F /* People+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = A46A6DD21BFA15E100F4EB6F /* People+CoreDataProperties.swift */; };
 		A46A6DD51BFA15E100F4EB6F /* People.swift in Sources */ = {isa = PBXBuildFile; fileRef = A46A6DD31BFA15E100F4EB6F /* People.swift */; };
-		A46A92661C2B1A13003F31F1 /* hmac-sha512.js in Resources */ = {isa = PBXBuildFile; fileRef = A46A92651C2B1A13003F31F1 /* hmac-sha512.js */; };
-		A46A926C1C2B242D003F31F1 /* enc-base64-min.js in Resources */ = {isa = PBXBuildFile; fileRef = A46A926B1C2B242D003F31F1 /* enc-base64-min.js */; };
 		A4718E6E2D7C468000C9B18D /* FireBaseGoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = A4718E6D2D7C468000C9B18D /* FireBaseGoogleService-Info.plist */; };
 		A4743E4E1BF3DBD6009078F9 /* CoreDataModel.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = A4743E4C1BF3DBD6009078F9 /* CoreDataModel.xcdatamodeld */; };
 		A47B67D31F6C148E00F8F8E6 /* PurchasesVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = A47B67D21F6C148E00F8F8E6 /* PurchasesVC.swift */; };
-		A47D31741C309B8C00429EB8 /* enc.js in Resources */ = {isa = PBXBuildFile; fileRef = A47D31731C309B8C00429EB8 /* enc.js */; };
 		A48301CC25FD25C6008F230C /* AdminUpdateVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = A48301CB25FD25C6008F230C /* AdminUpdateVC.swift */; };
 		A493B57E2D6A31E200404BC0 /* GeoFence.swift in Sources */ = {isa = PBXBuildFile; fileRef = A493B57D2D6A31DA00404BC0 /* GeoFence.swift */; };
 		A493B5802D6B580800404BC0 /* MovieCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A493B57F2D6B580800404BC0 /* MovieCollectionViewCell.swift */; };
@@ -83,27 +80,7 @@
 		A4A24B682D7CCCE400F3B65A /* Websocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4A24B672D7CCCDC00F3B65A /* Websocket.swift */; };
 		A4A24B6A2D8C000000F3B65A /* URLManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4A24B692D8C000000F3B65A /* URLManager.swift */; };
 		A4A96AA81D1FEB9A00421193 /* MapKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A4A96AA71D1FEB9A00421193 /* MapKit.framework */; };
-		A4AA7BB41C1F508A007FE726 /* AesUtil.js in Resources */ = {isa = PBXBuildFile; fileRef = A4AA7BB31C1F5089007FE726 /* AesUtil.js */; };
-		A4AA7BB61C1F50A6007FE726 /* pbkdf2.js in Resources */ = {isa = PBXBuildFile; fileRef = A4AA7BB51C1F50A6007FE726 /* pbkdf2.js */; };
-		A4B9928F1BED305900F87E21 /* aes.js in Resources */ = {isa = PBXBuildFile; fileRef = A4B9927C1BED305900F87E21 /* aes.js */; };
 		A4B992901BED305900F87E21 /* CryptoJS.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4B9927D1BED305900F87E21 /* CryptoJS.swift */; };
-		A4B992911BED305900F87E21 /* md5.js in Resources */ = {isa = PBXBuildFile; fileRef = A4B9927E1BED305900F87E21 /* md5.js */; };
-		A4B992921BED305900F87E21 /* mode-cfb.js in Resources */ = {isa = PBXBuildFile; fileRef = A4B9927F1BED305900F87E21 /* mode-cfb.js */; };
-		A4B992931BED305900F87E21 /* mode-ctr.js in Resources */ = {isa = PBXBuildFile; fileRef = A4B992801BED305900F87E21 /* mode-ctr.js */; };
-		A4B992941BED305900F87E21 /* mode-ecb.js in Resources */ = {isa = PBXBuildFile; fileRef = A4B992811BED305900F87E21 /* mode-ecb.js */; };
-		A4B992951BED305900F87E21 /* mode-ofb.js in Resources */ = {isa = PBXBuildFile; fileRef = A4B992821BED305900F87E21 /* mode-ofb.js */; };
-		A4B992961BED305900F87E21 /* pad-ansix923.js in Resources */ = {isa = PBXBuildFile; fileRef = A4B992831BED305900F87E21 /* pad-ansix923.js */; };
-		A4B992971BED305900F87E21 /* pad-iso10126.js in Resources */ = {isa = PBXBuildFile; fileRef = A4B992841BED305900F87E21 /* pad-iso10126.js */; };
-		A4B992981BED305900F87E21 /* pad-iso97971.js in Resources */ = {isa = PBXBuildFile; fileRef = A4B992851BED305900F87E21 /* pad-iso97971.js */; };
-		A4B992991BED305900F87E21 /* pad-nopadding.js in Resources */ = {isa = PBXBuildFile; fileRef = A4B992861BED305900F87E21 /* pad-nopadding.js */; };
-		A4B9929A1BED305900F87E21 /* pad-zeropadding.js in Resources */ = {isa = PBXBuildFile; fileRef = A4B992871BED305900F87E21 /* pad-zeropadding.js */; };
-		A4B9929B1BED305900F87E21 /* ripemd160.js in Resources */ = {isa = PBXBuildFile; fileRef = A4B992881BED305900F87E21 /* ripemd160.js */; };
-		A4B9929C1BED305900F87E21 /* sha1.js in Resources */ = {isa = PBXBuildFile; fileRef = A4B992891BED305900F87E21 /* sha1.js */; };
-		A4B9929D1BED305900F87E21 /* sha3.js in Resources */ = {isa = PBXBuildFile; fileRef = A4B9928A1BED305900F87E21 /* sha3.js */; };
-		A4B9929E1BED305900F87E21 /* sha224.js in Resources */ = {isa = PBXBuildFile; fileRef = A4B9928B1BED305900F87E21 /* sha224.js */; };
-		A4B9929F1BED305900F87E21 /* sha256.js in Resources */ = {isa = PBXBuildFile; fileRef = A4B9928C1BED305900F87E21 /* sha256.js */; };
-		A4B992A01BED305900F87E21 /* sha384.js in Resources */ = {isa = PBXBuildFile; fileRef = A4B9928D1BED305900F87E21 /* sha384.js */; };
-		A4B992A11BED305900F87E21 /* sha512.js in Resources */ = {isa = PBXBuildFile; fileRef = A4B9928E1BED305900F87E21 /* sha512.js */; };
 		A4BBC52D1BF0919900CDD365 /* MenuVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4BBC52C1BF0919900CDD365 /* MenuVC.swift */; };
 		A4C0AE511D842A6700260FCB /* Storyboard.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A4C0AE501D842A6700260FCB /* Storyboard.storyboard */; };
 		A4C0AE561D8800E900260FCB /* FeedCells.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4C0AE551D8800E900260FCB /* FeedCells.swift */; };
@@ -198,13 +175,10 @@
 		A46A6DCF1BFA139300F4EB6F /* CachedResponse.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CachedResponse.swift; sourceTree = "<group>"; };
 		A46A6DD21BFA15E100F4EB6F /* People+CoreDataProperties.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "People+CoreDataProperties.swift"; sourceTree = "<group>"; };
 		A46A6DD31BFA15E100F4EB6F /* People.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = People.swift; sourceTree = "<group>"; };
-		A46A92651C2B1A13003F31F1 /* hmac-sha512.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "hmac-sha512.js"; sourceTree = "<group>"; };
-		A46A926B1C2B242D003F31F1 /* enc-base64-min.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "enc-base64-min.js"; sourceTree = "<group>"; };
 		A46F12471E59E04700B29EFF /* SwiftLoginScreen.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SwiftLoginScreen.entitlements; sourceTree = "<group>"; };
 		A4718E6D2D7C468000C9B18D /* FireBaseGoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "FireBaseGoogleService-Info.plist"; sourceTree = "<group>"; };
 		A4743E4D1BF3DBD6009078F9 /* CoreDataModel.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = CoreDataModel.xcdatamodel; sourceTree = "<group>"; };
 		A47B67D21F6C148E00F8F8E6 /* PurchasesVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PurchasesVC.swift; sourceTree = "<group>"; };
-		A47D31731C309B8C00429EB8 /* enc.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = enc.js; sourceTree = "<group>"; };
 		A48301CB25FD25C6008F230C /* AdminUpdateVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminUpdateVC.swift; sourceTree = "<group>"; };
 		A493B57D2D6A31DA00404BC0 /* GeoFence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeoFence.swift; sourceTree = "<group>"; };
 		A493B57F2D6B580800404BC0 /* MovieCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieCollectionViewCell.swift; sourceTree = "<group>"; };
@@ -215,27 +189,7 @@
 		A4A24B692D8C000000F3B65A /* URLManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLManager.swift; sourceTree = "<group>"; };
 		A4A5A7822D57C8F000AD78AF /* Braintree.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Braintree.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4A96AA71D1FEB9A00421193 /* MapKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MapKit.framework; path = System/Library/Frameworks/MapKit.framework; sourceTree = SDKROOT; };
-		A4AA7BB31C1F5089007FE726 /* AesUtil.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = AesUtil.js; sourceTree = "<group>"; };
-		A4AA7BB51C1F50A6007FE726 /* pbkdf2.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = pbkdf2.js; sourceTree = "<group>"; };
-		A4B9927C1BED305900F87E21 /* aes.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = aes.js; sourceTree = "<group>"; };
 		A4B9927D1BED305900F87E21 /* CryptoJS.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CryptoJS.swift; sourceTree = "<group>"; };
-		A4B9927E1BED305900F87E21 /* md5.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = md5.js; sourceTree = "<group>"; };
-		A4B9927F1BED305900F87E21 /* mode-cfb.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "mode-cfb.js"; sourceTree = "<group>"; };
-		A4B992801BED305900F87E21 /* mode-ctr.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "mode-ctr.js"; sourceTree = "<group>"; };
-		A4B992811BED305900F87E21 /* mode-ecb.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "mode-ecb.js"; sourceTree = "<group>"; };
-		A4B992821BED305900F87E21 /* mode-ofb.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "mode-ofb.js"; sourceTree = "<group>"; };
-		A4B992831BED305900F87E21 /* pad-ansix923.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "pad-ansix923.js"; sourceTree = "<group>"; };
-		A4B992841BED305900F87E21 /* pad-iso10126.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "pad-iso10126.js"; sourceTree = "<group>"; };
-		A4B992851BED305900F87E21 /* pad-iso97971.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "pad-iso97971.js"; sourceTree = "<group>"; };
-		A4B992861BED305900F87E21 /* pad-nopadding.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "pad-nopadding.js"; sourceTree = "<group>"; };
-		A4B992871BED305900F87E21 /* pad-zeropadding.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "pad-zeropadding.js"; sourceTree = "<group>"; };
-		A4B992881BED305900F87E21 /* ripemd160.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = ripemd160.js; sourceTree = "<group>"; };
-		A4B992891BED305900F87E21 /* sha1.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = sha1.js; sourceTree = "<group>"; };
-		A4B9928A1BED305900F87E21 /* sha3.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = sha3.js; sourceTree = "<group>"; };
-		A4B9928B1BED305900F87E21 /* sha224.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = sha224.js; sourceTree = "<group>"; };
-		A4B9928C1BED305900F87E21 /* sha256.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = sha256.js; sourceTree = "<group>"; };
-		A4B9928D1BED305900F87E21 /* sha384.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = sha384.js; sourceTree = "<group>"; };
-		A4B9928E1BED305900F87E21 /* sha512.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = sha512.js; sourceTree = "<group>"; };
 		A4BBC52C1BF0919900CDD365 /* MenuVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MenuVC.swift; sourceTree = "<group>"; };
 		A4C0AE501D842A6700260FCB /* Storyboard.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = Storyboard.storyboard; sourceTree = "<group>"; };
 		A4C0AE551D8800E900260FCB /* FeedCells.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FeedCells.swift; sourceTree = "<group>"; };
@@ -434,30 +388,7 @@
 		A4B9927B1BED302D00F87E21 /* CryptoStuff */ = {
 			isa = PBXGroup;
 			children = (
-				A46A926B1C2B242D003F31F1 /* enc-base64-min.js */,
-				A46A92651C2B1A13003F31F1 /* hmac-sha512.js */,
-				A4AA7BB51C1F50A6007FE726 /* pbkdf2.js */,
-				A4B9927C1BED305900F87E21 /* aes.js */,
-				A4AA7BB31C1F5089007FE726 /* AesUtil.js */,
 				A4B9927D1BED305900F87E21 /* CryptoJS.swift */,
-				A4B9927E1BED305900F87E21 /* md5.js */,
-				A47D31731C309B8C00429EB8 /* enc.js */,
-				A4B9927F1BED305900F87E21 /* mode-cfb.js */,
-				A4B992801BED305900F87E21 /* mode-ctr.js */,
-				A4B992811BED305900F87E21 /* mode-ecb.js */,
-				A4B992821BED305900F87E21 /* mode-ofb.js */,
-				A4B992831BED305900F87E21 /* pad-ansix923.js */,
-				A4B992841BED305900F87E21 /* pad-iso10126.js */,
-				A4B992851BED305900F87E21 /* pad-iso97971.js */,
-				A4B992861BED305900F87E21 /* pad-nopadding.js */,
-				A4B992871BED305900F87E21 /* pad-zeropadding.js */,
-				A4B992881BED305900F87E21 /* ripemd160.js */,
-				A4B992891BED305900F87E21 /* sha1.js */,
-				A4B9928A1BED305900F87E21 /* sha3.js */,
-				A4B9928B1BED305900F87E21 /* sha224.js */,
-				A4B9928C1BED305900F87E21 /* sha256.js */,
-				A4B9928D1BED305900F87E21 /* sha384.js */,
-				A4B9928E1BED305900F87E21 /* sha512.js */,
 			);
 			name = CryptoStuff;
 			sourceTree = "<group>";
@@ -729,34 +660,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				A4272E0A23A9841500304A2A /* garnier1.mov in Resources */,
-				A4B992961BED305900F87E21 /* pad-ansix923.js in Resources */,
-				A4B9929F1BED305900F87E21 /* sha256.js in Resources */,
-				A4B9929D1BED305900F87E21 /* sha3.js in Resources */,
 				EA62FD581989F6AC00469896 /* Images.xcassets in Resources */,
-				A4B992941BED305900F87E21 /* mode-ecb.js in Resources */,
 				A4CA8DA51C07328F00EA59A4 /* Launch Screen.storyboard in Resources */,
-				A4B992A01BED305900F87E21 /* sha384.js in Resources */,
-				A4B9928F1BED305900F87E21 /* aes.js in Resources */,
-				A4B9929E1BED305900F87E21 /* sha224.js in Resources */,
 				A4C0AE511D842A6700260FCB /* Storyboard.storyboard in Resources */,
-				A4B992931BED305900F87E21 /* mode-ctr.js in Resources */,
 				A4076A191D8F179900202E2A /* GoogleService-Info.plist in Resources */,
-				A4B992981BED305900F87E21 /* pad-iso97971.js in Resources */,
-				A4B992921BED305900F87E21 /* mode-cfb.js in Resources */,
-				A47D31741C309B8C00429EB8 /* enc.js in Resources */,
-				A4B992A11BED305900F87E21 /* sha512.js in Resources */,
-				A4B992911BED305900F87E21 /* md5.js in Resources */,
-				A46A926C1C2B242D003F31F1 /* enc-base64-min.js in Resources */,
-				A4B992991BED305900F87E21 /* pad-nopadding.js in Resources */,
 				A4718E6E2D7C468000C9B18D /* FireBaseGoogleService-Info.plist in Resources */,
-				A4B9929A1BED305900F87E21 /* pad-zeropadding.js in Resources */,
-				A4B992951BED305900F87E21 /* mode-ofb.js in Resources */,
-				A4AA7BB41C1F508A007FE726 /* AesUtil.js in Resources */,
-				A46A92661C2B1A13003F31F1 /* hmac-sha512.js in Resources */,
-				A4B9929C1BED305900F87E21 /* sha1.js in Resources */,
-				A4B992971BED305900F87E21 /* pad-iso10126.js in Resources */,
-				A4AA7BB61C1F50A6007FE726 /* pbkdf2.js in Resources */,
-				A4B9929B1BED305900F87E21 /* ripemd160.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

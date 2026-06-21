@@ -4,8 +4,6 @@
 import Security
 import UIKit
 
-@MainActor
-let deviceId = UIDevice.current.identifierForVendor!.uuidString
 nonisolated(unsafe) var kKeychainItemName: String?
 final class LoginVC: UIViewController, UITextFieldDelegate, HasAppServices {
     // MARK: Lifecycle
@@ -71,8 +69,6 @@ final class LoginVC: UIViewController, UITextFieldDelegate, HasAppServices {
     }
 
     @IBAction func signinTapped(_: UIButton) {
-        // let deviceId = UIDevice.currentDevice().identifierForVendor!.UUIDString
-        NSLog("deviceId ==> %@", deviceId)
         username = txtUsername.text! as NSString
         txtUsername.textContentType = .username
 
@@ -81,9 +77,13 @@ final class LoginVC: UIViewController, UITextFieldDelegate, HasAppServices {
 
         let systemVersion = UIDevice.current.systemVersion
 
-        let SHA3 = CryptoJS.SHA3()
-
-        let hash: String = SHA3.hash(password! as String, outputLength: 512)
+        let hash: String
+        do {
+            hash = try NativeCrypto.sha3Hex(password! as String, outputLength: 512)
+        } catch {
+            presentAlert(withTitle: "Sign in Failed!", message: ErrorHandler.message(for: AppError.decodingFailed))
+            return
+        }
 
         if username!.isEqual(to: "") || password!.isEqual(to: "") {
             presentAlert(withTitle: "Warning", message: ErrorHandler.message(for: AppError.decodingFailed))
@@ -91,6 +91,8 @@ final class LoginVC: UIViewController, UITextFieldDelegate, HasAppServices {
         } else {
             Task { @MainActor [weak self] in
                 guard let self else { return }
+                let deviceId = currentDeviceId()
+                NSLog("deviceId ==> %@", deviceId)
                 do {
                     try await AuthDataManager.shared.signIn(
                         username: self.username! as String,

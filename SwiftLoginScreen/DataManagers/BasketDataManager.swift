@@ -7,7 +7,7 @@ import UIKit
 
 /// Manages shopping basket, payments, and purchases
 @MainActor
-final class BasketDataManager: @MainActor SharedDataManager, @MainActor HasAppServices {
+final class BasketDataManager: SharedDataManager, HasAppServices {
     // MARK: Lifecycle
 
     private init() {}

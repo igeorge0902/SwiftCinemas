@@ -6,7 +6,7 @@ import UIKit
 nonisolated(unsafe) var endOfFile = false
 nonisolated(unsafe) var veil = true
 nonisolated(unsafe) var shouldShowSearchResults = false
-class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UISearchResultsUpdating, UISearchBarDelegate, @MainActor HasAppServices {
+class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UISearchResultsUpdating, UISearchBarDelegate, HasAppServices {
     // MARK: Lifecycle
 
     deinit {

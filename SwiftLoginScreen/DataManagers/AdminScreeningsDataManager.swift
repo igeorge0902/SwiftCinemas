@@ -7,7 +7,7 @@ import UIKit
 
 /// Owns admin movie/venue screening list data and admin write operations.
 @MainActor
-final class AdminDataManager: @MainActor SharedDataManager, @MainActor HasAppServices {
+final class AdminDataManager: SharedDataManager, HasAppServices {
     // MARK: Lifecycle
 
     private init() {}

@@ -43,7 +43,7 @@ class SignupVC: UIViewController {
     }
 
     @IBAction func signupTapped(_: UIButton) {
-        NSLog("deviceId ==> %@", deviceId)
+        NSLog("deviceId ==> %@", currentDeviceId())
 
         let username = txtUsername.text ?? ""
         let password = txtPassword.text ?? ""
@@ -68,8 +68,13 @@ class SignupVC: UIViewController {
             return
         }
 
-        let sha3 = CryptoJS.SHA3()
-        let hash = sha3.hash(password, outputLength: 512)
+        let hash: String
+        do {
+            hash = try NativeCrypto.sha3Hex(password, outputLength: 512)
+        } catch {
+            presentAlert(withTitle: "SignUp Failed!", message: ErrorHandler.message(for: AppError.decodingFailed))
+            return
+        }
 
         Task { @MainActor [weak self] in
             guard let self else { return }
@@ -79,7 +84,7 @@ class SignupVC: UIViewController {
                     email: email,
                     username: username,
                     passwordHash: hash,
-                    deviceId: deviceId,
+                    deviceId: currentDeviceId(),
                     systemVersion: systemVersion
                 )
                 self.dismiss(animated: true, completion: nil)

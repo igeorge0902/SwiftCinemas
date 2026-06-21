@@ -80,7 +80,7 @@ class WebViewController: UIViewController, WKUIDelegate, WKNavigationDelegate {
         let request = URLRequest(url: request.url!)
 
         let mutableRequest = request as! NSMutableURLRequest
-        let ciphertext = cipherText.getCipherText(deviceId)
+        let ciphertext = cipherText.getCipherText(currentDeviceId())
         mutableRequest.setValue(ciphertext, forHTTPHeaderField: "M-Device")
         mutableRequest.setValue("M", forHTTPHeaderField: "M")
 

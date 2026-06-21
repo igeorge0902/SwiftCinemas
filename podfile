@@ -7,6 +7,7 @@ target 'SwiftCinemas' do
   # Pods for the APP
   pod 'SwiftyJSON'
   pod 'Realm'
+  pod 'CryptoSwift'
 
   pod 'Braintree'
   pod 'BraintreeDropIn'

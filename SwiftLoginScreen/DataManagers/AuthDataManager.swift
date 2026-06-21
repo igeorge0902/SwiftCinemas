@@ -76,7 +76,7 @@ final class AuthDataManager: SharedDataManager, HasAppServices {
     }
 
     func activateCurrentDevice(user: String) async throws {
-        try await activate(deviceId: deviceId, user: user)
+        try await activate(deviceId: currentDeviceId(), user: user)
     }
 
     /// Refresh in-memory/auth context from persisted session state and validate with backend.
@@ -120,9 +120,11 @@ final class AuthDataManager: SharedDataManager, HasAppServices {
             let time = zeroTime(0).getCurrentMillis()
             let post_ = "/login/register:user=\(username)&email=\(email)&pswrd=\(passwordHash)&deviceId=\(deviceId)&voucher_=\(voucher):\(time):\(post.length)"
 
-            let hmacSHA512 = CryptoJS.hmacSHA512()
-            let hmacSec = hmacSHA512.hmac(username, secret: passwordHash) as NSString
-            let hmacHash = hmacSHA512.hmac(post_, secret: hmacSec as String) as NSString
+            let hmacHash = try NativeCrypto.loginHMAC(
+                postPathAndBody: post_ as String,
+                username: username,
+                passwordHash: passwordHash
+            )
 
             let endpoint = Endpoint(
                 path: "login/register",
@@ -135,7 +137,7 @@ final class AuthDataManager: SharedDataManager, HasAppServices {
 
             let headers = HMACLoginHeaderProvider(
                 contentLength: String(postData.count),
-                hmacHash: hmacHash as String,
+                hmacHash: hmacHash,
                 microTime: String(time)
             )
 

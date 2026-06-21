@@ -61,7 +61,7 @@ All managers share a singleton `URLSession` (`URLSession.sharedCustomSession`) c
 - **AES-128 encryption** for ciphertext tokens (`Ciphertext` header) using PBKDF2 key derivation
 - **XSRF-TOKEN** and **JSESSIONID** cookies for session management
 - **X-Token** header for Ciphertext filter authentication
-- Crypto operations use CryptoJS via JavaScriptCore (`CryptoJS.swift` + bundled `.js` files)
+- Crypto operations use native Swift implementations (`NativeCrypto` in `CryptoJS.swift` backed by `CryptoSwift`)
 
 ### Caching
 

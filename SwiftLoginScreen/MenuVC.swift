@@ -5,7 +5,7 @@ import SafariServices
 import SwiftyJSON
 import UIKit
 
-class MenuVC: UIViewController, @MainActor HasAppServices {
+class MenuVC: UIViewController, HasAppServices {
     // MARK: Internal
 
     var appServices: AppServices!

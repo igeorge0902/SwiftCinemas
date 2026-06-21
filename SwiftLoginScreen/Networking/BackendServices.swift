@@ -183,12 +183,12 @@ final class LoginGatewayService {
         let time = zeroTime(0).getCurrentMillis()
         let post_ = "/login/HelloWorld:user=\(username)&pswrd=\(passwordHash)&deviceId=\(deviceId):\(time):\(post.length)"
 
-        let hmacSHA512 = CryptoJS.hmacSHA512()
-        let hmacSec = hmacSHA512.hmac(username, secret: passwordHash) as NSString
-        let hmacHash = hmacSHA512.hmac(post_, secret: hmacSec as String) as NSString
+        let hmacHash = try NativeCrypto.loginHMAC(
+            postPathAndBody: post_ as String,
+            username: username,
+            passwordHash: passwordHash
+        )
 
-        NSLog("hmacSecret: %@", hmacSec)
-        NSLog("PostData: %@", post)
 
         let endpoint = Endpoint(
             path: loginPath("HelloWorld"),
@@ -200,7 +200,7 @@ final class LoginGatewayService {
 
         let headerProvider = HMACLoginHeaderProvider(
             contentLength: String(postData.count),
-            hmacHash: hmacHash as String,
+            hmacHash: hmacHash,
             microTime: String(time)
         )
 

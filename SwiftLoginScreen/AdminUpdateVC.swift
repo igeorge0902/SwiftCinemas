@@ -5,7 +5,7 @@ import Foundation
 import UIKit
 
 nonisolated(unsafe) var originalVenueName: NSAttributedString!
-class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIViewControllerTransitioningDelegate, UIPopoverPresentationControllerDelegate, @MainActor HasAppServices {
+class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIViewControllerTransitioningDelegate, UIPopoverPresentationControllerDelegate, HasAppServices {
     // MARK: Lifecycle
 
     deinit {

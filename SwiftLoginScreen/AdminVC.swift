@@ -6,7 +6,7 @@ import UIKit
 
 nonisolated(unsafe) var adminPage = false
 nonisolated(unsafe) var adminUpdatePage = false
-class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIViewControllerTransitioningDelegate, UIPopoverPresentationControllerDelegate, @MainActor HasAppServices {
+class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIViewControllerTransitioningDelegate, UIPopoverPresentationControllerDelegate, HasAppServices {
     // MARK: Lifecycle
 
     deinit {
