@@ -246,6 +246,11 @@ final class LoginGatewayService {
             throw AppError.decodingFailed
         }
     }
+    
+    func logOut() async throws -> Data {
+        let endpoint = Endpoint(path: logoutPath("logout"), method: "GET", query: nil, body: nil, cacheKey: nil, absoluteURL: nil)
+        return try await apiClient.requestData(endpoint, headers: session)
+    }
 
     func getUser() async throws -> Data {
         let endpoint = Endpoint(path: loginPath("admin"), method: "GET", query: nil, body: nil, cacheKey: nil, absoluteURL: nil)
@@ -324,6 +329,11 @@ final class LoginGatewayService {
     private let session = SessionHeaderProvider()
 
     private func loginPath(_ url: String) -> String {
+        let s = url.hasPrefix("/") ? String(url.dropFirst()) : url
+        return "login/\(s)"
+    }
+    
+    private func logoutPath(_ url: String) -> String {
         let s = url.hasPrefix("/") ? String(url.dropFirst()) : url
         return "login/\(s)"
     }

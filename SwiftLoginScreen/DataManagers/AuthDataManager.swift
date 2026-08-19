@@ -39,6 +39,15 @@ final class AuthDataManager: SharedDataManager, HasAppServices {
             throw handleError(error)
         }
     }
+    
+    func logOut() async throws -> [String: Any] {
+        do {
+            let data = try await loginGateway.logOut()
+            return try JSONSerialization.jsonObject(with: data) as? [String: Any] ?? [:]
+        } catch {
+            throw handleError(error)
+        }
+    }
 
     /// Fetch current user profile
     func fetchUser() async throws -> [String: Any] {

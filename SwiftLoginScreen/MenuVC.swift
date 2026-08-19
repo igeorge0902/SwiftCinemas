@@ -45,7 +45,7 @@ class MenuVC: UIViewController, HasAppServices {
                     ? "No email"
                     : profile.email
 
-                let urlString = URLManager.image(profile.profilePicture)
+                let urlString = profile.profilePicture
 
                 let imagedata = try await self.appServices.images.getData(
                     urlString: urlString,
@@ -221,38 +221,25 @@ class MenuVC: UIViewController, HasAppServices {
     }
 
     @IBAction private func logoutTapped(_: UIButton) {
-        performLogout { success in
-            DispatchQueue.main.async {
-                if success {
-                    self.presentAlert(withTitle: "Logout Successful", message: "Bye!")
-                    self.clearCookies()
-                } else {
-                    self.presentAlert(withTitle: "Logout Failed", message: "Please try again.")
-                }
-            }
-        }
+        performLogout()
     }
 
-    private func performLogout(completion: @escaping (Bool) -> Void) {
-        guard let requestUrl = url else { return }
+    private func performLogout() -> Void {
 
-        var request = URLRequest(url: requestUrl)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-
-        let task = session.dataTask(with: request) { _, response, error in
-            guard error == nil, let httpResponse = response as? HTTPURLResponse else {
-                completion(false)
-                return
-            }
-
-            if httpResponse.statusCode == 200 {
-                completion(true)
-            } else {
-                completion(false)
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let deviceId = currentDeviceId()
+            NSLog("deviceId ==> %@", deviceId)
+            do {
+                try await AuthDataManager.shared.logOut()
+                self.presentAlert(withTitle: "Logout Successful", message: "Bye!")
+                self.clearCookies()
+               // self.dismiss(animated: true, completion: nil)
+            } catch let err as AppError {
+                self.presentAlert(withTitle: "Error!", message: ErrorHandler.message(for: AppError.networkFailure(underlying: err))
+                )
             }
         }
-        task.resume()
     }
 
     private func clearCookies() {
