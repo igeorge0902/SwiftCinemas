@@ -1,0 +1,26 @@
+SwiftLoginScreen/WebViewController.swift
+  s_bffba4f7f332af::t_30568aa520cabb 42-43,45,49-50,65,67,70,106
+  s_bffba4f7f332af::t_f10019bec9ade2 116-119
+  s_bffba4f7f332af::t_815e8080b56960 7,40,58,97-101,107
+  s_bffba4f7f332af::t_130a120e62ac36 10-11,44,59-60,62-64,71-72,74-91,104-105
+  s_bffba4f7f332af::t_0b07fabe4cca75 39
+  s_bffba4f7f332af::t_7330f156af4350 108
+  s_bffba4f7f332af::t_640faeef753913 92,102
+  s_bffba4f7f332af::t_218bf30c6a5253 73,94-96
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.11",
+  "base_commit_sha": "a887724cfd92ae74b7ee03fcb7bb1b00abb1e91a",
+  "prompts": {},
+  "sessions": {
+    "s_bffba4f7f332af": {
+      "agent_id": {
+        "tool": "github-copilot-jetbrains",
+        "id": "1787298125452",
+        "model": "unknown"
+      },
+      "human_author": "GASPAR, GYORGY <gyorgy.gaspar@lhsystems.com>"
+    }
+  }
+}
