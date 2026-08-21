@@ -4,10 +4,11 @@
 import UIKit
 import WebKit
 
+@MainActor
 class WebViewController: UIViewController, WKUIDelegate, WKNavigationDelegate {
     lazy var webView: WKWebView = .init()
-    var response: URLResponse!
-    var httpresponse: HTTPURLResponse!
+    private var authCheckTimer: Timer?
+    private var didHandleLogin = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -26,8 +27,6 @@ class WebViewController: UIViewController, WKUIDelegate, WKNavigationDelegate {
         view.addSubview(btnNav)
         view.addSubview(btnReload)
 
-        // let config = WKWebViewConfiguration()
-        // config.setValue(true, forKey: "allowUniversalAccessFromFileURLs")
         webView.configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
         webView.uiDelegate = self
         webView.navigationDelegate = self
@@ -36,19 +35,19 @@ class WebViewController: UIViewController, WKUIDelegate, WKNavigationDelegate {
         webView.scrollView.bounces = true
         view.addSubview(webView)
 
-        let requestURL = URL(string: URLManager.login("/index.html"))
-        let urlrequest = URLRequest(url: requestURL!)
+        let requestURL = URL(string: URLManager.baseURL + URLManager.login("/film-review/#/login"))!
+        webView.load(URLRequest(url: requestURL))
+    }
 
-        let cookieStorage = HTTPCookieStorage.shared
-        if let cookies_ = cookieStorage.cookies {
-            for cookie in cookies_ {
-                cookieStorage.deleteCookie(cookie)
-            }
-        }
-        webView.load(urlrequest)
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        authCheckTimer?.invalidate()
+        authCheckTimer = nil
     }
 
     @objc func navigateBack() {
+        authCheckTimer?.invalidate()
+        authCheckTimer = nil
         dismiss(animated: true, completion: nil)
     }
 
@@ -56,53 +55,68 @@ class WebViewController: UIViewController, WKUIDelegate, WKNavigationDelegate {
         webView.reload()
     }
 
-    func webView(_ webView: WKWebView, didCommit _: WKNavigation!) {
-        webView.configuration.websiteDataStore.httpCookieStore.getAllCookies { cookies in
-            for cookie in cookies {
-                let cookieStorage = HTTPCookieStorage.shared
-
-                cookieStorage.setCookie(cookie)
-
-                if cookie.name == "X-Token" {
-                    let prefs = UserDefaults.standard
-                    prefs.setValue(cookie.value, forKey: "X-Token")
-                    SecureStore.set(cookie.value, for: "X-Token")
-                }
-            }
-
-            print("cookis: \(cookies)")
-        }
-    }
-
-    func webView(_ webView: WKWebView, shouldStartLoadWith request: URLRequest, navigationType _:
-        WKNavigationType) -> Bool
-    {
-        let request = URLRequest(url: request.url!)
-
-        let mutableRequest = request as! NSMutableURLRequest
-        let ciphertext = cipherText.getCipherText(currentDeviceId())
-        mutableRequest.setValue(ciphertext, forHTTPHeaderField: "M-Device")
-        mutableRequest.setValue("M", forHTTPHeaderField: "M")
-
-        webView.load(request)
-
-        return true
-    }
-
     func webView(_ webView: WKWebView, didFinish _: WKNavigation!) {
-        let path = webView.url?.relativePath ?? ""
-        // if path == "/login/index.html" {
-        //     dismiss(animated: true, completion: nil)
-        // }
+        startAuthPolling()
+    }
+
+    private func startAuthPolling() {
+        authCheckTimer?.invalidate()
+        authCheckTimer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: true) { [weak self] _ in
+            self?.checkAuthStateAndDismiss()
+        }
+        checkAuthStateAndDismiss()
+    }
+
+    private func checkAuthStateAndDismiss() {
+        if didHandleLogin { return }
+
+        let script = "JSON.stringify({hash: window.location.hash || '', user: localStorage.filmReviewUser || ''})"
+        webView.evaluateJavaScript(script) { [weak self] result, _ in
+            guard let self else { return }
+            guard let jsonString = result as? String,
+                  let data = jsonString.data(using: .utf8),
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: String]
+            else { return }
+
+            let hash = json["hash"] ?? ""
+            let localUser = json["user"] ?? ""
+            guard hash == "#/movies" else { return }
+
+            self.webView.configuration.websiteDataStore.httpCookieStore.getAllCookies { cookies in
+                var cookieToken: String?
+                for cookie in cookies {
+                    HTTPCookieStorage.shared.setCookie(cookie)
+                    if cookie.name == "X-Token" {
+                        cookieToken = cookie.value
+                    }
+                }
+
+                if let token = cookieToken, !token.isEmpty {
+                    UserDefaults.standard.setValue(token, forKey: "X-Token")
+                    SecureStore.set(token, for: "X-Token")
+                }
+                if !localUser.isEmpty {
+                    UserDefaults.standard.set(localUser, forKey: "USERNAME")
+                    UserDefaults.standard.set(1, forKey: "ISLOGGEDIN")
+                    UserDefaults.standard.set(1, forKey: "ISWEBLOGGEDIN")
+                }
+
+                self.didHandleLogin = true
+                self.authCheckTimer?.invalidate()
+                self.authCheckTimer = nil
+                self.dismiss(animated: true, completion: nil)
+            }
+        }
     }
 
     func webView(_: WKWebView,
                  didReceive challenge: URLAuthenticationChallenge,
                  completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void)
     {
-        if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust {
-            let cred = URLCredential(trust: challenge.protectionSpace.serverTrust!)
-            completionHandler(.useCredential, cred)
+        if challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+           let serverTrust = challenge.protectionSpace.serverTrust
+        {
+            completionHandler(.useCredential, URLCredential(trust: serverTrust))
         } else {
             completionHandler(.performDefaultHandling, nil)
         }

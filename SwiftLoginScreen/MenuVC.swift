@@ -248,6 +248,7 @@ class MenuVC: UIViewController, HasAppServices {
 
         usernameValueLabel.text = "No logged-in user"
         emailValueLabel.text = "No email"
+        self.imageView.image = nil
         sessionCookieValue = ""
 
         UserDefaults.standard.removePersistentDomain(forName: Bundle.main.bundleIdentifier!)
