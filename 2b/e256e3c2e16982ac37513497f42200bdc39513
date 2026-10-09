@@ -1,0 +1,50 @@
+SwiftLoginScreen/BroadCasting/Websocket.swift
+  s_8a5a5b1ae7714c::t_64159afdd70a07 17-22,58-80,120,150
+  s_0dfb976905ff25::t_bf7c023098180b 6,13-16,23-31,35-37,41-56,81-86,89,93,95,99-101,106-119,121,123-149,154,158-161,172-179,186,188-192,196
+  s_0dfb976905ff25::t_2e519840ab41d9 57
+SwiftLoginScreen/MenuVC.swift
+  s_8a5a5b1ae7714c::t_f380930b72f563 213,251,255
+  s_8a5a5b1ae7714c::t_6b357f2ab678ae 23-43,97-102,120,161-164,168-212,214-233,235-237,240,265-268,270-272,274-276,373-379
+  s_8a5a5b1ae7714c::t_ef3f5af581dd87 79,81,234,239,241-250,252-254,256-264,269,273
+  s_8a5a5b1ae7714c::t_122e1d258df2d2 238
+SwiftLoginScreen/Networking/BackendServices.swift
+  s_8a5a5b1ae7714c::t_64159afdd70a07 164-167,264-277,349-355
+  s_8a5a5b1ae7714c::t_9701c26963d049 356
+README.md
+  s_3139b90f425609::t_656283b3f01798 156-174,181-186
+  s_3139b90f425609::t_2b13f8c0910c97 175-180
+Podfile.lock
+  s_3139b90f425609::t_15723d116a22b2 1229-1234,1239-1241,1244-1246,1248-1253,1262-1263,1268-1269,1273-1275,1282-1283,1286,1291,1293,1296,1301,1303-1304,1307,1402,1409-1412,1465-1477,1480,1483-1484,1489,1491
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2be256e3c2e16982ac37513497f42200bdc39513",
+  "prompts": {},
+  "sessions": {
+    "s_0dfb976905ff25": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "d6f91b66-d8b2-4c7d-aed5-717e73a26d69",
+        "model": "unknown"
+      },
+      "human_author": "GASPAR, GYORGY <gyorgy.gaspar@lhsystems.com>"
+    },
+    "s_3139b90f425609": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "53745e29-98d5-4fbb-bf3c-08a4357710e2",
+        "model": "unknown"
+      },
+      "human_author": "GASPAR, GYORGY <gyorgy.gaspar@lhsystems.com>"
+    },
+    "s_8a5a5b1ae7714c": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "c66b2ef2-4e58-4b95-a49b-cc1d9d69dde5",
+        "model": "unknown"
+      },
+      "human_author": "GASPAR, GYORGY <gyorgy.gaspar@lhsystems.com>"
+    }
+  }
+}
