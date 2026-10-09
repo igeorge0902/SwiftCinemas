@@ -66,6 +66,8 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>com.paypal.ppclient.touch.v1</string>
@@ -125,8 +127,6 @@
 	<string>We need your location to send notifications when you're near a place.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>We need your location to send notifications when you're near a place.</string>
-    <key>FirebaseAppDelegateProxyEnabled</key>
-    <false/>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>

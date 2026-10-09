@@ -1,4 +1,4 @@
-platform :ios, '15.0'
+platform :ios, '17.0'
 
 use_frameworks!
 
@@ -25,6 +25,19 @@ target 'SwiftCinemas' do
 end
 
 post_install do |installer|
+  # Podspec minimums can be older than Xcode 27's supported iOS range.
+  # Raise only explicit numeric values; keep higher and xcconfig-derived targets.
+  minimum_pod_target = Gem::Version.new('15.0')
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      deployment_target = config.build_settings['IPHONEOS_DEPLOYMENT_TARGET']
+      next unless deployment_target.to_s.match?(/\A\d+(?:\.\d+)*\z/)
+      next unless Gem::Version.new(deployment_target) < minimum_pod_target
+
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = minimum_pod_target.to_s
+    end
+  end
+
   user_projects = installer.aggregate_targets.map(&:user_project).uniq
 
   user_projects.each do |user_project|

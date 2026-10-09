@@ -161,6 +161,10 @@ final class MbooksService {
 
 // MARK: - /login (LoginGatewayService)
 
+struct ScreenNews: Codable, Sendable {
+    let enabled: Bool
+}
+
 @MainActor
 final class LoginGatewayService {
     // MARK: Lifecycle
@@ -257,6 +261,20 @@ final class LoginGatewayService {
         return try await apiClient.requestData(endpoint, headers: session)
     }
 
+    func getNewsScreen() async throws -> ScreenNews {
+        let endpoint = Endpoint(path: loginPath("admin/newsSettings/screen"), method: "GET", query: nil, body: nil, cacheKey: nil, absoluteURL: nil)
+        let data = try await apiClient.requestData(endpoint, headers: session)
+        return try decodeNewsScreen(from: data)
+    }
+
+    func putNewsScreen(enabled: Bool) async throws -> ScreenNews {
+        let body = try JSONEncoder().encode(ScreenNews(enabled: enabled))
+        let headers = MergedHeaderProvider(base: session, extra: ["Content-Type": "application/json"])
+        let endpoint = Endpoint(path: loginPath("admin/newsSettings/screen"), method: "PUT", query: nil, body: body, cacheKey: nil, absoluteURL: nil)
+        let data = try await apiClient.requestData(endpoint, headers: headers)
+        return try decodeNewsScreen(from: data)
+    }
+
     func getCheckOut() async throws -> Data {
         let endpoint = Endpoint(path: loginPath("CheckOut"), method: "GET", query: nil, body: nil, cacheKey: nil, absoluteURL: nil)
         return try await apiClient.requestData(endpoint, headers: session)
@@ -327,6 +345,14 @@ final class LoginGatewayService {
 
     private let apiClient: APIClient
     private let session = SessionHeaderProvider()
+
+    private func decodeNewsScreen(from data: Data) throws -> ScreenNews {
+        do {
+            return try JSONDecoder().decode(ScreenNews.self, from: data)
+        } catch {
+            throw AppError.decodingFailed
+        }
+    }
 
     private func loginPath(_ url: String) -> String {
         let s = url.hasPrefix("/") ? String(url.dropFirst()) : url

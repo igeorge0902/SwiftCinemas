@@ -20,6 +20,27 @@ class MenuVC: UIViewController, HasAppServices {
         setupUI()
         loadCookies()
         getUser()
+        loadNewsScreen()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // Refresh after returning from another screen, including a cancelled save.
+        if newsScreenTask == nil {
+            loadNewsScreen()
+        }
+    }
+
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        newsScreenTask?.cancel()
+        newsScreenTask = nil
+        screenNewsSwitch.isEnabled = false
+        screenNewsSwitch.setOn(confirmedNewsScreen ?? false, animated: false)
+    }
+
+    deinit {
+        newsScreenTask?.cancel()
     }
 
     override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
@@ -55,22 +76,9 @@ class MenuVC: UIViewController, HasAppServices {
                 self.imageView.image = UIImage(data: imagedata)
 
             } catch let err as AppError {
-                let title: String
-                switch err {
-                case .activationRequired(voucherActive: false):
-                    title = "Warning!"
-                    self.presentAlertWithFunction(withTitle: title, message: ErrorHandler.message(for: err), function: "sendEmail")
-
-                default:
-                    title = "No valid session!"
-                }
-                self.presentAlert(withTitle: title, message: ErrorHandler.message(for: err))
-
+                self.presentMenuError(err, title: "No valid session!")
             } catch {
-                self.presentAlert(
-                    withTitle: "Error!",
-                    message: ErrorHandler.message(for: AppError.networkFailure(underlying: error))
-                )
+                self.presentMenuError(error)
             }
         }
     }
@@ -86,6 +94,12 @@ class MenuVC: UIViewController, HasAppServices {
     private lazy var emailValueLabel = createFieldValueLabel()
     private lazy var imageView = createImageView()
     private lazy var adminButton = createButton(title: "Admin", action: #selector(admin))
+    private let screenNewsSwitch = UISwitch()
+    private let screenNewsStatusLabel = UILabel()
+    private lazy var screenNewsRow = createScreenNewsRow()
+
+    private var confirmedNewsScreen: Bool?
+    private var newsScreenTask: Task<Void, Never>?
 
     private let url = URL(string: URLManager.login("/logout"))
     private var sessionCookieValue = ""
@@ -103,7 +117,7 @@ class MenuVC: UIViewController, HasAppServices {
         ])
 
         imageView.image = UIImage(named: "placeholder")
-        for item in [profileCard, adminButton] {
+        for item in [profileCard, adminButton, screenNewsRow] {
             item.translatesAutoresizingMaskIntoConstraints = false
             view.addSubview(item)
         }
@@ -144,7 +158,120 @@ class MenuVC: UIViewController, HasAppServices {
             adminButton.leadingAnchor.constraint(equalTo: profileCard.leadingAnchor),
             adminButton.trailingAnchor.constraint(equalTo: profileCard.trailingAnchor),
             adminButton.heightAnchor.constraint(equalToConstant: 42),
+
+            screenNewsRow.topAnchor.constraint(equalTo: adminButton.bottomAnchor, constant: 18),
+            screenNewsRow.leadingAnchor.constraint(equalTo: profileCard.leadingAnchor),
+            screenNewsRow.trailingAnchor.constraint(equalTo: profileCard.trailingAnchor),
         ])
+    }
+
+    private func createScreenNewsRow() -> UIStackView {
+        let title = createFieldTitleLabel(text: "Screen news")
+        screenNewsStatusLabel.font = .systemFont(ofSize: 11)
+        screenNewsStatusLabel.textColor = .darkGray
+        screenNewsStatusLabel.numberOfLines = 0
+        screenNewsStatusLabel.text = "Loading…"
+
+        let labels = UIStackView(arrangedSubviews: [title, screenNewsStatusLabel])
+        labels.axis = .vertical
+        labels.spacing = 4
+
+        screenNewsSwitch.isEnabled = false
+        screenNewsSwitch.accessibilityLabel = "Screen news"
+        screenNewsSwitch.addTarget(self, action: #selector(screenNewsChanged(_:)), for: .valueChanged)
+
+        let row = UIStackView(arrangedSubviews: [labels, screenNewsSwitch])
+        row.axis = .horizontal
+        row.alignment = .center
+        row.spacing = 12
+        return row
+    }
+
+    // MARK: - Screen-news Subscription
+
+    private func loadNewsScreen() {
+        requestNewsScreen(enabled: nil)
+    }
+
+    @objc private func screenNewsChanged(_ sender: UISwitch) {
+        guard let confirmed = confirmedNewsScreen, newsScreenTask == nil else { return }
+        let wanted = sender.isOn
+        // Keep displaying the last confirmed value until the server acknowledges the change.
+        sender.setOn(confirmed, animated: true)
+        requestNewsScreen(enabled: wanted)
+    }
+
+    private func requestNewsScreen(enabled: Bool?) {
+        guard newsScreenTask == nil else { return }
+        let gateway = appServices.loginGateway
+        let previousConfirmed = confirmedNewsScreen
+        screenNewsSwitch.isEnabled = false
+        screenNewsStatusLabel.text = enabled == nil ? "Loading…" : "Saving…"
+
+        // Capture the service, not the controller, across the network suspension.
+        newsScreenTask = Task { @MainActor [weak self] in
+            guard !Task.isCancelled else { return }
+            do {
+                let settings: ScreenNews
+                if let enabled {
+                    settings = try await gateway.putNewsScreen(enabled: enabled)
+                } else {
+                    settings = try await gateway.getNewsScreen()
+                }
+                guard !Task.isCancelled, let self else { return }
+                self.newsScreenTask = nil
+                self.confirmedNewsScreen = settings.enabled
+                self.screenNewsSwitch.setOn(settings.enabled, animated: true)
+                self.screenNewsSwitch.isEnabled = true
+                self.screenNewsStatusLabel.text = settings.enabled ? "Enabled" : "Disabled"
+            } catch {
+                // Leaving the screen cancels UI delivery; the next appearance re-reads the server.
+                guard !Task.isCancelled, let self else { return }
+                self.newsScreenTask = nil
+                self.screenNewsSwitch.setOn(previousConfirmed ?? false, animated: true)
+                self.screenNewsSwitch.isEnabled = enabled != nil && previousConfirmed != nil
+                self.screenNewsStatusLabel.text = enabled == nil ? "Unavailable" : "Not saved"
+                self.presentMenuError(error)
+            }
+        }
+    }
+
+    private func presentMenuError(_ error: Error, title: String = "Error!") {
+        let appError = (error as? AppError) ?? .networkFailure(underlying: error)
+        var message = ErrorHandler.message(for: appError)
+
+        // Profile and settings requests may fail together. Do not attempt overlapping alerts.
+        if let alert = presentedViewController as? UIAlertController {
+            if let existing = alert.message, !existing.isEmpty, existing != message {
+                message = existing + "\n" + message
+            }
+            switch appError {
+            case .activationRequired(voucherActive: false) where alert.title != "Warning!":
+                // Upgrade a plain error alert to the existing activation-action alert.
+                let combinedMessage = message
+                alert.dismiss(animated: false) { [weak self] in
+                    self?.presentAlertWithFunction(
+                        withTitle: "Warning!",
+                        message: combinedMessage,
+                        function: "sendEmail"
+                    )
+                }
+            default:
+                alert.message = message
+            }
+            return
+        }
+
+        switch appError {
+        case .activationRequired(voucherActive: false):
+            presentAlertWithFunction(
+                withTitle: "Warning!",
+                message: message,
+                function: "sendEmail"
+            )
+        default:
+            presentAlert(withTitle: title, message: message)
+        }
     }
 
     private func createButton(title: String, action: Selector) -> UIButton {
@@ -243,6 +370,13 @@ class MenuVC: UIViewController, HasAppServices {
     }
 
     private func clearCookies() {
+        newsScreenTask?.cancel()
+        newsScreenTask = nil
+        confirmedNewsScreen = nil
+        screenNewsSwitch.setOn(false, animated: false)
+        screenNewsSwitch.isEnabled = false
+        screenNewsStatusLabel.text = "Unavailable"
+
         let cookieStorage = HTTPCookieStorage.shared
         cookieStorage.cookies?.forEach { cookieStorage.deleteCookie($0) }
 

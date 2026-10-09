@@ -153,6 +153,37 @@ open SwiftCinemas.xcworkspace
 
 > ⚠️ Always open the `.xcworkspace` file (not `.xcodeproj`) after installing pods.
 
+### CocoaPods Deployment Targets (Xcode 27)
+
+Xcode 27's iOS Simulator SDK supports deployment targets starting at **15.0**.
+Some locked podspecs still declare iOS 9–12 (for example, CryptoSwift declares
+11.0). The Podfile's `platform :ios` controls dependency resolution and aggregate
+targets; it does not raise every individual pod or resource-bundle target.
+
+The existing `post_install` hook applies a **15.0 floor** to explicit numeric pod
+deployment targets in every configuration, including resource bundles. It never
+lowers higher targets and preserves inherited/variable-based settings (such as
+Realm's Xcode-dependent xcconfig). The app and test targets remain at **15.6**;
+the existing Podfile platform of **17.0** is unchanged.
+
+If `Pods.xcodeproj` reports an unsupported `IPHONEOS_DEPLOYMENT_TARGET`, run
+`pod install` again; do not hand-edit the generated project or run `pod update`.
+These diagnostics may be warnings on older Xcode versions, but Xcode 27 can
+report them as build-stopping errors. Any compilation errors remaining after
+regeneration are separate blockers.
+
+One confirmed separate blocker with locked Braintree **5.27.0** on Xcode 27 is
+`BTPayPalDriver.m:440`: `UIApplication.windows` is deprecated and the pod's
+per-file `-Werror` flag promotes it to an error. The deployment-target hook does
+not patch vendor source or suppress these compiler diagnostics; a full app
+build can still fail here after all deployment-target errors are gone.
+
+Validate the raise-only hook without building the app:
+
+```bash
+ruby scripts/test-pod-deployment-targets.rb
+```
+
 ### CLI Test Stability (CocoaPods Embed Frameworks)
 
 If CLI test runs fail in `[CP] Embed Pods Frameworks` with `rsync: ... Operation not permitted`, the test target's script sandbox is usually blocking pod framework copy into the `.xctest` bundle.
