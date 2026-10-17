@@ -90,12 +90,22 @@ jobs:
         run: |
           set -euo pipefail
           lock_hash="$(shasum -a 256 Cartfile.resolved)"
-          # Reuse compatible cached builds, but never resolve new dependency versions.
-          carthage bootstrap --platform iOS --use-xcframeworks --cache-builds
+          
+          # 1. Fetch checkouts into Carthage/Checkouts inside the project dir
+          carthage checkout
+
+          # 2. Prune example workspaces causing the xcodebuild timeout loop
+          find Carthage/Checkouts -name "CombineSample.xcworkspace" -exec rm -rf {} +
+          find Carthage/Checkouts -name "*Sample*" -type d -exec rm -rf {} + 2>/dev/null || true
+
+          # 3. Safely compile frameworks into Carthage/Build
+          carthage build --platform iOS --use-xcframeworks --cache-builds
+
           if [ "$lock_hash" != "$(shasum -a 256 Cartfile.resolved)" ]; then
             echo "Bootstrap changed Cartfile.resolved; reconcile it locally before running CI" >&2
             exit 1
           fi
+    
 
       # Run tests on iPhone Simulator
       - name: Run Tests on iPhone Simulator
