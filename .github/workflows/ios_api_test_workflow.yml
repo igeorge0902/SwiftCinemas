@@ -133,10 +133,3 @@ jobs:
             ${{ runner.temp }}/xcodebuild-test.log
           if-no-files-found: warn
           retention-days: 14
-
-      - name: Publish Xcode test report
-        if: ${{ always() }}
-        uses: kishikawakatsumi/xcresulttool@v1
-        with:
-          path: /Users/runner/Library/Developer/Xcode/DerivedData/SwiftCinemas-*/Logs/Test/*.xcresult
-
