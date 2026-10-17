@@ -1,0 +1,68 @@
+SwiftLoginScreen/HomeVC.swift
+  s_665cd05e72128d::t_39fc186985d2ba 113
+SwiftLoginScreen/Alerts/AlertAction.swift
+  s_665cd05e72128d::t_39fc186985d2ba 1-7
+.github/workflows/ios_api_test_workflow.yml
+  s_1d8b21582b0552::t_c95692f3ab6067 19-37,39-41,43-45,47-52,54-69,71
+SwiftLoginScreen/MenuVC.swift
+  s_665cd05e72128d::t_39fc186985d2ba 253,256,267,270
+README.md
+  s_ff21b52866adfc::t_cab9b5ef379704 141-142
+  s_0dfb976905ff25::t_b22bc01a2808f3 134-135
+SwiftLoginScreen/VenuesDetailsVC.swift
+  s_665cd05e72128d::t_39fc186985d2ba 146,237,293
+SwiftCinemas.xcodeproj/project.pbxproj
+  s_665cd05e72128d::t_39fc186985d2ba 742,745-746,776,818-863,889,912,1028-1029
+SwiftLoginScreen/Alerts/AlertPresenter.swift
+  s_665cd05e72128d::t_39fc186985d2ba 1-30
+SwiftLoginScreen/BasketVC.swift
+  s_e33bd7bbbf7894::t_5828b239bdaa63 4-5,7,24-27,201,208,214,217-218,223-244,247-253,257,260,296,306-372
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9fde7445c3b5764ebbc7755bbc73761e1527dea9",
+  "prompts": {},
+  "sessions": {
+    "s_0dfb976905ff25": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "d6f91b66-d8b2-4c7d-aed5-717e73a26d69",
+        "model": "unknown"
+      },
+      "human_author": "GASPAR, GYORGY <gyorgy.gaspar@lhsystems.com>"
+    },
+    "s_1d8b21582b0552": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "03031df9-0fea-4f32-903e-463156e402dc",
+        "model": "unknown"
+      },
+      "human_author": "GASPAR, GYORGY <gyorgy.gaspar@lhsystems.com>"
+    },
+    "s_665cd05e72128d": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "34926b2b-f3ab-41da-8653-9c1e7790a655",
+        "model": "unknown"
+      },
+      "human_author": "GASPAR, GYORGY <gyorgy.gaspar@lhsystems.com>"
+    },
+    "s_e33bd7bbbf7894": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "978a1a0b-f7f8-4ad0-9dbe-4e46f20dd550",
+        "model": "unknown"
+      },
+      "human_author": "GASPAR, GYORGY <gyorgy.gaspar@lhsystems.com>"
+    },
+    "s_ff21b52866adfc": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "6b430721-6d45-4382-b2b5-724a165ae63d",
+        "model": "unknown"
+      },
+      "human_author": "GASPAR, GYORGY <gyorgy.gaspar@lhsystems.com>"
+    }
+  }
+}
