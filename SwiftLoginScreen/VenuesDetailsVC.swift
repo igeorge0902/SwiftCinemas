@@ -143,14 +143,7 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
         }
 
         if DatesDataManager.shared.selectedScreeningDateId == nil {
-            let alertView = UIAlertView()
-
-            alertView.title = "Warning!"
-            alertView.message = "Select dates first!"
-            alertView.delegate = self
-            alertView.addButton(withTitle: "OK")
-            alertView.show()
-
+            presentAlert(withTitle: "Warning!", message: "Select dates first!")
         } else {
             Task { @MainActor [weak self] in
                 guard let self,
@@ -241,14 +234,7 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
 
     @objc func selectCalendar(_: UIButton) {
         if DatesDataManager.shared.selectedScreeningDateId == nil {
-            let alertView = UIAlertView()
-
-            alertView.title = "Warning!"
-            alertView.message = "Select dates first!"
-            alertView.delegate = self
-            alertView.addButton(withTitle: "OK")
-            alertView.show()
-
+            presentAlert(withTitle: "Warning!", message: "Select dates first!")
         } else {
             // Access permission
             eventStore.requestAccess(to: EKEntityType.event) { granted, error in
@@ -304,14 +290,7 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
 
     @objc func selectCalendar_(sender _: UIButton /* , event: UIEvent */ ) {
         if DatesDataManager.shared.selectedScreeningDateId == nil {
-            let alertView = UIAlertView()
-
-            alertView.title = "Warning!"
-            alertView.message = "Select dates first!"
-            alertView.delegate = self
-            alertView.addButton(withTitle: "OK")
-            alertView.show()
-
+            presentAlert(withTitle: "Warning!", message: "Select dates first!")
         } else {
             // Access permission
             eventStore.requestAccess(to: EKEntityType.event) { granted, error in

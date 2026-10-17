@@ -1,8 +1,10 @@
 // BasketVC.swift
 // Created by Gyorgy Gaspar on 2026.05.23.
 
-import BraintreeDropIn
+import BraintreeCard
+import BraintreeUIComponents
 import Foundation
+import SwiftUI
 import UIKit
 
 class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, HasAppServices {
@@ -18,6 +20,10 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
     var appServices: AppServices!
     var collectionView: UICollectionView!
     var clientToken: String?
+
+    /// Guards against duplicate checkout submissions: set when the checkout flow starts
+    /// (client-token fetch) and cleared on cancel, error, or when the server checkout finishes.
+    private(set) var isCheckoutInProgress = false
 
     lazy var layout = UICollectionViewFlowLayout()
 
@@ -192,52 +198,66 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
             presentAlert(withTitle: "Warning!", message: "Select free seat(s) first!")
 
         } else {
+            guard !isCheckoutInProgress else { return }
             // postNonceToServer(nonce!)
             getClientToken()
         }
     }
 
     func getClientToken() {
+        isCheckoutInProgress = true
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
                 let token = try await CheckoutDataManager.shared.fetchClientToken()
                 self.clientToken = token.clientToken
-                self.showDropIn(clientTokenOrTokenizationKey: token.clientToken)
+                self.showCardFields(clientTokenOrTokenizationKey: token.clientToken)
             } catch {
                 NSLog("getClientToken: %@", error.localizedDescription)
+                self.isCheckoutInProgress = false
+                self.presentAlert(withTitle: "Payment error", message: error.localizedDescription)
             }
         }
     }
 
-    func showDropIn(clientTokenOrTokenizationKey: String) {
-        let request = BTDropInRequest()
-        let dropIn = BTDropInController(authorization: clientTokenOrTokenizationKey, request: request) { controller, result, error in
-            if error != nil {
-                print("ERROR")
-            } else if result?.isCanceled == true {
-                print("CANCELLED")
-            } else if let result {
-                guard let nonce = result.paymentMethod?.nonce
-                else {
-                    controller.dismiss(animated: true, completion: nil)
-                    return
+    /// Presents Braintree's SwiftUI `CardFields` (replacement for the deprecated Drop-in UI)
+    /// in a `UIHostingController`. The resulting nonce is passed to the existing `postNonceToServer`.
+    func showCardFields(clientTokenOrTokenizationKey: String) {
+        var hostRef: UIViewController?
+
+        let checkoutView = CardCheckoutView(
+            authorization: clientTokenOrTokenizationKey,
+            onNonce: { [weak self] nonce in
+                hostRef?.dismiss(animated: true) {
+                    self?.postNonceToServer(nonce)
                 }
-                self.postNonceToServer(nonce)
-                // Use the BTDropInResult properties to update your UI
-                // result.paymentOptionType
-                // result.paymentMethod
-                // result.paymentIcon
-                // result.paymentDescription
+            },
+            onError: { [weak self] error in
+                NSLog("CardFields tokenization: %@", error.localizedDescription)
+                hostRef?.dismiss(animated: true) {
+                    self?.isCheckoutInProgress = false
+                    self?.presentAlert(withTitle: "Payment error", message: error.localizedDescription)
+                }
+            },
+            onCancel: { [weak self] in
+                hostRef?.dismiss(animated: true) {
+                    self?.isCheckoutInProgress = false
+                }
             }
-            controller.dismiss(animated: true, completion: nil)
-        }
-        present(dropIn!, animated: true, completion: nil)
+        )
+
+        let host = UIHostingController(rootView: checkoutView)
+        // Require explicit Cancel/Pay so the in-progress flag is always cleared.
+        host.isModalInPresentation = true
+        hostRef = host
+        present(host, animated: true, completion: nil)
     }
 
     func postNonceToServer(_ paymentMethodNonce: String) {
+        isCheckoutInProgress = true
         Task { @MainActor [weak self] in
             guard let self else { return }
+            defer { self.isCheckoutInProgress = false }
             do {
                 let orderId = String(zeroTime(0).getCurrentMillis())
                 let seatsPayload = try BasketDataManager.shared.makeSeatsToBeReservedPayload()
@@ -273,6 +293,7 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
                 }
             } catch {
                 NSLog("postNonceToServer: %@", error.localizedDescription)
+                self.presentAlert(withTitle: "Payment error", message: error.localizedDescription)
             }
         }
     }
@@ -280,6 +301,73 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
     // MARK: Private
 
     private var topNavigationButtons: [UIButton] = []
+}
+
+// MARK: - CardCheckoutView
+
+/// SwiftUI card entry sheet built on Braintree `CardFields`.
+/// `CardFields` has no submit button, so Pay is enabled only when the form is valid
+/// and disabled while tokenization is in flight to prevent duplicate submission.
+struct CardCheckoutView: View {
+    let authorization: String
+    let onNonce: (String) -> Void
+    let onError: (Error) -> Void
+    let onCancel: () -> Void
+
+    @State private var isValid = false
+    @State private var tokenize: (() -> Void)?
+    @State private var isSubmitting = false
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 24) {
+                    CardFields(authorization: authorization, card: BTCard()) { nonce, error in
+                        if let nonce {
+                            onNonce(nonce.nonce)
+                        } else {
+                            isSubmitting = false
+                            if let error {
+                                onError(error)
+                            }
+                        }
+                    }
+                    .onValidityChange { valid, tokenizeAction in
+                        isValid = valid
+                        tokenize = tokenizeAction
+                    }
+                    .disabled(isSubmitting)
+
+                    Button {
+                        guard isValid, !isSubmitting, let tokenize else { return }
+                        isSubmitting = true
+                        tokenize()
+                    } label: {
+                        if isSubmitting {
+                            ProgressView()
+                                .frame(maxWidth: .infinity)
+                        } else {
+                            Text("Pay")
+                                .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!isValid || isSubmitting)
+                    .accessibilityIdentifier("cardFieldsPayButton")
+                }
+                .padding()
+            }
+            .navigationTitle("Card payment")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", action: onCancel)
+                        .disabled(isSubmitting)
+                        .accessibilityIdentifier("cardFieldsCancelButton")
+                }
+            }
+        }
+    }
 }
 
 /// Helper function inserted by Swift 4.2 migrator.

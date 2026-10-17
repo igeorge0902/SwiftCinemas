@@ -250,10 +250,10 @@ class MenuVC: UIViewController, HasAppServices {
                 // Upgrade a plain error alert to the existing activation-action alert.
                 let combinedMessage = message
                 alert.dismiss(animated: false) { [weak self] in
-                    self?.presentAlertWithFunction(
+                    self?.presentAlert(
                         withTitle: "Warning!",
                         message: combinedMessage,
-                        function: "sendEmail"
+                        action: .resendActivation
                     )
                 }
             default:
@@ -264,10 +264,10 @@ class MenuVC: UIViewController, HasAppServices {
 
         switch appError {
         case .activationRequired(voucherActive: false):
-            presentAlertWithFunction(
+            presentAlert(
                 withTitle: "Warning!",
                 message: message,
-                function: "sendEmail"
+                action: .resendActivation
             )
         default:
             presentAlert(withTitle: title, message: message)

@@ -7,7 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		54D956C6DD035C62972C4E3A /* Pods_SwiftCinemas.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8D825BF86296873B49574DCA /* Pods_SwiftCinemas.framework */; };
+		0CE8AB00A0E08330B4D813E1 /* grpcpp.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9D68262ECFCFEA52D4BB2BA9 /* grpcpp.xcframework */; };
+		1C6EDDBBBDB8A2224B7FFD16 /* absl.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = EAE619183417AACB33B1FD23 /* absl.xcframework */; };
+		37EA5B0D570D59486BE82079 /* FBLPromises.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = A34088BB261DEA8873F549A0 /* FBLPromises.xcframework */; };
+		3CD8572E2A227FFEB7994952 /* leveldb.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 0BC22DE8C6A3EC55C43231B6 /* leveldb.xcframework */; };
+		43F11E83DD1251BF0975E572 /* GoogleDataTransport.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = C7EA18796FD6310A3EAB2A9F /* GoogleDataTransport.xcframework */; };
+		49A6AA46CDA27D24A2C5A308 /* nanopb.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = A360B5E49B1F398AA4B7ECC4 /* nanopb.xcframework */; };
+		4F08A46864B12B07133DE255 /* GoogleAdsOnDeviceConversion.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F74E800546FAC0F7E9C9041E /* GoogleAdsOnDeviceConversion.xcframework */; };
+		5864F11BDCD31A06478B374F /* GTMSessionFetcher.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F82162A372E8E07E8AD9FF95 /* GTMSessionFetcher.xcframework */; };
+		59CCDDA180CA3971EE944A21 /* RecaptchaInterop.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = A0F8CB06FB9D956705F30DCC /* RecaptchaInterop.xcframework */; };
 		7D230E192FC105E40062B129 /* PurchaseRowCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D230E182FC105D20062B129 /* PurchaseRowCell.swift */; };
 		7D25892F2F8021CC00C5A23C /* VenuesMigrationSegueEntryVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D25892D2F8021CC00C5A23C /* VenuesMigrationSegueEntryVC.swift */; };
 		7D5C0D012F786E880019481A /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D5C0D002F786E790019481A /* APIClient.swift */; };
@@ -19,17 +27,82 @@
 		7D5C0D0D2F786ED10019481A /* BackendServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D5C0D0C2F786ED00019481A /* BackendServices.swift */; };
 		7D5C0D0D2F790E510019481A /* UserData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D5C0D0C2F790E4A0019481A /* UserData.swift */; };
 		7D7955EA2F800CB200887048 /* VenuesMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D7955E82F800CB200887048 /* VenuesMigration.swift */; };
-		7DC30A542FAE66D80097FC34 /* SeatsDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC30A4F2FAE66D80097FC34 /* SeatsDataManager.swift */; };
-		7DC30A552FAE66D80097FC34 /* SecureStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC30A502FAE66D80097FC34 /* SecureStore.swift */; };
-		7DC30A562FAE66D80097FC34 /* CheckoutDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC30A4B2FAE66D80097FC34 /* CheckoutDataManager.swift */; };
-		7DC30A572FAE66D80097FC34 /* AdminScreeningsDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC30A482FAE66D80097FC34 /* AdminScreeningsDataManager.swift */; };
-		7DC30A582FAE66D80097FC34 /* BasketDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC30A4A2FAE66D80097FC34 /* BasketDataManager.swift */; };
-		7DC30A592FAE66D80097FC34 /* VenuesDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC30A522FAE66D80097FC34 /* VenuesDataManager.swift */; };
-		7DC30A5A2FAE66D80097FC34 /* LocationsDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC30A4D2FAE66D80097FC34 /* LocationsDataManager.swift */; };
-		7DC30A5B2FAE66D80097FC34 /* SharedDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC30A512FAE66D80097FC34 /* SharedDataManager.swift */; };
-		7DC30A5C2FAE66D80097FC34 /* DatesDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC30A4C2FAE66D80097FC34 /* DatesDataManager.swift */; };
-		7DC30A5D2FAE66D80097FC34 /* AuthDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC30A492FAE66D80097FC34 /* AuthDataManager.swift */; };
-		7DC30A5E2FAE66D80097FC34 /* MoviesDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC30A4E2FAE66D80097FC34 /* MoviesDataManager.swift */; };
+		7D8E1BD9307A62BA00F12E8B /* Realm.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1BC7307A62BA00F12E8B /* Realm.xcframework */; };
+		7D8E1BDA307A62BA00F12E8B /* Realm.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1BC7307A62BA00F12E8B /* Realm.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1BE7307A62BA00F12E8B /* PayPalMessages.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1BCE307A62BA00F12E8B /* PayPalMessages.xcframework */; };
+		7D8E1BE8307A62BA00F12E8B /* PayPalMessages.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1BCE307A62BA00F12E8B /* PayPalMessages.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1BEB307A62BA00F12E8B /* CardinalMobile.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1BD0307A62BA00F12E8B /* CardinalMobile.xcframework */; };
+		7D8E1BEC307A62BA00F12E8B /* CardinalMobile.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1BD0307A62BA00F12E8B /* CardinalMobile.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1BF5307A62BA00F12E8B /* RealmSwift.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1BD5307A62BA00F12E8B /* RealmSwift.xcframework */; };
+		7D8E1BF6307A62BA00F12E8B /* RealmSwift.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1BD5307A62BA00F12E8B /* RealmSwift.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1BFB307A62BA00F12E8B /* PPRiskMagnes.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1BD8307A62BA00F12E8B /* PPRiskMagnes.xcframework */; };
+		7D8E1BFC307A62BA00F12E8B /* PPRiskMagnes.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1BD8307A62BA00F12E8B /* PPRiskMagnes.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C18307A62E000F12E8B /* CardinalMobile.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1BD0307A62BA00F12E8B /* CardinalMobile.xcframework */; };
+		7D8E1C19307A62E000F12E8B /* CardinalMobile.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1BD0307A62BA00F12E8B /* CardinalMobile.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C1A307A62E000F12E8B /* PayPalMessages.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1BCE307A62BA00F12E8B /* PayPalMessages.xcframework */; };
+		7D8E1C1B307A62E000F12E8B /* PayPalMessages.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1BCE307A62BA00F12E8B /* PayPalMessages.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C1C307A62E000F12E8B /* PPRiskMagnes.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1BD8307A62BA00F12E8B /* PPRiskMagnes.xcframework */; };
+		7D8E1C1D307A62E000F12E8B /* PPRiskMagnes.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1BD8307A62BA00F12E8B /* PPRiskMagnes.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C1E307A62E000F12E8B /* Realm.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1BC7307A62BA00F12E8B /* Realm.xcframework */; };
+		7D8E1C1F307A62E000F12E8B /* Realm.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1BC7307A62BA00F12E8B /* Realm.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C20307A62E000F12E8B /* RealmSwift.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1BD5307A62BA00F12E8B /* RealmSwift.xcframework */; };
+		7D8E1C21307A62E000F12E8B /* RealmSwift.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1BD5307A62BA00F12E8B /* RealmSwift.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C24307A68A100F12E8B /* SwiftyJSON.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C23307A68A100F12E8B /* SwiftyJSON.xcframework */; };
+		7D8E1C25307A68A100F12E8B /* SwiftyJSON.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C23307A68A100F12E8B /* SwiftyJSON.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C26307A68AC00F12E8B /* SwiftyJSON.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C23307A68A100F12E8B /* SwiftyJSON.xcframework */; };
+		7D8E1C27307A68AC00F12E8B /* SwiftyJSON.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C23307A68A100F12E8B /* SwiftyJSON.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C29307A6AA900F12E8B /* CryptoSwift.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C28307A6AA900F12E8B /* CryptoSwift.xcframework */; };
+		7D8E1C2A307A6AA900F12E8B /* CryptoSwift.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C28307A6AA900F12E8B /* CryptoSwift.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C2B307A6AB600F12E8B /* CryptoSwift.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C28307A6AA900F12E8B /* CryptoSwift.xcframework */; };
+		7D8E1C2C307A6AB600F12E8B /* CryptoSwift.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C28307A6AA900F12E8B /* CryptoSwift.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C39307A6EAC00F12E8B /* FirebaseAuth.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C2D307A6EAC00F12E8B /* FirebaseAuth.xcframework */; };
+		7D8E1C3A307A6EAC00F12E8B /* FirebaseAuth.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C2D307A6EAC00F12E8B /* FirebaseAuth.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C3B307A6EAC00F12E8B /* FirebaseAppCheckInterop.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C2E307A6EAC00F12E8B /* FirebaseAppCheckInterop.xcframework */; };
+		7D8E1C3C307A6EAD00F12E8B /* FirebaseAppCheckInterop.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C2E307A6EAC00F12E8B /* FirebaseAppCheckInterop.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C3D307A6EAD00F12E8B /* FirebaseFirestore.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C2F307A6EAC00F12E8B /* FirebaseFirestore.xcframework */; };
+		7D8E1C3E307A6EAD00F12E8B /* FirebaseFirestore.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C2F307A6EAC00F12E8B /* FirebaseFirestore.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C3F307A6EAD00F12E8B /* FirebaseCoreInternal.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C30307A6EAC00F12E8B /* FirebaseCoreInternal.xcframework */; };
+		7D8E1C40307A6EAD00F12E8B /* FirebaseCoreInternal.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C30307A6EAC00F12E8B /* FirebaseCoreInternal.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C41307A6EAD00F12E8B /* FirebaseFirestoreInternal.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C31307A6EAC00F12E8B /* FirebaseFirestoreInternal.xcframework */; };
+		7D8E1C42307A6EAD00F12E8B /* FirebaseFirestoreInternal.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C31307A6EAC00F12E8B /* FirebaseFirestoreInternal.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C43307A6EAD00F12E8B /* FirebaseSharedSwift.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C32307A6EAC00F12E8B /* FirebaseSharedSwift.xcframework */; };
+		7D8E1C44307A6EAD00F12E8B /* FirebaseSharedSwift.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C32307A6EAC00F12E8B /* FirebaseSharedSwift.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C45307A6EAD00F12E8B /* FirebaseMessaging.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C33307A6EAC00F12E8B /* FirebaseMessaging.xcframework */; };
+		7D8E1C46307A6EAD00F12E8B /* FirebaseMessaging.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C33307A6EAC00F12E8B /* FirebaseMessaging.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C47307A6EAD00F12E8B /* FirebaseAuthInterop.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C34307A6EAC00F12E8B /* FirebaseAuthInterop.xcframework */; };
+		7D8E1C48307A6EAD00F12E8B /* FirebaseAuthInterop.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C34307A6EAC00F12E8B /* FirebaseAuthInterop.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C49307A6EAD00F12E8B /* FirebaseInstallations.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C35307A6EAC00F12E8B /* FirebaseInstallations.xcframework */; };
+		7D8E1C4A307A6EAD00F12E8B /* FirebaseInstallations.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C35307A6EAC00F12E8B /* FirebaseInstallations.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C4B307A6EAD00F12E8B /* FirebaseAnalytics.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C36307A6EAC00F12E8B /* FirebaseAnalytics.xcframework */; };
+		7D8E1C4C307A6EAD00F12E8B /* FirebaseAnalytics.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C36307A6EAC00F12E8B /* FirebaseAnalytics.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C4D307A6EAD00F12E8B /* FirebaseCore.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C37307A6EAC00F12E8B /* FirebaseCore.xcframework */; };
+		7D8E1C4E307A6EAD00F12E8B /* FirebaseCore.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C37307A6EAC00F12E8B /* FirebaseCore.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C4F307A6EAD00F12E8B /* FirebaseCoreExtension.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C38307A6EAC00F12E8B /* FirebaseCoreExtension.xcframework */; };
+		7D8E1C50307A6EAD00F12E8B /* FirebaseCoreExtension.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C38307A6EAC00F12E8B /* FirebaseCoreExtension.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C51307A6EBA00F12E8B /* FirebaseAnalytics.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C36307A6EAC00F12E8B /* FirebaseAnalytics.xcframework */; };
+		7D8E1C52307A6EBA00F12E8B /* FirebaseAnalytics.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C36307A6EAC00F12E8B /* FirebaseAnalytics.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C53307A6EBB00F12E8B /* FirebaseAppCheckInterop.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C2E307A6EAC00F12E8B /* FirebaseAppCheckInterop.xcframework */; };
+		7D8E1C54307A6EBB00F12E8B /* FirebaseAppCheckInterop.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C2E307A6EAC00F12E8B /* FirebaseAppCheckInterop.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C55307A6EBB00F12E8B /* FirebaseAuth.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C2D307A6EAC00F12E8B /* FirebaseAuth.xcframework */; };
+		7D8E1C56307A6EBB00F12E8B /* FirebaseAuth.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C2D307A6EAC00F12E8B /* FirebaseAuth.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C57307A6EBB00F12E8B /* FirebaseAuthInterop.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C34307A6EAC00F12E8B /* FirebaseAuthInterop.xcframework */; };
+		7D8E1C58307A6EBB00F12E8B /* FirebaseAuthInterop.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C34307A6EAC00F12E8B /* FirebaseAuthInterop.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C59307A6EBB00F12E8B /* FirebaseCore.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C37307A6EAC00F12E8B /* FirebaseCore.xcframework */; };
+		7D8E1C5A307A6EBB00F12E8B /* FirebaseCore.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C37307A6EAC00F12E8B /* FirebaseCore.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C5B307A6EBB00F12E8B /* FirebaseCoreExtension.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C38307A6EAC00F12E8B /* FirebaseCoreExtension.xcframework */; };
+		7D8E1C5C307A6EBB00F12E8B /* FirebaseCoreExtension.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C38307A6EAC00F12E8B /* FirebaseCoreExtension.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C5D307A6EBB00F12E8B /* FirebaseCoreInternal.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C30307A6EAC00F12E8B /* FirebaseCoreInternal.xcframework */; };
+		7D8E1C5E307A6EBB00F12E8B /* FirebaseCoreInternal.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C30307A6EAC00F12E8B /* FirebaseCoreInternal.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C5F307A6EBB00F12E8B /* FirebaseFirestore.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C2F307A6EAC00F12E8B /* FirebaseFirestore.xcframework */; };
+		7D8E1C60307A6EBB00F12E8B /* FirebaseFirestore.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C2F307A6EAC00F12E8B /* FirebaseFirestore.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C61307A6EBB00F12E8B /* FirebaseFirestoreInternal.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C31307A6EAC00F12E8B /* FirebaseFirestoreInternal.xcframework */; };
+		7D8E1C62307A6EBB00F12E8B /* FirebaseFirestoreInternal.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C31307A6EAC00F12E8B /* FirebaseFirestoreInternal.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C63307A6EBB00F12E8B /* FirebaseInstallations.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C35307A6EAC00F12E8B /* FirebaseInstallations.xcframework */; };
+		7D8E1C64307A6EBB00F12E8B /* FirebaseInstallations.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C35307A6EAC00F12E8B /* FirebaseInstallations.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C65307A6EBB00F12E8B /* FirebaseMessaging.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C33307A6EAC00F12E8B /* FirebaseMessaging.xcframework */; };
+		7D8E1C66307A6EBB00F12E8B /* FirebaseMessaging.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C33307A6EAC00F12E8B /* FirebaseMessaging.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7D8E1C67307A6EBB00F12E8B /* FirebaseSharedSwift.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C32307A6EAC00F12E8B /* FirebaseSharedSwift.xcframework */; };
+		7D8E1C68307A6EBB00F12E8B /* FirebaseSharedSwift.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7D8E1C32307A6EAC00F12E8B /* FirebaseSharedSwift.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		7DC30A5F2FAE66D80097FC34 /* SeatsDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC30A4F2FAE66D80097FC34 /* SeatsDataManager.swift */; };
 		7DC30A602FAE66D80097FC34 /* SecureStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC30A502FAE66D80097FC34 /* SecureStore.swift */; };
 		7DC30A612FAE66D80097FC34 /* CheckoutDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC30A4B2FAE66D80097FC34 /* CheckoutDataManager.swift */; };
@@ -41,7 +114,45 @@
 		7DC30A672FAE66D80097FC34 /* DatesDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC30A4C2FAE66D80097FC34 /* DatesDataManager.swift */; };
 		7DC30A682FAE66D80097FC34 /* AuthDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC30A492FAE66D80097FC34 /* AuthDataManager.swift */; };
 		7DC30A692FAE66D80097FC34 /* MoviesDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC30A4E2FAE66D80097FC34 /* MoviesDataManager.swift */; };
-		8527C603D854F13536457CC7 /* Pods_SwiftCinemas_SwiftCinemasTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BC21FC33725912A24978F7C1 /* Pods_SwiftCinemas_SwiftCinemasTests.framework */; };
+		7DDE3956307ACFBF00A05B37 /* BraintreeShopperInsights.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE394A307ACFBF00A05B37 /* BraintreeShopperInsights.xcframework */; };
+		7DDE3957307ACFBF00A05B37 /* BraintreeShopperInsights.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE394A307ACFBF00A05B37 /* BraintreeShopperInsights.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7DDE3958307ACFBF00A05B37 /* BraintreeThreeDSecure.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE394B307ACFBF00A05B37 /* BraintreeThreeDSecure.xcframework */; };
+		7DDE3959307ACFBF00A05B37 /* BraintreeThreeDSecure.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE394B307ACFBF00A05B37 /* BraintreeThreeDSecure.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7DDE395A307ACFBF00A05B37 /* BraintreeVenmo.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE394C307ACFBF00A05B37 /* BraintreeVenmo.xcframework */; };
+		7DDE395B307ACFBF00A05B37 /* BraintreeVenmo.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE394C307ACFBF00A05B37 /* BraintreeVenmo.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7DDE395C307ACFBF00A05B37 /* BraintreePayPal.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE394D307ACFBF00A05B37 /* BraintreePayPal.xcframework */; };
+		7DDE395D307ACFBF00A05B37 /* BraintreePayPal.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE394D307ACFBF00A05B37 /* BraintreePayPal.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7DDE395E307ACFBF00A05B37 /* BraintreeDataCollector.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE394E307ACFBF00A05B37 /* BraintreeDataCollector.xcframework */; };
+		7DDE395F307ACFBF00A05B37 /* BraintreeDataCollector.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE394E307ACFBF00A05B37 /* BraintreeDataCollector.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7DDE3960307ACFBF00A05B37 /* BraintreePayPalMessaging.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE394F307ACFBF00A05B37 /* BraintreePayPalMessaging.xcframework */; };
+		7DDE3961307ACFBF00A05B37 /* BraintreePayPalMessaging.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE394F307ACFBF00A05B37 /* BraintreePayPalMessaging.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7DDE3962307ACFBF00A05B37 /* BraintreeCard.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE3950307ACFBF00A05B37 /* BraintreeCard.xcframework */; };
+		7DDE3963307ACFBF00A05B37 /* BraintreeCard.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE3950307ACFBF00A05B37 /* BraintreeCard.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7DDE3964307ACFC000A05B37 /* BraintreeApplePay.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE3951307ACFBF00A05B37 /* BraintreeApplePay.xcframework */; };
+		7DDE3965307ACFC000A05B37 /* BraintreeApplePay.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE3951307ACFBF00A05B37 /* BraintreeApplePay.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7DDE3966307ACFC000A05B37 /* BraintreeCore.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE3952307ACFBF00A05B37 /* BraintreeCore.xcframework */; };
+		7DDE3967307ACFC000A05B37 /* BraintreeCore.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE3952307ACFBF00A05B37 /* BraintreeCore.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7DDE3968307ACFC000A05B37 /* BraintreeAmericanExpress.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE3953307ACFBF00A05B37 /* BraintreeAmericanExpress.xcframework */; };
+		7DDE3969307ACFC000A05B37 /* BraintreeAmericanExpress.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE3953307ACFBF00A05B37 /* BraintreeAmericanExpress.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7DDE396A307ACFC000A05B37 /* BraintreeLocalPayment.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE3954307ACFBF00A05B37 /* BraintreeLocalPayment.xcframework */; };
+		7DDE396B307ACFC000A05B37 /* BraintreeLocalPayment.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE3954307ACFBF00A05B37 /* BraintreeLocalPayment.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7DDE396C307ACFC000A05B37 /* BraintreeSEPADirectDebit.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE3955307ACFBF00A05B37 /* BraintreeSEPADirectDebit.xcframework */; };
+		7DDE396D307ACFC000A05B37 /* BraintreeSEPADirectDebit.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE3955307ACFBF00A05B37 /* BraintreeSEPADirectDebit.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7DDE396E307AD0DE00A05B37 /* BraintreeShopperInsights.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE394A307ACFBF00A05B37 /* BraintreeShopperInsights.xcframework */; };
+		7DDE396F307AD0DE00A05B37 /* BraintreeThreeDSecure.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE394B307ACFBF00A05B37 /* BraintreeThreeDSecure.xcframework */; };
+		7DDE3970307AD0DE00A05B37 /* BraintreeVenmo.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE394C307ACFBF00A05B37 /* BraintreeVenmo.xcframework */; };
+		7DDE3972307AD0DE00A05B37 /* BraintreeUIComponents.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE3971307AD0DE00A05B37 /* BraintreeUIComponents.xcframework */; };
+		7DDE3973307AD0DF00A05B37 /* BraintreeUIComponents.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE3971307AD0DE00A05B37 /* BraintreeUIComponents.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7DDE3974307AD0F200A05B37 /* BraintreeShopperInsights.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE394A307ACFBF00A05B37 /* BraintreeShopperInsights.xcframework */; };
+		7DDE3975307AD0F200A05B37 /* BraintreeShopperInsights.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE394A307ACFBF00A05B37 /* BraintreeShopperInsights.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7DDE3976307AD0F200A05B37 /* BraintreeThreeDSecure.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE394B307ACFBF00A05B37 /* BraintreeThreeDSecure.xcframework */; };
+		7DDE3977307AD0F200A05B37 /* BraintreeThreeDSecure.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE394B307ACFBF00A05B37 /* BraintreeThreeDSecure.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7DDE3978307AD0F200A05B37 /* BraintreeUIComponents.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE3971307AD0DE00A05B37 /* BraintreeUIComponents.xcframework */; };
+		7DDE3979307AD0F200A05B37 /* BraintreeUIComponents.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE3971307AD0DE00A05B37 /* BraintreeUIComponents.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		7DDE397A307AD0F200A05B37 /* BraintreeVenmo.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE394C307ACFBF00A05B37 /* BraintreeVenmo.xcframework */; };
+		7DDE397B307AD0F200A05B37 /* BraintreeVenmo.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7DDE394C307ACFBF00A05B37 /* BraintreeVenmo.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		92D44B5C98F7E01A1C1321A4 /* GoogleAppMeasurement.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = D05F7B31753297104D7BA835 /* GoogleAppMeasurement.xcframework */; };
+		9EA7BC2CC421B8709AA5545B /* GoogleAppMeasurementIdentitySupport.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = F7EA26C4A5F0D1E6936D7B94 /* GoogleAppMeasurementIdentitySupport.xcframework */; };
 		A4076A191D8F179900202E2A /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = A4076A181D8F179900202E2A /* GoogleService-Info.plist */; };
 		A407DE081C31DFA300D3CAD1 /* Time.swift in Sources */ = {isa = PBXBuildFile; fileRef = A407DE071C31DFA300D3CAD1 /* Time.swift */; };
 		A416B0291D6115B8008C9CBC /* VenueForMoviesVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = A416B0281D6115B8008C9CBC /* VenueForMoviesVC.swift */; };
@@ -63,7 +174,6 @@
 		A44399C625C09B8600AB3154 /* ListViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A44399C525C09B8600AB3154 /* ListViewCell.swift */; };
 		A4471C211D46F4170081A4E5 /* TableViewCellExt.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4471C201D46F4170081A4E5 /* TableViewCellExt.swift */; };
 		A4471C231D46F4FB0081A4E5 /* Helpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4471C221D46F4FB0081A4E5 /* Helpers.swift */; };
-		A449DA3F1BFD185A004A9402 /* AFSecurityPolicy.m in Sources */ = {isa = PBXBuildFile; fileRef = A449DA3E1BFD185A004A9402 /* AFSecurityPolicy.m */; };
 		A45BE72C2D4E53A000C6AB27 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A45BE72B2D4E53A000C6AB27 /* UIKit.framework */; };
 		A45BE72E2D4E53AC00C6AB27 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A45BE72D2D4E53AC00C6AB27 /* QuartzCore.framework */; };
 		A45BE7302D4E53BA00C6AB27 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A45BE72F2D4E53BA00C6AB27 /* CoreGraphics.framework */; };
@@ -88,7 +198,6 @@
 		A4CA8DA51C07328F00EA59A4 /* Launch Screen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = A4CA8DA41C07328F00EA59A4 /* Launch Screen.storyboard */; };
 		A4CAC1B426C26C3000B808C3 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4CAC1B326C26C3000B808C3 /* ViewController.swift */; };
 		A4CC2C451C33E07A0015546C /* ciphertext.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4CC2C441C33E07A0015546C /* ciphertext.swift */; };
-		A4D58A451BFA40AB00D379F8 /* AFNetworkReachabilityManager.m in Sources */ = {isa = PBXBuildFile; fileRef = A4D58A441BFA40AB00D379F8 /* AFNetworkReachabilityManager.m */; };
 		A4D9B6491D834A1700FB5C44 /* PopOverDates.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D9B6481D834A1700FB5C44 /* PopOverDates.swift */; };
 		A4E795C82379F63500CA2C4C /* CustomTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4E795C72379F63500CA2C4C /* CustomTableViewCell.swift */; };
 		A4E795CA237A111D00CA2C4C /* TicketsVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4E795C9237A111D00CA2C4C /* TicketsVC.swift */; };
@@ -100,6 +209,11 @@
 		A4EEC50A1D3A8AF9001C376B /* TableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4EEC5091D3A8AF9001C376B /* TableViewCell.swift */; };
 		A4F5D5B81BF88548002850B2 /* CachedURLResponse+CoreDataProperties.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F5D5B61BF88548002850B2 /* CachedURLResponse+CoreDataProperties.swift */; };
 		A4F5D5B91BF88548002850B2 /* CachedURLResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4F5D5B71BF88548002850B2 /* CachedURLResponse.swift */; };
+		AC1700012026101700000001 /* AlertAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC1700012026101700000003 /* AlertAction.swift */; };
+		AC1700012026101700000002 /* AlertPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC1700012026101700000004 /* AlertPresenter.swift */; };
+		B695F1743FB5C28168DF53F6 /* grpc.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9303580618A157B515DCAF4F /* grpc.xcframework */; };
+		C667EF66252DB18F194B07F7 /* openssl_grpc.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = C4ACE428EA0DD0EF5DFFAACD /* openssl_grpc.xcframework */; };
+		D4261A4E24FB2FB576C7574D /* GoogleUtilities.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2DF8035243FBEEB94F1311F5 /* GoogleUtilities.xcframework */; };
 		EA62FD561989F6AC00469896 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA62FD551989F6AC00469896 /* AppDelegate.swift */; };
 		EA62FD581989F6AC00469896 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EA62FD571989F6AC00469896 /* Images.xcassets */; };
 		EAA118A5198A1BF000F443F1 /* HomeVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAA118A4198A1BF000F443F1 /* HomeVC.swift */; };
@@ -117,8 +231,87 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		7D8E1BFD307A62BA00F12E8B /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				7D8E1BE8307A62BA00F12E8B /* PayPalMessages.xcframework in Embed Frameworks */,
+				7DDE3967307ACFC000A05B37 /* BraintreeCore.xcframework in Embed Frameworks */,
+				7DDE3957307ACFBF00A05B37 /* BraintreeShopperInsights.xcframework in Embed Frameworks */,
+				7DDE395D307ACFBF00A05B37 /* BraintreePayPal.xcframework in Embed Frameworks */,
+				7D8E1C42307A6EAD00F12E8B /* FirebaseFirestoreInternal.xcframework in Embed Frameworks */,
+				7D8E1C4C307A6EAD00F12E8B /* FirebaseAnalytics.xcframework in Embed Frameworks */,
+				7D8E1C3C307A6EAD00F12E8B /* FirebaseAppCheckInterop.xcframework in Embed Frameworks */,
+				7DDE395F307ACFBF00A05B37 /* BraintreeDataCollector.xcframework in Embed Frameworks */,
+				7DDE3973307AD0DF00A05B37 /* BraintreeUIComponents.xcframework in Embed Frameworks */,
+				7D8E1C46307A6EAD00F12E8B /* FirebaseMessaging.xcframework in Embed Frameworks */,
+				7DDE396D307ACFC000A05B37 /* BraintreeSEPADirectDebit.xcframework in Embed Frameworks */,
+				7DDE395B307ACFBF00A05B37 /* BraintreeVenmo.xcframework in Embed Frameworks */,
+				7DDE3959307ACFBF00A05B37 /* BraintreeThreeDSecure.xcframework in Embed Frameworks */,
+				7D8E1BFC307A62BA00F12E8B /* PPRiskMagnes.xcframework in Embed Frameworks */,
+				7D8E1BF6307A62BA00F12E8B /* RealmSwift.xcframework in Embed Frameworks */,
+				7D8E1C44307A6EAD00F12E8B /* FirebaseSharedSwift.xcframework in Embed Frameworks */,
+				7DDE3961307ACFBF00A05B37 /* BraintreePayPalMessaging.xcframework in Embed Frameworks */,
+				7D8E1C2A307A6AA900F12E8B /* CryptoSwift.xcframework in Embed Frameworks */,
+				7D8E1C4E307A6EAD00F12E8B /* FirebaseCore.xcframework in Embed Frameworks */,
+				7DDE3963307ACFBF00A05B37 /* BraintreeCard.xcframework in Embed Frameworks */,
+				7D8E1C4A307A6EAD00F12E8B /* FirebaseInstallations.xcframework in Embed Frameworks */,
+				7D8E1C3E307A6EAD00F12E8B /* FirebaseFirestore.xcframework in Embed Frameworks */,
+				7D8E1BEC307A62BA00F12E8B /* CardinalMobile.xcframework in Embed Frameworks */,
+				7D8E1C3A307A6EAC00F12E8B /* FirebaseAuth.xcframework in Embed Frameworks */,
+				7D8E1C25307A68A100F12E8B /* SwiftyJSON.xcframework in Embed Frameworks */,
+				7DDE3965307ACFC000A05B37 /* BraintreeApplePay.xcframework in Embed Frameworks */,
+				7D8E1C40307A6EAD00F12E8B /* FirebaseCoreInternal.xcframework in Embed Frameworks */,
+				7DDE396B307ACFC000A05B37 /* BraintreeLocalPayment.xcframework in Embed Frameworks */,
+				7D8E1BDA307A62BA00F12E8B /* Realm.xcframework in Embed Frameworks */,
+				7D8E1C50307A6EAD00F12E8B /* FirebaseCoreExtension.xcframework in Embed Frameworks */,
+				7D8E1C48307A6EAD00F12E8B /* FirebaseAuthInterop.xcframework in Embed Frameworks */,
+				7DDE3969307ACFC000A05B37 /* BraintreeAmericanExpress.xcframework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7D8E1C22307A62E000F12E8B /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				7D8E1C21307A62E000F12E8B /* RealmSwift.xcframework in Embed Frameworks */,
+				7DDE3975307AD0F200A05B37 /* BraintreeShopperInsights.xcframework in Embed Frameworks */,
+				7D8E1C66307A6EBB00F12E8B /* FirebaseMessaging.xcframework in Embed Frameworks */,
+				7D8E1C19307A62E000F12E8B /* CardinalMobile.xcframework in Embed Frameworks */,
+				7D8E1C1F307A62E000F12E8B /* Realm.xcframework in Embed Frameworks */,
+				7D8E1C5E307A6EBB00F12E8B /* FirebaseCoreInternal.xcframework in Embed Frameworks */,
+				7DDE3977307AD0F200A05B37 /* BraintreeThreeDSecure.xcframework in Embed Frameworks */,
+				7D8E1C54307A6EBB00F12E8B /* FirebaseAppCheckInterop.xcframework in Embed Frameworks */,
+				7DDE3979307AD0F200A05B37 /* BraintreeUIComponents.xcframework in Embed Frameworks */,
+				7D8E1C1D307A62E000F12E8B /* PPRiskMagnes.xcframework in Embed Frameworks */,
+				7D8E1C60307A6EBB00F12E8B /* FirebaseFirestore.xcframework in Embed Frameworks */,
+				7DDE397B307AD0F200A05B37 /* BraintreeVenmo.xcframework in Embed Frameworks */,
+				7D8E1C1B307A62E000F12E8B /* PayPalMessages.xcframework in Embed Frameworks */,
+				7D8E1C5A307A6EBB00F12E8B /* FirebaseCore.xcframework in Embed Frameworks */,
+				7D8E1C52307A6EBA00F12E8B /* FirebaseAnalytics.xcframework in Embed Frameworks */,
+				7D8E1C5C307A6EBB00F12E8B /* FirebaseCoreExtension.xcframework in Embed Frameworks */,
+				7D8E1C56307A6EBB00F12E8B /* FirebaseAuth.xcframework in Embed Frameworks */,
+				7D8E1C2C307A6AB600F12E8B /* CryptoSwift.xcframework in Embed Frameworks */,
+				7D8E1C58307A6EBB00F12E8B /* FirebaseAuthInterop.xcframework in Embed Frameworks */,
+				7D8E1C27307A68AC00F12E8B /* SwiftyJSON.xcframework in Embed Frameworks */,
+				7D8E1C68307A6EBB00F12E8B /* FirebaseSharedSwift.xcframework in Embed Frameworks */,
+				7D8E1C64307A6EBB00F12E8B /* FirebaseInstallations.xcframework in Embed Frameworks */,
+				7D8E1C62307A6EBB00F12E8B /* FirebaseFirestoreInternal.xcframework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
-		5F8537B88264A8B854ED3468 /* Pods-SwiftCinemas.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SwiftCinemas.debug.xcconfig"; path = "Target Support Files/Pods-SwiftCinemas/Pods-SwiftCinemas.debug.xcconfig"; sourceTree = "<group>"; };
+		0BC22DE8C6A3EC55C43231B6 /* leveldb.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = leveldb.xcframework; path = Carthage/Build/leveldb.xcframework; sourceTree = "<group>"; };
+		2DF8035243FBEEB94F1311F5 /* GoogleUtilities.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = GoogleUtilities.xcframework; path = Carthage/Build/GoogleUtilities.xcframework; sourceTree = "<group>"; };
 		7D230E182FC105D20062B129 /* PurchaseRowCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchaseRowCell.swift; sourceTree = "<group>"; };
 		7D25892D2F8021CC00C5A23C /* VenuesMigrationSegueEntryVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenuesMigrationSegueEntryVC.swift; sourceTree = "<group>"; };
 		7D5C0D002F786E790019481A /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
@@ -130,6 +323,25 @@
 		7D5C0D0C2F786ED00019481A /* BackendServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendServices.swift; sourceTree = "<group>"; };
 		7D5C0D0C2F790E4A0019481A /* UserData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserData.swift; sourceTree = "<group>"; };
 		7D7955E82F800CB200887048 /* VenuesMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenuesMigration.swift; sourceTree = "<group>"; };
+		7D8E1BC7307A62BA00F12E8B /* Realm.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = Realm.xcframework; path = Carthage/Build/Realm.xcframework; sourceTree = "<group>"; };
+		7D8E1BCE307A62BA00F12E8B /* PayPalMessages.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:43253H4X22:Braintree Payment Solutions, LLC"; lastKnownFileType = wrapper.xcframework; name = PayPalMessages.xcframework; path = Carthage/Build/PayPalMessages.xcframework; sourceTree = "<group>"; };
+		7D8E1BD0307A62BA00F12E8B /* CardinalMobile.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:H7M4G5NDNU:CardinalCommerce Corp"; lastKnownFileType = wrapper.xcframework; name = CardinalMobile.xcframework; path = Carthage/Build/CardinalMobile.xcframework; sourceTree = "<group>"; };
+		7D8E1BD5307A62BA00F12E8B /* RealmSwift.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = RealmSwift.xcframework; path = Carthage/Build/RealmSwift.xcframework; sourceTree = "<group>"; };
+		7D8E1BD8307A62BA00F12E8B /* PPRiskMagnes.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:XEZPTDFLAS:changching chi"; lastKnownFileType = wrapper.xcframework; name = PPRiskMagnes.xcframework; path = Carthage/Build/PPRiskMagnes.xcframework; sourceTree = "<group>"; };
+		7D8E1C23307A68A100F12E8B /* SwiftyJSON.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = SwiftyJSON.xcframework; path = Carthage/Build/SwiftyJSON.xcframework; sourceTree = "<group>"; };
+		7D8E1C28307A6AA900F12E8B /* CryptoSwift.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = CryptoSwift.xcframework; path = Carthage/Build/CryptoSwift.xcframework; sourceTree = "<group>"; };
+		7D8E1C2D307A6EAC00F12E8B /* FirebaseAuth.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = FirebaseAuth.xcframework; path = Carthage/Build/FirebaseAuth.xcframework; sourceTree = "<group>"; };
+		7D8E1C2E307A6EAC00F12E8B /* FirebaseAppCheckInterop.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = FirebaseAppCheckInterop.xcframework; path = Carthage/Build/FirebaseAppCheckInterop.xcframework; sourceTree = "<group>"; };
+		7D8E1C2F307A6EAC00F12E8B /* FirebaseFirestore.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = FirebaseFirestore.xcframework; path = Carthage/Build/FirebaseFirestore.xcframework; sourceTree = "<group>"; };
+		7D8E1C30307A6EAC00F12E8B /* FirebaseCoreInternal.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = FirebaseCoreInternal.xcframework; path = Carthage/Build/FirebaseCoreInternal.xcframework; sourceTree = "<group>"; };
+		7D8E1C31307A6EAC00F12E8B /* FirebaseFirestoreInternal.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = FirebaseFirestoreInternal.xcframework; path = Carthage/Build/FirebaseFirestoreInternal.xcframework; sourceTree = "<group>"; };
+		7D8E1C32307A6EAC00F12E8B /* FirebaseSharedSwift.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = FirebaseSharedSwift.xcframework; path = Carthage/Build/FirebaseSharedSwift.xcframework; sourceTree = "<group>"; };
+		7D8E1C33307A6EAC00F12E8B /* FirebaseMessaging.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = FirebaseMessaging.xcframework; path = Carthage/Build/FirebaseMessaging.xcframework; sourceTree = "<group>"; };
+		7D8E1C34307A6EAC00F12E8B /* FirebaseAuthInterop.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = FirebaseAuthInterop.xcframework; path = Carthage/Build/FirebaseAuthInterop.xcframework; sourceTree = "<group>"; };
+		7D8E1C35307A6EAC00F12E8B /* FirebaseInstallations.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = FirebaseInstallations.xcframework; path = Carthage/Build/FirebaseInstallations.xcframework; sourceTree = "<group>"; };
+		7D8E1C36307A6EAC00F12E8B /* FirebaseAnalytics.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = FirebaseAnalytics.xcframework; path = Carthage/Build/FirebaseAnalytics.xcframework; sourceTree = "<group>"; };
+		7D8E1C37307A6EAC00F12E8B /* FirebaseCore.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = FirebaseCore.xcframework; path = Carthage/Build/FirebaseCore.xcframework; sourceTree = "<group>"; };
+		7D8E1C38307A6EAC00F12E8B /* FirebaseCoreExtension.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = FirebaseCoreExtension.xcframework; path = Carthage/Build/FirebaseCoreExtension.xcframework; sourceTree = "<group>"; };
 		7DC30A482FAE66D80097FC34 /* AdminScreeningsDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminScreeningsDataManager.swift; sourceTree = "<group>"; };
 		7DC30A492FAE66D80097FC34 /* AuthDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthDataManager.swift; sourceTree = "<group>"; };
 		7DC30A4A2FAE66D80097FC34 /* BasketDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasketDataManager.swift; sourceTree = "<group>"; };
@@ -142,9 +354,26 @@
 		7DC30A512FAE66D80097FC34 /* SharedDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedDataManager.swift; sourceTree = "<group>"; };
 		7DC30A522FAE66D80097FC34 /* VenuesDataManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenuesDataManager.swift; sourceTree = "<group>"; };
 		7DD3DCD32F794D14006C94F6 /* SwiftCinemasTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwiftCinemasTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7DDE394A307ACFBF00A05B37 /* BraintreeShopperInsights.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = BraintreeShopperInsights.xcframework; path = Carthage/Build/BraintreeShopperInsights.xcframework; sourceTree = "<group>"; };
+		7DDE394B307ACFBF00A05B37 /* BraintreeThreeDSecure.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = BraintreeThreeDSecure.xcframework; path = Carthage/Build/BraintreeThreeDSecure.xcframework; sourceTree = "<group>"; };
+		7DDE394C307ACFBF00A05B37 /* BraintreeVenmo.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = BraintreeVenmo.xcframework; path = Carthage/Build/BraintreeVenmo.xcframework; sourceTree = "<group>"; };
+		7DDE394D307ACFBF00A05B37 /* BraintreePayPal.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = BraintreePayPal.xcframework; path = Carthage/Build/BraintreePayPal.xcframework; sourceTree = "<group>"; };
+		7DDE394E307ACFBF00A05B37 /* BraintreeDataCollector.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = BraintreeDataCollector.xcframework; path = Carthage/Build/BraintreeDataCollector.xcframework; sourceTree = "<group>"; };
+		7DDE394F307ACFBF00A05B37 /* BraintreePayPalMessaging.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = BraintreePayPalMessaging.xcframework; path = Carthage/Build/BraintreePayPalMessaging.xcframework; sourceTree = "<group>"; };
+		7DDE3950307ACFBF00A05B37 /* BraintreeCard.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = BraintreeCard.xcframework; path = Carthage/Build/BraintreeCard.xcframework; sourceTree = "<group>"; };
+		7DDE3951307ACFBF00A05B37 /* BraintreeApplePay.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = BraintreeApplePay.xcframework; path = Carthage/Build/BraintreeApplePay.xcframework; sourceTree = "<group>"; };
+		7DDE3952307ACFBF00A05B37 /* BraintreeCore.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = BraintreeCore.xcframework; path = Carthage/Build/BraintreeCore.xcframework; sourceTree = "<group>"; };
+		7DDE3953307ACFBF00A05B37 /* BraintreeAmericanExpress.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = BraintreeAmericanExpress.xcframework; path = Carthage/Build/BraintreeAmericanExpress.xcframework; sourceTree = "<group>"; };
+		7DDE3954307ACFBF00A05B37 /* BraintreeLocalPayment.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = BraintreeLocalPayment.xcframework; path = Carthage/Build/BraintreeLocalPayment.xcframework; sourceTree = "<group>"; };
+		7DDE3955307ACFBF00A05B37 /* BraintreeSEPADirectDebit.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = BraintreeSEPADirectDebit.xcframework; path = Carthage/Build/BraintreeSEPADirectDebit.xcframework; sourceTree = "<group>"; };
+		7DDE3971307AD0DE00A05B37 /* BraintreeUIComponents.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = BraintreeUIComponents.xcframework; path = Carthage/Build/BraintreeUIComponents.xcframework; sourceTree = "<group>"; };
 		7DE541432F795EAE00747662 /* SwiftyJSON.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = SwiftyJSON.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		7DF917952FA7CC2900B7C16C /* SwiftCinemas.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = SwiftCinemas.xctestplan; path = SwiftCinemasTests/SwiftCinemas.xctestplan; sourceTree = "<group>"; };
-		8D825BF86296873B49574DCA /* Pods_SwiftCinemas.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SwiftCinemas.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		9303580618A157B515DCAF4F /* grpc.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = grpc.xcframework; path = Carthage/Build/grpc.xcframework; sourceTree = "<group>"; };
+		9D68262ECFCFEA52D4BB2BA9 /* grpcpp.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = grpcpp.xcframework; path = Carthage/Build/grpcpp.xcframework; sourceTree = "<group>"; };
+		A0F8CB06FB9D956705F30DCC /* RecaptchaInterop.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = RecaptchaInterop.xcframework; path = Carthage/Build/RecaptchaInterop.xcframework; sourceTree = "<group>"; };
+		A34088BB261DEA8873F549A0 /* FBLPromises.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = FBLPromises.xcframework; path = Carthage/Build/FBLPromises.xcframework; sourceTree = "<group>"; };
+		A360B5E49B1F398AA4B7ECC4 /* nanopb.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = nanopb.xcframework; path = Carthage/Build/nanopb.xcframework; sourceTree = "<group>"; };
 		A4076A181D8F179900202E2A /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		A407DE071C31DFA300D3CAD1 /* Time.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Time.swift; sourceTree = "<group>"; };
 		A416B0281D6115B8008C9CBC /* VenueForMoviesVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = VenueForMoviesVC.swift; sourceTree = "<group>"; };
@@ -167,8 +396,6 @@
 		A4471C201D46F4170081A4E5 /* TableViewCellExt.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TableViewCellExt.swift; sourceTree = "<group>"; };
 		A4471C221D46F4FB0081A4E5 /* Helpers.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Helpers.swift; sourceTree = "<group>"; };
 		A448624C2D56A71F004C81B7 /* SwiftLoginScreenDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SwiftLoginScreenDebug.entitlements; sourceTree = "<group>"; };
-		A449DA3D1BFD185A004A9402 /* AFSecurityPolicy.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFSecurityPolicy.h; sourceTree = "<group>"; };
-		A449DA3E1BFD185A004A9402 /* AFSecurityPolicy.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AFSecurityPolicy.m; sourceTree = "<group>"; };
 		A45BE72B2D4E53A000C6AB27 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		A45BE72D2D4E53AC00C6AB27 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		A45BE72F2D4E53BA00C6AB27 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -183,7 +410,6 @@
 		A493B57D2D6A31DA00404BC0 /* GeoFence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeoFence.swift; sourceTree = "<group>"; };
 		A493B57F2D6B580800404BC0 /* MovieCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieCollectionViewCell.swift; sourceTree = "<group>"; };
 		A496B5FC2D56CCE0000626A2 /* Braintree.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = Braintree.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		A496B5FE2D56CCE7000626A2 /* BraintreeDropIn.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = BraintreeDropIn.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A49A51F51BF6829C00E197D7 /* WebViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WebViewController.swift; sourceTree = "<group>"; };
 		A4A24B672D7CCCDC00F3B65A /* Websocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Websocket.swift; sourceTree = "<group>"; };
 		A4A24B692D8C000000F3B65A /* URLManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLManager.swift; sourceTree = "<group>"; };
@@ -197,8 +423,6 @@
 		A4CA8DA41C07328F00EA59A4 /* Launch Screen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = "Launch Screen.storyboard"; sourceTree = "<group>"; };
 		A4CAC1B326C26C3000B808C3 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		A4CC2C441C33E07A0015546C /* ciphertext.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ciphertext.swift; sourceTree = "<group>"; };
-		A4D58A431BFA40AB00D379F8 /* AFNetworkReachabilityManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AFNetworkReachabilityManager.h; sourceTree = "<group>"; };
-		A4D58A441BFA40AB00D379F8 /* AFNetworkReachabilityManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AFNetworkReachabilityManager.m; sourceTree = "<group>"; };
 		A4D58A471BFA40D000D379F8 /* SwiftLoginScreen-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "SwiftLoginScreen-Bridging-Header.h"; sourceTree = "<group>"; };
 		A4D9B6481D834A1700FB5C44 /* PopOverDates.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PopOverDates.swift; sourceTree = "<group>"; };
 		A4E795C72379F63500CA2C4C /* CustomTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTableViewCell.swift; sourceTree = "<group>"; };
@@ -217,10 +441,11 @@
 		A4FEEE321CA4994B0004F0AB /* Realm.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Realm.framework; path = "Pods/../build/Debug-iphoneos/Realm.framework"; sourceTree = "<group>"; };
 		A4FEEE3C1CA49DC10004F0AB /* RealmSwift.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = RealmSwift.framework; path = "Pods/../build/Debug-iphoneos/RealmSwift.framework"; sourceTree = "<group>"; };
 		A4FEEE3E1CA49DC70004F0AB /* Realm.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Realm.framework; path = "Pods/../build/Debug-iphoneos/Realm.framework"; sourceTree = "<group>"; };
-		B313D65107DCA9D47402ADF5 /* Pods-SwiftCinemas.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SwiftCinemas.release.xcconfig"; path = "Target Support Files/Pods-SwiftCinemas/Pods-SwiftCinemas.release.xcconfig"; sourceTree = "<group>"; };
-		BC21FC33725912A24978F7C1 /* Pods_SwiftCinemas_SwiftCinemasTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SwiftCinemas_SwiftCinemasTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		BFF084588B72C69EE11950DC /* Pods-SwiftCinemas-SwiftCinemasTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SwiftCinemas-SwiftCinemasTests.release.xcconfig"; path = "Target Support Files/Pods-SwiftCinemas-SwiftCinemasTests/Pods-SwiftCinemas-SwiftCinemasTests.release.xcconfig"; sourceTree = "<group>"; };
-		D82C748938F15C27C8AE9DFE /* Pods-SwiftCinemas-SwiftCinemasTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SwiftCinemas-SwiftCinemasTests.debug.xcconfig"; path = "Target Support Files/Pods-SwiftCinemas-SwiftCinemasTests/Pods-SwiftCinemas-SwiftCinemasTests.debug.xcconfig"; sourceTree = "<group>"; };
+		AC1700012026101700000003 /* AlertAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertAction.swift; sourceTree = "<group>"; };
+		AC1700012026101700000004 /* AlertPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertPresenter.swift; sourceTree = "<group>"; };
+		C4ACE428EA0DD0EF5DFFAACD /* openssl_grpc.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = openssl_grpc.xcframework; path = Carthage/Build/openssl_grpc.xcframework; sourceTree = "<group>"; };
+		C7EA18796FD6310A3EAB2A9F /* GoogleDataTransport.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = GoogleDataTransport.xcframework; path = Carthage/Build/GoogleDataTransport.xcframework; sourceTree = "<group>"; };
+		D05F7B31753297104D7BA835 /* GoogleAppMeasurement.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = GoogleAppMeasurement.xcframework; path = Carthage/Build/GoogleAppMeasurement.xcframework; sourceTree = "<group>"; };
 		EA62FD501989F6AC00469896 /* SwiftCinemas.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftCinemas.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EA62FD541989F6AC00469896 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		EA62FD551989F6AC00469896 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -228,6 +453,10 @@
 		EAA118A4198A1BF000F443F1 /* HomeVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HomeVC.swift; sourceTree = "<group>"; };
 		EAA118A6198A23CB00F443F1 /* LoginVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoginVC.swift; sourceTree = "<group>"; };
 		EAA118A8198AAC7100F443F1 /* SignupVC.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SignupVC.swift; sourceTree = "<group>"; };
+		EAE619183417AACB33B1FD23 /* absl.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = absl.xcframework; path = Carthage/Build/absl.xcframework; sourceTree = "<group>"; };
+		F74E800546FAC0F7E9C9041E /* GoogleAdsOnDeviceConversion.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = GoogleAdsOnDeviceConversion.xcframework; path = Carthage/Build/GoogleAdsOnDeviceConversion.xcframework; sourceTree = "<group>"; };
+		F7EA26C4A5F0D1E6936D7B94 /* GoogleAppMeasurementIdentitySupport.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = GoogleAppMeasurementIdentitySupport.xcframework; path = Carthage/Build/GoogleAppMeasurementIdentitySupport.xcframework; sourceTree = "<group>"; };
+		F82162A372E8E07E8AD9FF95 /* GTMSessionFetcher.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = GTMSessionFetcher.xcframework; path = Carthage/Build/GTMSessionFetcher.xcframework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -243,7 +472,29 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				8527C603D854F13536457CC7 /* Pods_SwiftCinemas_SwiftCinemasTests.framework in Frameworks */,
+				7D8E1C20307A62E000F12E8B /* RealmSwift.xcframework in Frameworks */,
+				7DDE3974307AD0F200A05B37 /* BraintreeShopperInsights.xcframework in Frameworks */,
+				7D8E1C65307A6EBB00F12E8B /* FirebaseMessaging.xcframework in Frameworks */,
+				7D8E1C18307A62E000F12E8B /* CardinalMobile.xcframework in Frameworks */,
+				7D8E1C1E307A62E000F12E8B /* Realm.xcframework in Frameworks */,
+				7D8E1C5D307A6EBB00F12E8B /* FirebaseCoreInternal.xcframework in Frameworks */,
+				7DDE3976307AD0F200A05B37 /* BraintreeThreeDSecure.xcframework in Frameworks */,
+				7D8E1C53307A6EBB00F12E8B /* FirebaseAppCheckInterop.xcframework in Frameworks */,
+				7DDE3978307AD0F200A05B37 /* BraintreeUIComponents.xcframework in Frameworks */,
+				7D8E1C1C307A62E000F12E8B /* PPRiskMagnes.xcframework in Frameworks */,
+				7D8E1C5F307A6EBB00F12E8B /* FirebaseFirestore.xcframework in Frameworks */,
+				7DDE397A307AD0F200A05B37 /* BraintreeVenmo.xcframework in Frameworks */,
+				7D8E1C1A307A62E000F12E8B /* PayPalMessages.xcframework in Frameworks */,
+				7D8E1C59307A6EBB00F12E8B /* FirebaseCore.xcframework in Frameworks */,
+				7D8E1C51307A6EBA00F12E8B /* FirebaseAnalytics.xcframework in Frameworks */,
+				7D8E1C5B307A6EBB00F12E8B /* FirebaseCoreExtension.xcframework in Frameworks */,
+				7D8E1C55307A6EBB00F12E8B /* FirebaseAuth.xcframework in Frameworks */,
+				7D8E1C2B307A6AB600F12E8B /* CryptoSwift.xcframework in Frameworks */,
+				7D8E1C57307A6EBB00F12E8B /* FirebaseAuthInterop.xcframework in Frameworks */,
+				7D8E1C26307A68AC00F12E8B /* SwiftyJSON.xcframework in Frameworks */,
+				7D8E1C67307A6EBB00F12E8B /* FirebaseSharedSwift.xcframework in Frameworks */,
+				7D8E1C63307A6EBB00F12E8B /* FirebaseInstallations.xcframework in Frameworks */,
+				7D8E1C61307A6EBB00F12E8B /* FirebaseFirestoreInternal.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -251,11 +502,59 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D4261A4E24FB2FB576C7574D /* GoogleUtilities.xcframework in Frameworks */,
+				37EA5B0D570D59486BE82079 /* FBLPromises.xcframework in Frameworks */,
+				7DDE395A307ACFBF00A05B37 /* BraintreeVenmo.xcframework in Frameworks */,
+				49A6AA46CDA27D24A2C5A308 /* nanopb.xcframework in Frameworks */,
+				92D44B5C98F7E01A1C1321A4 /* GoogleAppMeasurement.xcframework in Frameworks */,
+				9EA7BC2CC421B8709AA5545B /* GoogleAppMeasurementIdentitySupport.xcframework in Frameworks */,
+				7DDE3970307AD0DE00A05B37 /* BraintreeVenmo.xcframework in Frameworks */,
+				4F08A46864B12B07133DE255 /* GoogleAdsOnDeviceConversion.xcframework in Frameworks */,
+				7DDE396A307ACFC000A05B37 /* BraintreeLocalPayment.xcframework in Frameworks */,
+				43F11E83DD1251BF0975E572 /* GoogleDataTransport.xcframework in Frameworks */,
+				5864F11BDCD31A06478B374F /* GTMSessionFetcher.xcframework in Frameworks */,
+				7DDE3968307ACFC000A05B37 /* BraintreeAmericanExpress.xcframework in Frameworks */,
+				59CCDDA180CA3971EE944A21 /* RecaptchaInterop.xcframework in Frameworks */,
+				7DDE3958307ACFBF00A05B37 /* BraintreeThreeDSecure.xcframework in Frameworks */,
+				1C6EDDBBBDB8A2224B7FFD16 /* absl.xcframework in Frameworks */,
+				B695F1743FB5C28168DF53F6 /* grpc.xcframework in Frameworks */,
+				7DDE396F307AD0DE00A05B37 /* BraintreeThreeDSecure.xcframework in Frameworks */,
+				0CE8AB00A0E08330B4D813E1 /* grpcpp.xcframework in Frameworks */,
+				7DDE3960307ACFBF00A05B37 /* BraintreePayPalMessaging.xcframework in Frameworks */,
+				3CD8572E2A227FFEB7994952 /* leveldb.xcframework in Frameworks */,
+				C667EF66252DB18F194B07F7 /* openssl_grpc.xcframework in Frameworks */,
+				7DDE3972307AD0DE00A05B37 /* BraintreeUIComponents.xcframework in Frameworks */,
+				7D8E1C4D307A6EAD00F12E8B /* FirebaseCore.xcframework in Frameworks */,
+				7D8E1C45307A6EAD00F12E8B /* FirebaseMessaging.xcframework in Frameworks */,
+				7DDE396E307AD0DE00A05B37 /* BraintreeShopperInsights.xcframework in Frameworks */,
+				7DDE395C307ACFBF00A05B37 /* BraintreePayPal.xcframework in Frameworks */,
+				7D8E1C4F307A6EAD00F12E8B /* FirebaseCoreExtension.xcframework in Frameworks */,
+				7DDE3966307ACFC000A05B37 /* BraintreeCore.xcframework in Frameworks */,
+				7D8E1BF5307A62BA00F12E8B /* RealmSwift.xcframework in Frameworks */,
+				7DDE3964307ACFC000A05B37 /* BraintreeApplePay.xcframework in Frameworks */,
+				7D8E1BEB307A62BA00F12E8B /* CardinalMobile.xcframework in Frameworks */,
+				7D8E1C4B307A6EAD00F12E8B /* FirebaseAnalytics.xcframework in Frameworks */,
+				7D8E1C24307A68A100F12E8B /* SwiftyJSON.xcframework in Frameworks */,
+				7DDE396C307ACFC000A05B37 /* BraintreeSEPADirectDebit.xcframework in Frameworks */,
+				7DDE395E307ACFBF00A05B37 /* BraintreeDataCollector.xcframework in Frameworks */,
+				7D8E1C3B307A6EAC00F12E8B /* FirebaseAppCheckInterop.xcframework in Frameworks */,
+				7D8E1C3D307A6EAD00F12E8B /* FirebaseFirestore.xcframework in Frameworks */,
+				7D8E1C47307A6EAD00F12E8B /* FirebaseAuthInterop.xcframework in Frameworks */,
+				7D8E1C49307A6EAD00F12E8B /* FirebaseInstallations.xcframework in Frameworks */,
+				7DDE3956307ACFBF00A05B37 /* BraintreeShopperInsights.xcframework in Frameworks */,
 				A45BE7302D4E53BA00C6AB27 /* CoreGraphics.framework in Frameworks */,
 				A45BE72E2D4E53AC00C6AB27 /* QuartzCore.framework in Frameworks */,
+				7D8E1BFB307A62BA00F12E8B /* PPRiskMagnes.xcframework in Frameworks */,
+				7DDE3962307ACFBF00A05B37 /* BraintreeCard.xcframework in Frameworks */,
+				7D8E1BE7307A62BA00F12E8B /* PayPalMessages.xcframework in Frameworks */,
 				A45BE72C2D4E53A000C6AB27 /* UIKit.framework in Frameworks */,
+				7D8E1C39307A6EAC00F12E8B /* FirebaseAuth.xcframework in Frameworks */,
+				7D8E1C3F307A6EAD00F12E8B /* FirebaseCoreInternal.xcframework in Frameworks */,
+				7D8E1C43307A6EAD00F12E8B /* FirebaseSharedSwift.xcframework in Frameworks */,
+				7D8E1C29307A6AA900F12E8B /* CryptoSwift.xcframework in Frameworks */,
+				7D8E1C41307A6EAD00F12E8B /* FirebaseFirestoreInternal.xcframework in Frameworks */,
 				A4A96AA81D1FEB9A00421193 /* MapKit.framework in Frameworks */,
-				54D956C6DD035C62972C4E3A /* Pods_SwiftCinemas.framework in Frameworks */,
+				7D8E1BD9307A62BA00F12E8B /* Realm.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -417,17 +716,6 @@
 			name = Customs;
 			sourceTree = "<group>";
 		};
-		A4D58A461BFA40B200D379F8 /* AFNetworking */ = {
-			isa = PBXGroup;
-			children = (
-				A4D58A431BFA40AB00D379F8 /* AFNetworkReachabilityManager.h */,
-				A4D58A441BFA40AB00D379F8 /* AFNetworkReachabilityManager.m */,
-				A449DA3D1BFD185A004A9402 /* AFSecurityPolicy.h */,
-				A449DA3E1BFD185A004A9402 /* AFSecurityPolicy.m */,
-			);
-			name = AFNetworking;
-			sourceTree = "<group>";
-		};
 		A4F34F691CB0366B0034CFE8 /* PopOvers */ = {
 			isa = PBXGroup;
 			children = (
@@ -451,15 +739,13 @@
 			name = CachedURLResponse;
 			sourceTree = "<group>";
 		};
-		CD59F45AADDF112374360FD5 /* Pods */ = {
+		AC1700012026101700000005 /* Alerts */ = {
 			isa = PBXGroup;
 			children = (
-				5F8537B88264A8B854ED3468 /* Pods-SwiftCinemas.debug.xcconfig */,
-				B313D65107DCA9D47402ADF5 /* Pods-SwiftCinemas.release.xcconfig */,
-				D82C748938F15C27C8AE9DFE /* Pods-SwiftCinemas-SwiftCinemasTests.debug.xcconfig */,
-				BFF084588B72C69EE11950DC /* Pods-SwiftCinemas-SwiftCinemasTests.release.xcconfig */,
+				AC1700012026101700000003 /* AlertAction.swift */,
+				AC1700012026101700000004 /* AlertPresenter.swift */,
 			);
-			path = Pods;
+			path = Alerts;
 			sourceTree = "<group>";
 		};
 		EA62FD471989F6AC00469896 = {
@@ -472,7 +758,6 @@
 				7DD3DCD42F794D14006C94F6 /* SwiftCinemasTests */,
 				EA62FD511989F6AC00469896 /* Products */,
 				EAC4BD05C622F79975547B48 /* Frameworks */,
-				CD59F45AADDF112374360FD5 /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -488,6 +773,7 @@
 		EA62FD521989F6AC00469896 /* SwiftLoginScreen */ = {
 			isa = PBXGroup;
 			children = (
+				AC1700012026101700000005 /* Alerts */,
 				A47D8D131E9FB13B00CE8426 /* DataHelpers */,
 				7DC30A532FAE66D80097FC34 /* DataManagers */,
 				7D7955E92F800CB200887048 /* VenuesMigration */,
@@ -500,7 +786,6 @@
 				A42E84D31CAC32210043C320 /* Temp */,
 				A46BF1DE1C9DAF1E00046FD9 /* Screens */,
 				A4C3F29D1BFCC7D900ADE1E3 /* Customs */,
-				A4D58A461BFA40B200D379F8 /* AFNetworking */,
 				A46A6DD11BFA15C800F4EB6F /* People */,
 				A4F5D5B51BF8850C002850B2 /* CachedURLResponse */,
 				A4B9927B1BED302D00F87E21 /* CryptoStuff */,
@@ -530,9 +815,54 @@
 		EAC4BD05C622F79975547B48 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				7DDE3971307AD0DE00A05B37 /* BraintreeUIComponents.xcframework */,
+				7DDE3953307ACFBF00A05B37 /* BraintreeAmericanExpress.xcframework */,
+				7DDE3951307ACFBF00A05B37 /* BraintreeApplePay.xcframework */,
+				7DDE3950307ACFBF00A05B37 /* BraintreeCard.xcframework */,
+				7DDE3952307ACFBF00A05B37 /* BraintreeCore.xcframework */,
+				7DDE394E307ACFBF00A05B37 /* BraintreeDataCollector.xcframework */,
+				7DDE3954307ACFBF00A05B37 /* BraintreeLocalPayment.xcframework */,
+				7DDE394D307ACFBF00A05B37 /* BraintreePayPal.xcframework */,
+				7DDE394F307ACFBF00A05B37 /* BraintreePayPalMessaging.xcframework */,
+				7DDE3955307ACFBF00A05B37 /* BraintreeSEPADirectDebit.xcframework */,
+				7DDE394A307ACFBF00A05B37 /* BraintreeShopperInsights.xcframework */,
+				7DDE394B307ACFBF00A05B37 /* BraintreeThreeDSecure.xcframework */,
+				7DDE394C307ACFBF00A05B37 /* BraintreeVenmo.xcframework */,
+				2DF8035243FBEEB94F1311F5 /* GoogleUtilities.xcframework */,
+				A34088BB261DEA8873F549A0 /* FBLPromises.xcframework */,
+				A360B5E49B1F398AA4B7ECC4 /* nanopb.xcframework */,
+				D05F7B31753297104D7BA835 /* GoogleAppMeasurement.xcframework */,
+				F7EA26C4A5F0D1E6936D7B94 /* GoogleAppMeasurementIdentitySupport.xcframework */,
+				F74E800546FAC0F7E9C9041E /* GoogleAdsOnDeviceConversion.xcframework */,
+				C7EA18796FD6310A3EAB2A9F /* GoogleDataTransport.xcframework */,
+				F82162A372E8E07E8AD9FF95 /* GTMSessionFetcher.xcframework */,
+				A0F8CB06FB9D956705F30DCC /* RecaptchaInterop.xcframework */,
+				EAE619183417AACB33B1FD23 /* absl.xcframework */,
+				9303580618A157B515DCAF4F /* grpc.xcframework */,
+				9D68262ECFCFEA52D4BB2BA9 /* grpcpp.xcframework */,
+				0BC22DE8C6A3EC55C43231B6 /* leveldb.xcframework */,
+				C4ACE428EA0DD0EF5DFFAACD /* openssl_grpc.xcframework */,
+				7D8E1C36307A6EAC00F12E8B /* FirebaseAnalytics.xcframework */,
+				7D8E1C2E307A6EAC00F12E8B /* FirebaseAppCheckInterop.xcframework */,
+				7D8E1C2D307A6EAC00F12E8B /* FirebaseAuth.xcframework */,
+				7D8E1C34307A6EAC00F12E8B /* FirebaseAuthInterop.xcframework */,
+				7D8E1C37307A6EAC00F12E8B /* FirebaseCore.xcframework */,
+				7D8E1C38307A6EAC00F12E8B /* FirebaseCoreExtension.xcframework */,
+				7D8E1C30307A6EAC00F12E8B /* FirebaseCoreInternal.xcframework */,
+				7D8E1C2F307A6EAC00F12E8B /* FirebaseFirestore.xcframework */,
+				7D8E1C31307A6EAC00F12E8B /* FirebaseFirestoreInternal.xcframework */,
+				7D8E1C35307A6EAC00F12E8B /* FirebaseInstallations.xcframework */,
+				7D8E1C33307A6EAC00F12E8B /* FirebaseMessaging.xcframework */,
+				7D8E1C32307A6EAC00F12E8B /* FirebaseSharedSwift.xcframework */,
+				7D8E1C28307A6AA900F12E8B /* CryptoSwift.xcframework */,
+				7D8E1C23307A68A100F12E8B /* SwiftyJSON.xcframework */,
+				7D8E1BD0307A62BA00F12E8B /* CardinalMobile.xcframework */,
+				7D8E1BCE307A62BA00F12E8B /* PayPalMessages.xcframework */,
+				7D8E1BD8307A62BA00F12E8B /* PPRiskMagnes.xcframework */,
+				7D8E1BC7307A62BA00F12E8B /* Realm.xcframework */,
+				7D8E1BD5307A62BA00F12E8B /* RealmSwift.xcframework */,
 				7DE541432F795EAE00747662 /* SwiftyJSON.framework */,
 				A4A5A7822D57C8F000AD78AF /* Braintree.framework */,
-				A496B5FE2D56CCE7000626A2 /* BraintreeDropIn.framework */,
 				A496B5FC2D56CCE0000626A2 /* Braintree.framework */,
 				A45BE72F2D4E53BA00C6AB27 /* CoreGraphics.framework */,
 				A45BE72D2D4E53AC00C6AB27 /* QuartzCore.framework */,
@@ -542,8 +872,6 @@
 				A4FEEE3C1CA49DC10004F0AB /* RealmSwift.framework */,
 				A4FEEE321CA4994B0004F0AB /* Realm.framework */,
 				A4FEEE301CA499420004F0AB /* RealmSwift.framework */,
-				8D825BF86296873B49574DCA /* Pods_SwiftCinemas.framework */,
-				BC21FC33725912A24978F7C1 /* Pods_SwiftCinemas_SwiftCinemasTests.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -555,11 +883,10 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 7DD3DCD92F794D14006C94F6 /* Build configuration list for PBXNativeTarget "SwiftCinemasTests" */;
 			buildPhases = (
-				CBA224910DF12B01689C0F0F /* [CP] Check Pods Manifest.lock */,
 				7DD3DCCF2F794D14006C94F6 /* Sources */,
 				7DD3DCD02F794D14006C94F6 /* Frameworks */,
 				7DD3DCD12F794D14006C94F6 /* Resources */,
-				7AF73D08C7EDFBB9EA7C0AEB /* [CP] Embed Pods Frameworks */,
+				7D8E1C22307A62E000F12E8B /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -578,12 +905,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = EA62FD671989F6AC00469896 /* Build configuration list for PBXNativeTarget "SwiftCinemas" */;
 			buildPhases = (
-				9F472040CDA6F93FDB80CFB1 /* [CP] Check Pods Manifest.lock */,
 				EA62FD4C1989F6AC00469896 /* Sources */,
 				EA62FD4D1989F6AC00469896 /* Frameworks */,
 				EA62FD4E1989F6AC00469896 /* Resources */,
 				A46BF1D91C9DABBD00046FD9 /* ShellScript */,
-				1F657BE5EB9B3051743DD834 /* [CP] Embed Pods Frameworks */,
+				7D8E1BFD307A62BA00F12E8B /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -672,70 +998,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		1F657BE5EB9B3051743DD834 /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-SwiftCinemas/Pods-SwiftCinemas-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			inputPaths = (
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-SwiftCinemas/Pods-SwiftCinemas-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-SwiftCinemas/Pods-SwiftCinemas-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		7AF73D08C7EDFBB9EA7C0AEB /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-SwiftCinemas-SwiftCinemasTests/Pods-SwiftCinemas-SwiftCinemasTests-frameworks-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			inputPaths = (
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-SwiftCinemas-SwiftCinemasTests/Pods-SwiftCinemas-SwiftCinemasTests-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-SwiftCinemas-SwiftCinemasTests/Pods-SwiftCinemas-SwiftCinemasTests-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		9F472040CDA6F93FDB80CFB1 /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-SwiftCinemas-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
 		A46BF1D91C9DABBD00046FD9 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -749,28 +1011,6 @@
 			shellPath = /bin/sh;
 			shellScript = "TAGS=\"TODO:|FIXMES:|COREDATA:\"\nERRORTAG=\"ERRORS:\"\nfind \"${SRCROOT}\" \\( -name \"*.h\" -or -name \"*.m\" -or -name \"*.swift\" \\) -print0 | xargs -0 egrep --with-filename --line-number --only-matching \"($TAGS).*\\$|($ERRORTAG).*\\$\" | perl -p -e \"s/($TAGS)/ warning: \\$1/\" | perl -p -e \"s/($ERRORTAG)/ error: \\$1/\"\n";
 		};
-		CBA224910DF12B01689C0F0F /* [CP] Check Pods Manifest.lock */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
-				"${PODS_ROOT}/Manifest.lock",
-			);
-			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-SwiftCinemas-SwiftCinemasTests-checkManifestLockResult.txt",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -778,17 +1018,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7DC30A542FAE66D80097FC34 /* SeatsDataManager.swift in Sources */,
-				7DC30A552FAE66D80097FC34 /* SecureStore.swift in Sources */,
-				7DC30A562FAE66D80097FC34 /* CheckoutDataManager.swift in Sources */,
-				7DC30A572FAE66D80097FC34 /* AdminScreeningsDataManager.swift in Sources */,
-				7DC30A582FAE66D80097FC34 /* BasketDataManager.swift in Sources */,
-				7DC30A592FAE66D80097FC34 /* VenuesDataManager.swift in Sources */,
-				7DC30A5A2FAE66D80097FC34 /* LocationsDataManager.swift in Sources */,
-				7DC30A5B2FAE66D80097FC34 /* SharedDataManager.swift in Sources */,
-				7DC30A5C2FAE66D80097FC34 /* DatesDataManager.swift in Sources */,
-				7DC30A5D2FAE66D80097FC34 /* AuthDataManager.swift in Sources */,
-				7DC30A5E2FAE66D80097FC34 /* MoviesDataManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -796,6 +1025,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AC1700012026101700000001 /* AlertAction.swift in Sources */,
+				AC1700012026101700000002 /* AlertPresenter.swift in Sources */,
 				A416B0291D6115B8008C9CBC /* VenueForMoviesVC.swift in Sources */,
 				A43AAD7F23B2D3F2004B0B0A /* MovieDetailVC.swift in Sources */,
 				7DC30A5F2FAE66D80097FC34 /* SeatsDataManager.swift in Sources */,
@@ -855,7 +1086,6 @@
 				A4A24B682D7CCCE400F3B65A /* Websocket.swift in Sources */,
 				A4C3F2A71BFCEAC700ADE1E3 /* Responses.swift in Sources */,
 				A4EDDCFC1CFCEA760013CE72 /* MoviesVC.swift in Sources */,
-				A449DA3F1BFD185A004A9402 /* AFSecurityPolicy.m in Sources */,
 				A4A24B6A2D8C000000F3B65A /* URLManager.swift in Sources */,
 				7D25892F2F8021CC00C5A23C /* VenuesMigrationSegueEntryVC.swift in Sources */,
 				7D5C0D092F786EBC0019481A /* AppError.swift in Sources */,
@@ -868,7 +1098,6 @@
 				7D7955EA2F800CB200887048 /* VenuesMigration.swift in Sources */,
 				A49A51F61BF6829C00E197D7 /* WebViewController.swift in Sources */,
 				A493B5802D6B580800404BC0 /* MovieCollectionViewCell.swift in Sources */,
-				A4D58A451BFA40AB00D379F8 /* AFNetworkReachabilityManager.m in Sources */,
 				7D5C0D052F786EA50019481A /* HeaderProvider.swift in Sources */,
 				EAA118A7198A23CB00F443F1 /* LoginVC.swift in Sources */,
 			);
@@ -887,7 +1116,6 @@
 /* Begin XCBuildConfiguration section */
 		7DD3DCDA2F794D14006C94F6 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D82C748938F15C27C8AE9DFE /* Pods-SwiftCinemas-SwiftCinemasTests.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -914,7 +1142,7 @@
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
@@ -934,7 +1162,6 @@
 		};
 		7DD3DCDB2F794D14006C94F6 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = BFF084588B72C69EE11950DC /* Pods-SwiftCinemas-SwiftCinemasTests.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -962,7 +1189,7 @@
 				FRAMEWORK_SEARCH_PATHS = "$(inherited)";
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
@@ -1019,7 +1246,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				METAL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
@@ -1061,7 +1288,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				METAL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -1073,7 +1300,6 @@
 		};
 		EA62FD681989F6AC00469896 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 5F8537B88264A8B854ED3468 /* Pods-SwiftCinemas.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -1087,7 +1313,7 @@
 				INFOPLIST_FILE = "$(SRCROOT)/SwiftLoginScreen/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = SwiftCinemas;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.shopping";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1098,6 +1324,7 @@
 				);
 				OTHER_LDFLAGS = (
 					"$(inherited)",
+					"-ObjC",
 					"-l\"sqlite3\"",
 					"-l\"z\"",
 					"-framework",
@@ -1136,7 +1363,6 @@
 		};
 		EA62FD691989F6AC00469896 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = B313D65107DCA9D47402ADF5 /* Pods-SwiftCinemas.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -1150,7 +1376,7 @@
 				INFOPLIST_FILE = "$(SRCROOT)/SwiftLoginScreen/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = SwiftCinemas;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.shopping";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1161,6 +1387,7 @@
 				);
 				OTHER_LDFLAGS = (
 					"$(inherited)",
+					"-ObjC",
 					"-l\"sqlite3\"",
 					"-l\"z\"",
 					"-framework",

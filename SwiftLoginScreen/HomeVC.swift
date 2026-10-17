@@ -110,7 +110,7 @@ class HomeVC: UIViewController, UIViewControllerTransitioningDelegate, HasAppSer
 
     @IBAction func basket(_: UIButton) {
         guard !BasketDataManager.shared.basketItemsBySeatId.isEmpty else {
-            UIAlertController.popUp(title: "Warning!", message: "No free seat(s) to be reserved!")
+            presentAlert(withTitle: "Warning!", message: "No free seat(s) to be reserved!")
             return
         }
         let pvc = UIStoryboard(name: "Storyboard", bundle: nil).instantiateViewController(withIdentifier: "Basket")
@@ -423,33 +423,5 @@ class HomeVC: UIViewController, UIViewControllerTransitioningDelegate, HasAppSer
                 NSLog("HomeVC.loadImage: %@ url=%@", errorMsg, url.absoluteString)
             }
         }
-    }
-}
-
-extension UIViewController {
-    func presentAlert(withTitle title: String, message: String) {
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
-    }
-
-    func presentAlertWithFunction(withTitle title: String, message: String, function: String) {
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        let action: UIAlertAction
-        if function == "sendEmail" {
-            action = UIAlertAction(title: "OK", style: .default) { _ in
-                let user = UserDefaults.standard.value(forKey: "USERNAME")
-                Task { @MainActor in
-                    guard let userStr = user as? String else { return }
-                    do {
-                        try await AuthDataManager.shared.activateCurrentDevice(user: userStr)
-                    } catch { print(error) }
-                }
-            }
-        } else {
-            action = UIAlertAction(title: "OK", style: .default)
-        }
-        alert.addAction(action)
-        present(alert, animated: true)
     }
 }

@@ -131,12 +131,14 @@ LoginVC ──────────────┐
 |-----|---------|
 | `SwiftyJSON` | JSON parsing |
 | `Realm` | Local object caching (API responses) |
-| `Braintree` | Payment processing (Cards) |
-| `BraintreeDropIn` | Payment UI (Drop-In) |
+| `BraintreeCard` | Card tokenization (Carthage Braintree SDK) |
+| `BraintreeUIComponents` | SwiftUI `CardFields` checkout form, hosted from UIKit |
 | `FirebaseAuth` | Firebase Authentication |
 | `FirebaseFirestore` | Firebase Firestore |
 | `FirebaseMessaging` | Push notifications (FCM) |
 | `Starscream` | WebSocket client (legacy, now replaced by native `URLSessionWebSocketTask`) |
+
+> **Firebase via Carthage binaries:** the Firebase XCFrameworks in `Carthage/Build` are static. Besides the `Firebase*` frameworks, the `SwiftCinemas` target must link ("Do Not Embed") every transitive XCFramework from the Analytics/Auth/Firestore/Messaging binary bundles — `GoogleUtilities`, `FBLPromises`, `nanopb`, `GoogleAppMeasurement`, `GoogleAppMeasurementIdentitySupport`, `GoogleAdsOnDeviceConversion`, `GoogleDataTransport`, `GTMSessionFetcher`, `RecaptchaInterop`, `absl`, `grpc`, `grpcpp`, `leveldb`, `openssl_grpc` — and keep `-ObjC` in `OTHER_LDFLAGS`. Omitting `GoogleUtilities` produces undefined `_GULGetLoggerLevel` / `_GULIsLoggableLevel` linker errors from `FirebaseCore`.
 
 ## Building
 

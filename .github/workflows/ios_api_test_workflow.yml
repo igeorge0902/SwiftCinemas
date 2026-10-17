@@ -16,36 +16,59 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Install any dependencies      # Cache CocoaPods artifacts
-      - name: Cache CocoaPods
+      - name: Locate iOS project
+        id: ios-project
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f Cartfile ]; then
+            project_dir=.
+          elif [ -f SwiftCinemas/Cartfile ]; then
+            project_dir=SwiftCinemas
+          else
+            echo "Cartfile not found at repository root or in SwiftCinemas" >&2
+            exit 1
+          fi
+          if [ ! -f "$project_dir/Cartfile.resolved" ]; then
+            echo "Cartfile.resolved is required for pinned CI dependencies" >&2
+            exit 1
+          fi
+          echo "IOS_PROJECT_DIR=$project_dir" >> "$GITHUB_ENV"
+          echo "directory=$project_dir" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare Carthage and identify toolchain
+        id: toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v carthage >/dev/null 2>&1; then
+            brew install carthage
+          fi
+          # Include Xcode's build number and Swift version, not just the runner label.
+          toolchain_hash="$(
+            { xcodebuild -version; xcrun swift --version; carthage version; } |
+              shasum -a 256 | awk '{print $1}'
+          )"
+          echo "hash=$toolchain_hash" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Carthage XCFrameworks
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.cocoapods/repos
-            Pods
-            SwiftCinemas/Pods
-          key: ${{ runner.os }}-cocoapods-${{ hashFiles('Podfile.lock', 'SwiftCinemas/Podfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cocoapods-
+          path: ${{ steps.ios-project.outputs.directory }}/Carthage/Build
+          key: ${{ runner.os }}-${{ runner.arch }}-carthage-xcframeworks-v1-${{ steps.toolchain.outputs.hash }}-${{ hashFiles('Cartfile', 'Cartfile.resolved', 'SwiftCinemas/Cartfile', 'SwiftCinemas/Cartfile.resolved') }}
 
-      # Install any dependencies
-      - name: Install Dependencies
+      - name: Bootstrap pinned Carthage dependencies
+        working-directory: ${{ env.IOS_PROJECT_DIR }}
+        shell: bash
         run: |
-          if ! command -v pod >/dev/null 2>&1; then
-            sudo gem install cocoapods
-          fi
-
-          if [ -f Podfile ]; then
-            echo "IOS_PROJECT_DIR=." >> "$GITHUB_ENV"
-            pod install
-          elif [ -f SwiftCinemas/Podfile ]; then
-            echo "IOS_PROJECT_DIR=SwiftCinemas" >> "$GITHUB_ENV"
-            cd SwiftCinemas
-            pod install
-          else
-            echo "Podfile not found" >&2
+          set -euo pipefail
+          lock_hash="$(shasum -a 256 Cartfile.resolved)"
+          # Reuse compatible cached builds, but never resolve new dependency versions.
+          carthage bootstrap --platform iOS --use-xcframeworks --cache-builds
+          if [ "$lock_hash" != "$(shasum -a 256 Cartfile.resolved)" ]; then
+            echo "Bootstrap changed Cartfile.resolved; reconcile it locally before running CI" >&2
             exit 1
-          fi        
+          fi
 
       # Run tests on iPhone Simulator
       - name: Run Tests on iPhone Simulator

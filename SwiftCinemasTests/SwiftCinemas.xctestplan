@@ -13,6 +13,9 @@
   },
   "testTargets" : [
     {
+      "skippedTests" : [
+        "VenueForMoviesIntegrationTests\/testLocations_LiveSmokeWhenRealBackendEnabled()"
+      ],
       "target" : {
         "containerPath" : "container:SwiftCinemas.xcodeproj",
         "identifier" : "7DD3DCD22F794D14006C94F6",

@@ -3,19 +3,6 @@
 
 import UIKit
 
-extension UIAlertController {
-    static func popUp(title: String, message: String) {
-        let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
-        alertController.addAction(UIAlertAction(title: "Close", style: .default, handler: nil))
-
-        let alertWindow = UIWindow(frame: UIScreen.main.bounds)
-        alertWindow.rootViewController = UIViewController()
-        alertWindow.windowLevel = UIWindow.Level.alert + 1
-        alertWindow.makeKeyAndVisible()
-        alertWindow.rootViewController?.present(alertController, animated: true, completion: nil)
-    }
-}
-
 extension String {
     static func formatDate(date: Date) -> String {
         let dateFormatter = DateFormatter()

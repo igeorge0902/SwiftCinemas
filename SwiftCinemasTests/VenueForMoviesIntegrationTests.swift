@@ -2,6 +2,7 @@ import Foundation
 import XCTest
 @testable import SwiftCinemas
 
+@MainActor
 final class VenueForMoviesIntegrationTests: XCTestCase {
     private var sut: MbooksService!
 
