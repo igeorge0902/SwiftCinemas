@@ -11,10 +11,37 @@ jobs:
   test-ios:
     runs-on: macos-latest
 
+    env:
+      EXPECTED_XCODE_VERSION: ${{ vars.XCODE_VERSION_WITH_SWIFT }}
+      EXPECTED_SWIFT_VERSION: ${{ vars.SWIFT_VERSION }}
+
     steps:
       # Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
+      
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ vars.XCODE_VERSION_WITH_SWIFT }}
+
+      - name: Verify selected toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          xcrun swift --version
+          xcode-select -p
+          xcrun swift --version | grep -Fq "Swift version $EXPECTED_SWIFT_VERSION" || {
+            echo "Expected Swift $EXPECTED_SWIFT_VERSION for Xcode $EXPECTED_XCODE_VERSION, but the selected toolchain differs." >&2
+            exit 1
+          }
+
+      - name: Verify toolchain
+        run: |
+          xcodebuild -version
+          xcrun swift --version
+          xcode-select -p
 
       - name: Locate iOS project
         id: ios-project
@@ -85,3 +112,21 @@ jobs:
             -scheme SwiftCinemas \
             -destination "$DESTINATION" \
             -only-testing:"$TEST_IDENTIFIER"
+
+      - name: Upload test results and build log
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: SwiftCinemas-test-results
+          path: |
+            ${{ runner.temp }}/SwiftCinemas-TestResults.xcresult
+            ${{ runner.temp }}/xcodebuild-test.log
+          if-no-files-found: warn
+          retention-days: 14
+
+
+      - name: Publish Xcode test report
+        if: ${{ always() }}
+        uses: kishikawakatsumi/xcresulttool@v1
+        with:
+          path: ${{ runner.temp }}/SwiftCinemas-TestResults.xcresult
