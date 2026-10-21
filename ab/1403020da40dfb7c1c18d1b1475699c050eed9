@@ -1,0 +1,20 @@
+.github/workflows/ios_api_test_workflow_with_appium.yml
+  s_e51a3905f66d37::t_e2e43b88891b25 91-94,121-127,163-170,227-228,263-271,287
+  s_e51a3905f66d37::t_529d7bc47f976f 262
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ab1403020da40dfb7c1c18d1b1475699c050eed9",
+  "prompts": {},
+  "sessions": {
+    "s_e51a3905f66d37": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "a64859a0-1119-4769-b792-f468fb6ebfbb",
+        "model": "unknown"
+      },
+      "human_author": "GASPAR, GYORGY <gyorgy.gaspar@lhsystems.com>"
+    }
+  }
+}
