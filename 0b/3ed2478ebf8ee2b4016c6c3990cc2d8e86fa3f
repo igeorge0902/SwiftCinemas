@@ -1,0 +1,125 @@
+SwiftLoginScreen/TicketsVC.swift
+  s_d6af8364b92425::t_c0fa04991a8697 21-24,34-37,44,77-78,204,225-226,344,349,356
+SwiftLoginScreen/ViewModels/TicketsViewModel.swift
+  s_d6af8364b92425::t_c0fa04991a8697 1-44
+SwiftLoginScreen/ViewModels/VenuesViewModel.swift
+  s_d6af8364b92425::t_66b930d2c028d9 10,25-26,46
+  s_d6af8364b92425::t_70151a3c1954a5 1-9,11-24,27-45,47-105
+SwiftLoginScreen/MoviesVC.swift
+  s_d6af8364b92425::t_4515d984e6b95b 22-26,31-37,44,51,61-62,72,76,118,122,136,153,155-156,163,170,175,177-178,183,244,254,359,361,368,381,427,486,606
+  s_d6af8364b92425::t_dd151bee766c6a 59-60,187
+  s_d6af8364b92425::t_4e7b3bc9a5170a 225-228,230-238,394-399,684
+  s_e51a3905f66d37::t_d0f12854f9b359 383
+SwiftLoginScreen/VenuesVC.swift
+  s_d6af8364b92425::t_66b930d2c028d9 19-22,31-34,125,283
+  s_d6af8364b92425::t_70151a3c1954a5 36,49,53,64-65,104,118,146,218,239,248,253,277-279,287,327-328,391,406,412-413
+SwiftLoginScreen/ViewModels/HomeViewModel.swift
+  s_d6af8364b92425::t_dd151bee766c6a 43,47-50
+  s_d6af8364b92425::t_dd1288c1f8155d 1-42,44-46,51-71
+SwiftLoginScreen/AdminUpdateVC.swift
+  s_d6af8364b92425::t_76f8c65b55620d 25-32,35-66,102-106,136,148,156-157,239-240,254-255,257,274-276,280-281,287,291-293,315,368-369,375-391
+  s_d6af8364b92425::t_c7510257bdb137 392
+SwiftLoginScreen/SignupVC.swift
+  s_d6af8364b92425::t_dd1288c1f8155d 6-8,28,70-71
+  s_d6af8364b92425::t_5c4700afa561bf 57-63,69
+SwiftLoginScreen/ViewModels/VenuesDetailsViewModel.swift
+  s_d6af8364b92425::t_7cd03ed2c4cfe6 1-116
+SwiftCinemas.xcodeproj/project.pbxproj
+  s_d6af8364b92425::t_eee2a9dad816c9 10-26,330-346,598-621,834,1087-1103
+SwiftLoginScreen/MenuVC.swift
+  s_d6af8364b92425::t_dd151bee766c6a 182,321,326
+  s_d6af8364b92425::t_344e15bb48a5e5 12,22,31,38,53,161,165,169,172-176,178-181,183-184,309
+SwiftLoginScreen/MovieDetailVC.swift
+  s_d6af8364b92425::t_4515d984e6b95b 21,45-50,54,135,142,161
+SwiftLoginScreen/PopOverDates.swift
+  s_d6af8364b92425::t_336399b3c85b2b 7,31,53,57,61,67-68
+SwiftLoginScreen/VenuesDetailsVC.swift
+  s_d6af8364b92425::t_7cd03ed2c4cfe6 24-27,31-74,118,124,179,183-184,187,227,236,382,396,400,805
+SwiftLoginScreen/ViewModels/MovieDetailViewModel.swift
+  s_d6af8364b92425::t_4515d984e6b95b 1-31
+SwiftLoginScreen/ViewModels/MapViewModel.swift
+  s_d6af8364b92425::t_66b930d2c028d9 6-7,18-19,28,38
+  s_d6af8364b92425::t_7cd03ed2c4cfe6 1-5,8-17,20-27,29-37,39-49
+SwiftLoginScreen/ViewModels/PurchasesViewModel.swift
+  s_d6af8364b92425::t_c0fa04991a8697 1-55
+SwiftLoginScreen/ViewModels/SeatSelectionViewModel.swift
+  s_d6af8364b92425::t_dd151bee766c6a 40-41,45
+  s_d6af8364b92425::t_336399b3c85b2b 1-39,42-44,46-99
+SwiftLoginScreen/MapViewController.swift
+  s_d6af8364b92425::t_7cd03ed2c4cfe6 45-46,52,76,106,112,127,133,142,175-184,233,262,266
+  s_d6af8364b92425::t_66b930d2c028d9 23-26,30-37,174
+SwiftLoginScreen/ViewModels/SignupViewModel.swift
+  s_d6af8364b92425::t_5c4700afa561bf 9,13-18,25-26,33,36,42,44-47,56-57
+  s_d6af8364b92425::t_dd1288c1f8155d 1-8,10-12,19-24,27-32,34-35,37-41,43,48-55,58-67
+SwiftLoginScreen/ViewModels/BasketViewModel.swift
+  s_d6af8364b92425::t_336399b3c85b2b 1-131
+SwiftLoginScreen/ViewModels/AdminUpdateViewModel.swift
+  s_d6af8364b92425::t_76f8c65b55620d 1-140
+.gitignore
+  h_d154d11af00b83 22
+SwiftLoginScreen/VenueForMoviesVC.swift
+  s_d6af8364b92425::t_70151a3c1954a5 16,21,23,31,97-98,103,114,118,123,128,134,162
+SwiftLoginScreen/AdminVC.swift
+  s_d6af8364b92425::t_76f8c65b55620d 25,56-59,104-105,109-110,122-124,128-129,205-206,215-216,218,262-272
+  s_d6af8364b92425::t_47633d152a5d15 273
+SwiftLoginScreen/ViewModels/LoginViewModel.swift
+  s_d6af8364b92425::t_dd1288c1f8155d 1-62
+SwiftLoginScreen/ViewModels/MoviesViewModel.swift
+  s_d6af8364b92425::t_2d622bfca73a42 68,70,73-78
+  s_d6af8364b92425::t_4e7b3bc9a5170a 5-8,46-67,69,71-72,79-86
+  s_d6af8364b92425::t_4515d984e6b95b 1-4,9,12-45,87-154,156-158,162-172,176-228,230-243
+  s_d6af8364b92425::t_dd151bee766c6a 10-11,155,159-161,173-175,229
+SwiftLoginScreen/PurchasesVC.swift
+  s_d6af8364b92425::t_c0fa04991a8697 17-19,35-36,112,119,126,240,253,281,301-302,418,493
+SwiftLoginScreen/LoginVC.swift
+  s_d6af8364b92425::t_dd1288c1f8155d 24,82-86
+  s_d6af8364b92425::t_5c4700afa561bf 90-102
+SwiftLoginScreen/ViewModels/ScreeningDateSelectionViewModel.swift
+  s_d6af8364b92425::t_336399b3c85b2b 1-25
+SwiftLoginScreen/PopOver.swift
+  s_d6af8364b92425::t_dd151bee766c6a 122
+  s_d6af8364b92425::t_15df958184c7ef 15,41,83,127,145,149,153,212-213,222
+SwiftLoginScreen/BasketVC.swift
+  s_d6af8364b92425::t_336399b3c85b2b 22-23,27,32,53,97,115,180,191,195,219,225,238,242,244,252-270
+SwiftLoginScreen/ViewModels/MenuViewModel.swift
+  s_d6af8364b92425::t_dd151bee766c6a 13,55,71,79,92,98,104-108
+  s_d6af8364b92425::t_344e15bb48a5e5 1-12,14-54,56-70,72-78,80-91,93-97,99-103,109-115
+SwiftLoginScreen/ViewModels/VenueForMoviesViewModel.swift
+  s_d6af8364b92425::t_70151a3c1954a5 1-63
+SwiftLoginScreen/ViewModels/AdminViewModel.swift
+  s_d6af8364b92425::t_76f8c65b55620d 1-76
+.github/workflows/ios_api_test_workflow_with_appium.yml
+  s_e51a3905f66d37::t_d9f5fee163b5de 1-277
+SwiftLoginScreen/HomeVC.swift
+  s_d6af8364b92425::t_dd151bee766c6a 314-315
+  s_d6af8364b92425::t_dd1288c1f8155d 23-24,42,44,60,98,146,148-149,318,322-338
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0b3ed2478ebf8ee2b4016c6c3990cc2d8e86fa3f",
+  "prompts": {},
+  "humans": {
+    "h_d154d11af00b83": {
+      "author": "GASPAR, GYORGY <gyorgy.gaspar@lhsystems.com>"
+    }
+  },
+  "sessions": {
+    "s_d6af8364b92425": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "a15c1dde-6ad3-4610-813c-715d47f80c99",
+        "model": "unknown"
+      },
+      "human_author": "GASPAR, GYORGY <gyorgy.gaspar@lhsystems.com>"
+    },
+    "s_e51a3905f66d37": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "a64859a0-1119-4769-b792-f468fb6ebfbb",
+        "model": "unknown"
+      },
+      "human_author": "GASPAR, GYORGY <gyorgy.gaspar@lhsystems.com>"
+    }
+  }
+}
