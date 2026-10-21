@@ -1,0 +1,277 @@
+name: ios_appium_and_xcui_tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      test_suite:
+        description: Test suite to run
+        type: choice
+        options:
+          - xcui
+          - appium
+        default: xcui
+      appium_testng_xml:
+        description: TestNG suite file in the Appium repository
+        type: string
+        default: testng-inspect.xml
+
+jobs:
+  test-ios:
+    runs-on: macos-latest
+    timeout-minutes: 90
+
+    env:
+      EXPECTED_XCODE_VERSION: ${{ vars.XCODE_VERSION_WITH_SWIFT }}
+      EXPECTED_SWIFT_VERSION: ${{ vars.SWIFT_VERSION }}
+      # Push and pull_request always run XCUITest; manual runs use the selected suite.
+      TEST_SUITE: ${{ github.event_name == 'workflow_dispatch' && inputs.test_suite || 'xcui' }}
+
+    steps:
+      # Existing SwiftCinemas workflow: this checkout is the current repository.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ vars.XCODE_VERSION_WITH_SWIFT }}
+
+      - name: Verify selected toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          xcrun swift --version
+          xcode-select -p
+          xcrun swift --version | grep -Fq "Swift version $EXPECTED_SWIFT_VERSION" || {
+            echo "Expected Swift $EXPECTED_SWIFT_VERSION for Xcode $EXPECTED_XCODE_VERSION, but the selected toolchain differs." >&2
+            exit 1
+          }
+
+      - name: Verify toolchain
+        run: |
+          xcodebuild -version
+          xcrun swift --version
+          xcode-select -p
+
+      - name: Locate iOS project
+        id: ios-project
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -f Cartfile ]; then
+            project_dir=.
+          elif [ -f SwiftCinemas/Cartfile ]; then
+            project_dir=SwiftCinemas
+          else
+            echo "Cartfile not found at repository root or in SwiftCinemas" >&2
+            exit 1
+          fi
+          if [ ! -f "$project_dir/Cartfile.resolved" ]; then
+            echo "Cartfile.resolved is required for pinned CI dependencies" >&2
+            exit 1
+          fi
+          echo "IOS_PROJECT_DIR=$project_dir" >> "$GITHUB_ENV"
+          echo "directory=$project_dir" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare Carthage and identify toolchain
+        id: toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v carthage >/dev/null 2>&1; then
+            brew install carthage
+          fi
+          toolchain_hash="$(
+            { xcodebuild -version; xcrun swift --version; carthage version; } |
+              shasum -a 256 | awk '{print $1}'
+          )"
+          echo "hash=$toolchain_hash" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Carthage XCFrameworks
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.ios-project.outputs.directory }}/Carthage/Build
+          key: ${{ runner.os }}-${{ runner.arch }}-carthage-xcframeworks-v1-${{ steps.toolchain.outputs.hash }}-${{ hashFiles('Cartfile', 'Cartfile.resolved', 'SwiftCinemas/Cartfile', 'SwiftCinemas/Cartfile.resolved') }}
+
+      - name: Bootstrap pinned Carthage dependencies
+        working-directory: ${{ env.IOS_PROJECT_DIR }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          lock_hash="$(shasum -a 256 Cartfile.resolved)"
+
+          # Fetch pinned checkouts into Carthage/Checkouts.
+          carthage checkout
+
+          # Prune sample workspaces that can cause xcodebuild timeout loops.
+          find Carthage/Checkouts -name "CombineSample.xcworkspace" -exec rm -rf {} +
+          find Carthage/Checkouts -name "*Sample*" -type d -exec rm -rf {} + 2>/dev/null || true
+
+          # Compile frameworks into Carthage/Build.
+          carthage build --platform iOS --use-xcframeworks --cache-builds
+
+          if [ "$lock_hash" != "$(shasum -a 256 Cartfile.resolved)" ]; then
+            echo "Bootstrap changed Cartfile.resolved; reconcile it locally before running CI" >&2
+            exit 1
+          fi
+
+      # Existing iOS/XCTest step, retained.
+      - name: Run Tests on iPhone Simulator
+        if: ${{ env.TEST_SUITE == 'xcui' }}
+        working-directory: ${{ env.IOS_PROJECT_DIR }}
+        env:
+          MODE: ${{ vars.MODE }}
+          DESTINATION: ${{ vars.DESTINATION }}
+          TEST_IDENTIFIER: ${{ vars.TEST_IDENTIFIER }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -list -workspace SwiftCinemas.xcworkspace
+          set -o pipefail
+          SWIFT_REST_BACKEND="$MODE" xcodebuild test \
+            -workspace SwiftCinemas.xcworkspace \
+            -scheme SwiftCinemas \
+            -destination "$DESTINATION" \
+            -only-testing:"$TEST_IDENTIFIER" \
+            2>&1 | tee "$RUNNER_TEMP/xcodebuild-test.log"
+
+      # Appium: the public Maven/TestNG automation repository; override with
+      # repository variables APPIUM_TEST_REPOSITORY / APPIUM_TEST_REF if needed.
+      - name: Checkout Appium test repository
+        if: ${{ env.TEST_SUITE == 'appium' }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.APPIUM_TEST_REPOSITORY || 'igeorge0902/appium' }}
+          ref: ${{ vars.APPIUM_TEST_REF || 'master' }}
+          path: appium-test-repo
+
+      - name: Set up Java for Appium tests
+        if: ${{ env.TEST_SUITE == 'appium' }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: appium-test-repo/pom.xml
+
+      - name: Set up Node.js for Appium
+        if: ${{ env.TEST_SUITE == 'appium' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      - name: Install Appium and XCUITest driver
+        if: ${{ env.TEST_SUITE == 'appium' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --global appium@latest
+          appium driver install xcuitest
+          appium driver list --installed
+          if ! command -v mvn >/dev/null 2>&1; then
+            brew install maven
+          fi
+          mvn -version
+
+      # Build a separate simulator .app for Appium so it does not depend on
+      # whether xcodebuild test left its XCTest simulator booted or installed.
+      - name: Build SwiftCinemas for Appium simulator
+        if: ${{ env.TEST_SUITE == 'appium' }}
+        working-directory: ${{ env.IOS_PROJECT_DIR }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -workspace SwiftCinemas.xcworkspace \
+            -scheme SwiftCinemas \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            -derivedDataPath "$RUNNER_TEMP/SwiftCinemas-Appium-DerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Prepare dedicated Appium simulator
+        if: ${{ env.TEST_SUITE == 'appium' }}
+        env:
+          SIM_DEVICE_TYPE_ID: ${{ vars.APPIUM_SIM_DEVICE_TYPE_ID || 'com.apple.CoreSimulator.SimDeviceType.iPhone-17' }}
+          APP_BUNDLE: ${{ runner.temp }}/SwiftCinemas-Appium-DerivedData/Build/Products/Debug-iphonesimulator/SwiftCinemas.app
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d "$APP_BUNDLE" || { echo "Built app not found: $APP_BUNDLE" >&2; exit 1; }
+          simulator_name="appium-ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          runtime_id="$(xcrun simctl list runtimes available -j | python3 -c '
+          import json, sys
+          rs = [r for r in json.load(sys.stdin)["runtimes"] if r.get("platform") == "iOS" and r.get("isAvailable")]
+          rs.sort(key=lambda r: [int(x) for x in r["version"].split(".")])
+          print(rs[-1]["identifier"] if rs else "")
+          ')"
+          test -n "$runtime_id" || { echo "No available iOS simulator runtime" >&2; exit 1; }
+          echo "Creating $SIM_DEVICE_TYPE_ID on $runtime_id"
+          udid="$(xcrun simctl create "$simulator_name" "$SIM_DEVICE_TYPE_ID" "$runtime_id")"
+          echo "SIM_UDID=$udid" >> "$GITHUB_ENV"
+          xcrun simctl boot "$udid"
+          xcrun simctl bootstatus "$udid" -b
+          xcrun simctl install "$udid" "$APP_BUNDLE"
+
+      - name: Start Appium server
+        if: ${{ env.TEST_SUITE == 'appium' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          nohup appium --log "$GITHUB_WORKSPACE/appium.log" > "$RUNNER_TEMP/appium-server.stdout.log" 2>&1 &
+          for attempt in $(seq 1 45); do
+            if curl --fail --silent http://127.0.0.1:4723/status > /dev/null; then
+              echo "Appium server is ready."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Appium did not start; server logs follow:" >&2
+          cat "$RUNNER_TEMP/appium-server.stdout.log" >&2 || true
+          cat "$GITHUB_WORKSPACE/appium.log" >&2 || true
+          exit 1
+
+      - name: Run Appium tests
+        if: ${{ env.TEST_SUITE == 'appium' }}
+        working-directory: appium-test-repo
+        env:
+          BUNDLE_ID: com.georgegaspar.SwiftLoginScreen
+          APPIUM_HOST: 127.0.0.1
+          APPIUM_PORT: '4723'
+          SWIFT_REST_BACKEND: mocked
+          TESTNG_XML: ${{ inputs.appium_testng_xml || 'testng-inspect.xml' }}
+        shell: bash
+        run: mvn -B clean test -DtestngXml="$TESTNG_XML"
+
+      - name: Upload iOS and Appium test artifacts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: SwiftCinemas-${{ env.TEST_SUITE }}-results
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            ${{ runner.temp }}/xcodebuild-test.log
+            ${{ runner.temp }}/appium-server.stdout.log
+            ${{ github.workspace }}/appium.log
+            appium-test-repo/target/surefire-reports/**
+            appium-test-repo/target/page-sources/**
+            appium-test-repo/target/selector-inventory.csv
+            ${{ runner.temp }}/SwiftCinemas-Appium-DerivedData/Logs/**
+
+      - name: Delete dedicated Appium simulator
+        if: ${{ always() && env.TEST_SUITE == 'appium' }}
+        shell: bash
+        run: |
+          if [ -n "${SIM_UDID:-}" ]; then
+            xcrun simctl shutdown "$SIM_UDID" || true
+            xcrun simctl delete "$SIM_UDID" || true
+          fi

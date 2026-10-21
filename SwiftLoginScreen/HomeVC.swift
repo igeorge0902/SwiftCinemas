@@ -20,15 +20,8 @@ class HomeVC: UIViewController, UIViewControllerTransitioningDelegate, HasAppSer
 
     enum TrendingDisplayMode { case carousel, list }
 
-    struct TrendingMovie {
-        let movieId: Int
-        let name: String
-        let thumbnailPicture: String
-        let largePicture: String
-        let bookedTickets: Int
-        let lastBookingTime: String?
-        let descriptionText: String
-    }
+    typealias TrendingMovie = HomeViewModel.TrendingMovie
+    private lazy var viewModel = HomeViewModel(movies: .shared, locations: .shared)
 
     var imageView: UIImageView!
     var appServices: AppServices!
@@ -46,8 +39,9 @@ class HomeVC: UIViewController, UIViewControllerTransitioningDelegate, HasAppSer
 
         setupTrendingSectionUI()
         setupTrendingGestures()
+        bindViewModel()
         fetchTrendingMovies(days: 10000)
-        MoviesDataManager.shared.warmImageCache()
+        viewModel.warmImageCache()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -63,8 +57,7 @@ class HomeVC: UIViewController, UIViewControllerTransitioningDelegate, HasAppSer
 
     override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
         if segue.identifier == "goto_map" {
-            LocationsDataManager.shared.isVenuesFromMapFlow = true
-            LocationsDataManager.shared.isMapFromVenueDetails = false
+            viewModel.selectMapFlow()
         }
     }
 
@@ -102,7 +95,7 @@ class HomeVC: UIViewController, UIViewControllerTransitioningDelegate, HasAppSer
         }
         let movie = trendingMovies[indexPath.row]
         cell.configure(title: movie.name, description: movie.descriptionText)
-        if let url = URL(string: URLManager.image(movie.largePicture)) {
+        if let url = URL(string: movie.largePicture) {
             loadImage(from: url, into: cell.posterImageView)
         }
         return cell
@@ -150,10 +143,10 @@ class HomeVC: UIViewController, UIViewControllerTransitioningDelegate, HasAppSer
 
     // MARK: Private
 
-    private var trendingMovies: [TrendingMovie] = []
+    private var trendingMovies: [TrendingMovie] { viewModel.state.trendingMovies }
     private var displayMode: TrendingDisplayMode = .carousel
-    private var isLoadingTrending = false
-    private var trendingErrorMessage: String?
+    private var isLoadingTrending: Bool { viewModel.state.isLoadingTrending }
+    private var trendingErrorMessage: String? { viewModel.state.trendingErrorMessage }
 
     // MARK: - Trending views
 
@@ -318,47 +311,31 @@ class HomeVC: UIViewController, UIViewControllerTransitioningDelegate, HasAppSer
 
     private func fetchTrendingMovies(days: Int? = nil) {
         guard appServices != nil else { return }
-        isLoadingTrending = true
-        trendingErrorMessage = nil
-        updateTrendingStateUI()
-
-        let started = Date()
-        print("HomeVC.trending request start days=\(days.map(String.init) ?? "default") limit=5")
-
+        // Preserve synchronous retry admission before the existing task starts.
+        viewModel.beginTrendingLoad()
         Task { @MainActor [weak self] in
             guard let self else { return }
-            do {
-                let movies = try await MoviesDataManager.shared.fetchTrending(limit: 5, days: days)
-                self.trendingMovies = movies.map {
-                    TrendingMovie(
-                        movieId: $0.movieId,
-                        name: $0.name,
-                        thumbnailPicture: "",
-                        largePicture: $0.largePicture,
-                        bookedTickets: 0,
-                        lastBookingTime: nil,
-                        descriptionText: $0.detail.isEmpty ? "Trending now." : $0.detail
-                    )
-                }
-                self.isLoadingTrending = false
-                self.trendingErrorMessage = nil
-                print("HomeVC.trending ok count=\(self.trendingMovies.count) ms=\(Int(Date().timeIntervalSince(started) * 1000))")
-                self.carouselCollectionView.reloadData()
-                self.trendingListTableView.reloadData()
-                self.setDisplayMode(.carousel, animated: false)
-                self.updateTrendingStateUI()
-            } catch {
-                self.isLoadingTrending = false
-                self.trendingMovies.removeAll()
-                self.trendingErrorMessage = "Could not load trending movies. Tap to retry."
-                print("HomeVC.trending failed ms=\(Int(Date().timeIntervalSince(started) * 1000)) error=\(error)")
-                self.carouselCollectionView.reloadData()
-                self.trendingListTableView.reloadData()
-                self.updateTrendingStateUI()
-            }
+            await viewModel.loadTrending(days: days)
         }
     }
 
+    private func bindViewModel() {
+        viewModel.onStateChange = { [weak self] state in
+            guard let self else { return }
+            switch state.phase {
+            case .loaded:
+                carouselCollectionView.reloadData()
+                trendingListTableView.reloadData()
+                setDisplayMode(.carousel, animated: false)
+            case .failed:
+                carouselCollectionView.reloadData()
+                trendingListTableView.reloadData()
+            case .idle, .loading: break
+            }
+            updateTrendingStateUI()
+        }
+        updateTrendingStateUI()
+    }
     private func updateTrendingStateUI() {
         if isLoadingTrending {
             trendingStatusLabel.text = "Loading trending movies..."

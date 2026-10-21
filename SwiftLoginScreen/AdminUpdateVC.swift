@@ -22,17 +22,48 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
     }
 
     var appServices: AppServices!
-    var movieSelected = false
+    private lazy var viewModel: AdminUpdateViewModel = {
+        injectAppServicesIfNeeded()
+        return AdminUpdateViewModel(admin: .shared, locations: .shared)
+    }()
+    var movieSelected: Bool {
+        get { viewModel.state.context.movieSelected }
+        set { viewModel.updateInput { $0.movieSelected = newValue } }
+    }
     // var originalVenueName: NSAttributedString!
 
-    var addMovie: String = ""
-    var addMovieId: String = ""
-    var addVenueId: String = ""
-    var addVenue: String = ""
-    var addScreeningID: String = ""
-    var addScreeningDate: String = ""
-    var addScreeningDateId: String = ""
-    var addCategory: String = ""
+    var addMovie: String {
+        get { viewModel.state.context.addMovie }
+        set { viewModel.updateInput { $0.addMovie = newValue } }
+    }
+    var addMovieId: String {
+        get { viewModel.state.context.addMovieId }
+        set { viewModel.updateInput { $0.addMovieId = newValue } }
+    }
+    var addVenueId: String {
+        get { viewModel.state.context.addVenueId }
+        set { viewModel.updateInput { $0.addVenueId = newValue } }
+    }
+    var addVenue: String {
+        get { viewModel.state.context.addVenue }
+        set { viewModel.updateInput { $0.addVenue = newValue } }
+    }
+    var addScreeningID: String {
+        get { viewModel.state.context.addScreeningID }
+        set { viewModel.updateInput { $0.addScreeningID = newValue } }
+    }
+    var addScreeningDate: String {
+        get { viewModel.state.context.addScreeningDate }
+        set { viewModel.updateInput { $0.addScreeningDate = newValue } }
+    }
+    var addScreeningDateId: String {
+        get { viewModel.state.context.addScreeningDateId }
+        set { viewModel.updateInput { $0.addScreeningDateId = newValue } }
+    }
+    var addCategory: String {
+        get { viewModel.state.context.addCategory }
+        set { viewModel.updateInput { $0.addCategory = newValue } }
+    }
 
     @IBOutlet var movieName: UITextField!
     @IBOutlet var screeningDate: UITextField!
@@ -68,6 +99,11 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
         venueName.textColor = .systemGray
         styleSelectButtons()
         showDatePicker()
+        viewModel.onStateChange = { [weak self] state in self?.renderForm(state.form) }
+        for field in [movieName, venueName, screeningDate, ScreeningID, category] {
+            field?.addTarget(self, action: #selector(captureForm), for: .editingChanged)
+        }
+        captureForm()
 
         NotificationCenter.default.addObserver(self, selector: #selector(AdminUpdateVC.refreshMovie), name: NSNotification.Name(rawValue: "movieSelected"), object: nil)
 
@@ -97,7 +133,7 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
-        AdminScreeningsDataManager.shared.screeningsForAdminUpdate = []
+        viewModel.leave()
     }
 
     @objc func keyboardwillshow() {
@@ -109,18 +145,7 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
     }
 
     @objc func clear() {
-        addMovie = ""
-        addVenue = ""
-        addScreeningID = ""
-        addScreeningDate = ""
-        addCategory = ""
-        addScreeningDateId = ""
-
-        movieName.text = ""
-        venueName.text = ""
-        ScreeningID.text = ""
-        screeningDate.text = ""
-        category.text = ""
+        viewModel.clear()
     }
 
     @objc func refreshMovie() {
@@ -128,9 +153,8 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
     }
 
     @objc func refreshVenue() {
-        addVenue = (LocationsDataManager.shared.selectedLocation?.title)!
-        let changed = !originalVenueTitle.isEmpty && addVenue != originalVenueTitle
-        venueName.text = changed ? "\(addVenue) (changed)" : addVenue
+        viewModel.refreshVenue()
+        venueName.text = viewModel.state.form.venue
         venueName.textColor = .systemGray
         venueChanged.isHidden = true
     }
@@ -212,9 +236,8 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
     }
 
     @objc func donedatePicker() {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        screeningDate.text = formatter.string(from: datePicker.date)
+        viewModel.setDate(datePicker.date)
+        screeningDate.text = viewModel.state.form.date
         view.endEditing(true)
     }
 
@@ -227,13 +250,11 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
     }
 
     func textFieldDidEndEditing(_ textField: UITextField) {
-        var CategoryData = [String]()
-        CategoryData = ["Action", "Drama", "Crime", "Romance", "Troll"]
-
         if textField == category {
-            if !CategoryData.contains(category.text!), category.text != "" {
+            captureForm()
+            if !viewModel.validateCategory() {
                 presentAlert(withTitle: "Hello", message: "Invalid category")
-                category.text = ""
+                category.text = viewModel.state.form.category
                 TrollErrorLabel.isHidden = false
             }
 
@@ -250,64 +271,26 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
     }
 
     @objc func updateScreen() {
-        let venue: NSString = venueName.text! as NSString
-        let date: NSString = screeningDate.text! as NSString
-        let ScreeningID_: NSString = ScreeningID.text! as NSString
-        let category_: NSString = category.text! as NSString
-
-        let testdata: [String: Any] = [
-            "venue": venue as String,
-            "venueId": addVenueId,
-            "movieId": addMovieId,
-            "date": date as String,
-            "ScreeningDatesId": addScreeningDateId,
-            "screenId": ScreeningID_ as String,
-            "category": category_ as String,
-        ]
+        captureForm()
+        let testdata = viewModel.updateBody()
+        let screeningId = viewModel.state.form.screeningId
 
         Task { @MainActor [weak self] in
             guard let self else { return }
-            do {
-                let screenResult = try await AdminDataManager.shared.updateScreen(body: testdata)
-                if screenResult.screeningId.contains("Error") {
-                    self.presentAlert(withTitle: "Error:", message: "Duplicate ScreeningId: \(ScreeningID_)")
-
-                } else {
-                    self.presentAlert(withTitle: "Info:", message: "Screen updated:, ScreeningId: \(screenResult.screeningId)")
-                }
-            } catch {
-                NSLog("updateScreen: %@", error.localizedDescription)
+            if let notice = await viewModel.update(body: testdata, screeningId: screeningId) {
+                self.presentAlert(withTitle: notice.title, message: notice.message)
             }
         }
     }
 
     @objc func deleteScreen() {
-        let testdata: [String: Any] = [
-            "ScreeningDatesId": addScreeningDateId as Any,
-        ]
+        let testdata = viewModel.deleteBody()
 
         Task { @MainActor [weak self] in
             guard let self else { return }
-            do {
-                if try await AdminDataManager.shared.deleteScreen(body: testdata) {
-                    self.presentAlert(withTitle: "Info:", message: "Screen deleted:, ScreeningDatesId: \(addScreeningDateId)")
-
-                    addMovie = ""
-                    addVenue = ""
-                    addScreeningID = ""
-                    addScreeningDate = ""
-                    addCategory = ""
-                    addScreeningDateId = ""
-
-                    self.movieName.text = ""
-                    self.venueName.text = ""
-                    self.ScreeningID.text = ""
-                    self.screeningDate.text = ""
-                    self.category.text = ""
-                }
-            } catch {
-                NSLog("deleteScreen: %@", error.localizedDescription)
-                self.presentAlert(withTitle: "Error:", message: "Duplicate ScreeningDatesId: \(addScreeningDateId)")
+            if let notice = await viewModel.delete(body: testdata) {
+                self.presentAlert(withTitle: notice.title, message: notice.message)
+                if notice.deleted { viewModel.clear() }
             }
         }
     }
@@ -329,7 +312,7 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
     private var saveButtonHeightConstraint: NSLayoutConstraint?
     private var deleteButtonHeightConstraint: NSLayoutConstraint?
     private var hasBottomButtonConstraints = false
-    private var originalVenueTitle = ""
+    private var originalVenueTitle: String { viewModel.state.context.originalVenueTitle }
     private var didConfigureScrollLayout = false
     private var didBuildCardLayout = false
     private weak var movieSelectButton: UIButton?
@@ -382,30 +365,29 @@ class AdminUpdateVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate
     }
 
     private func applyPrefillFromSelectionContext() {
-        let selected = AdminDataManager.shared.selectedScreen
-
-        movieName.text = selected?.movie ?? addMovie
-        venueName.text = selected?.venue ?? addVenue
-        ScreeningID.text = selected?.screeningId ?? addScreeningID
-        screeningDate.text = selected?.date ?? addScreeningDate
-        category.text = selected?.category ?? addCategory
-
-        if let selected {
-            addMovie = selected.movie
-            addVenue = selected.venue
-            addScreeningID = selected.screeningId
-            addScreeningDate = selected.date
-            addScreeningDateId = selected.screeningDatesId
-            addMovieId = selected.movieId
-            addVenueId = selected.venueId
-            addCategory = selected.category
-        }
-
-        let originalVenue = selected?.venue ?? addVenue
+        viewModel.prefill()
+        let originalVenue = originalVenueTitle
         let myTextAttribute = [convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 13.0)!]
         originalVenueName = NSMutableAttributedString(string: originalVenue, attributes: convertToOptionalNSAttributedStringKeyDictionary(myTextAttribute))
-        originalVenueTitle = originalVenue
         venueChanged.isHidden = true
+    }
+
+    @objc private func captureForm() {
+        viewModel.editForm {
+            $0.movie = movieName.text ?? ""
+            $0.venue = venueName.text ?? ""
+            $0.screeningId = ScreeningID.text ?? ""
+            $0.date = screeningDate.text ?? ""
+            $0.category = category.text ?? ""
+        }
+    }
+
+    private func renderForm(_ form: AdminUpdateViewModel.Form) {
+        movieName.text = form.movie
+        venueName.text = form.venue
+        ScreeningID.text = form.screeningId
+        screeningDate.text = form.date
+        category.text = form.category
     }
 
     private func styleSelectButtons() {

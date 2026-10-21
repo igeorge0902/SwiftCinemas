@@ -18,6 +18,7 @@ class MovieDetailVC: UIViewController, UIViewControllerTransitioningDelegate, UI
     // MARK: Internal
 
     var appServices: AppServices!
+    private lazy var viewModel = MovieDetailViewModel(movies: .shared)
     var iMDB: String!
     var movieId: Int!
     var movieName: String!
@@ -41,10 +42,16 @@ class MovieDetailVC: UIViewController, UIViewControllerTransitioningDelegate, UI
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        injectAppServicesIfNeeded()
+        viewModel.onStateChange = { [weak self] state in
+            guard let metadata = state.metadata else { return }
+            self?.nameTextView?.text = metadata.title
+            self?.nameTextViewg?.text = metadata.genre
+        }
     }
 
     override func viewWillAppear(_: Bool) {
-        if let selectedMovie = MoviesDataManager.shared.selectedMovie {
+        if let selectedMovie = viewModel.selectedMovie {
             movieId = selectedMovie.movieId
             movieName = selectedMovie.name
             selectLarge_picture = selectedMovie.largePicture
@@ -125,14 +132,14 @@ class MovieDetailVC: UIViewController, UIViewControllerTransitioningDelegate, UI
 
     override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
         if segue.identifier == "goto_venues2", movieId != nil {
-            MoviesDataManager.shared.selectedMovie = Movie(
+            viewModel.select(Movie(
                 movieId: movieId,
                 movieIdString: String(movieId),
                 name: movieName,
                 detail: selectDetails,
                 largePicture: selectLarge_picture,
                 imdbUrl: iMDB
-            )
+            ))
         }
     }
 
@@ -151,13 +158,7 @@ class MovieDetailVC: UIViewController, UIViewControllerTransitioningDelegate, UI
     func addData() {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            do {
-                let metadata = try await MoviesDataManager.shared.fetchMovieMetadata(imdbURL: self.iMDB)
-                self.nameTextView.text = metadata.title
-                self.nameTextViewg.text = metadata.genre
-            } catch {
-                NSLog("MovieDetailVC RapidAPI: %@", error.localizedDescription)
-            }
+            await viewModel.load(imdbURL: self.iMDB)
         }
     }
 

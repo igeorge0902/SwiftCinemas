@@ -8,15 +8,15 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
     // MARK: Lifecycle
 
     deinit {
-        purchaseTableData.removeAll()
         print(#function, "\(self)")
     }
 
     // MARK: Internal
 
     var appServices: AppServices!
-    var sortBy = "purchase"
-    var purchaseTableData: [PurchaseSummaryModel] = []
+    private lazy var viewModel = PurchasesViewModel(checkout: .shared)
+    var sortBy: String { viewModel.state.sortBy }
+    var purchaseTableData: [PurchaseSummaryModel] { viewModel.state.rows }
 
     override func viewWillAppear(_: Bool) {
         super.viewWillAppear(true)
@@ -32,6 +32,8 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
         configureNavigation()
         configureSortButtons()
         configureTable()
+        viewModel.onStateChange = { [weak self] _ in self?.tableView.reloadData() }
+        tableView.reloadData()
 
         refresh()
 
@@ -107,21 +109,21 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
     }
 
     @objc func sortByPurchaseDate() {
-        sortBy = "purchase"
+        viewModel.setSort("purchase")
         updateSortLabel()
         applySorting()
         tableView.reloadData()
     }
 
     @objc func sortByScreeningDate() {
-        sortBy = "screening"
+        viewModel.setSort("screening")
         updateSortLabel()
         applySorting()
         tableView.reloadData()
     }
 
     @objc func refresh() {
-        purchaseTableData.removeAll()
+        viewModel.clearRows()
         addPurchasesData()
     }
 
@@ -235,7 +237,7 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
     }
 
     func tableView(_: UITableView, didSelectRowAt indexPath: IndexPath) {
-        CheckoutDataManager.shared.selectedPurchaseId = purchaseTableData[indexPath.section].purchaseId
+        viewModel.selectPurchase(at: indexPath.section)
         performSegue(withIdentifier: "goto_tickets", sender: self)
     }
 
@@ -248,12 +250,7 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 do {
-                    let purchaseId = self.purchaseTableData[indexPath.section].purchaseId
-                    let movieName = self.purchaseTableData[indexPath.section].movieName
-                    if try await CheckoutDataManager.shared.refundPurchase(purchaseId: purchaseId) {
-                        self.purchaseTableData.remove(at: indexPath.section)
-                        self.refundedEntries.insert("#\(purchaseId) \(movieName)", at: 0)
-                        self.refundArmedSection = nil
+                    if try await viewModel.refund(at: indexPath.section) {
                         self.updateRefundBubble()
                         self.tableView.reloadData()
                     }
@@ -281,8 +278,7 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                self.purchaseTableData = try await CheckoutDataManager.shared.fetchAllPurchases()
-                self.tableView.reloadData()
+                try await viewModel.load()
             } catch {
                 NSLog("addPurchasesData: %@", error.localizedDescription)
                 self.presentAlert(withTitle: "Error", message: error.localizedDescription)
@@ -302,8 +298,8 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
     private let refreshControl = UIRefreshControl()
     private var navButtons: [UIButton] = []
     private var sortButtons: [UIButton] = []
-    private var refundArmedSection: Int?
-    private var refundedEntries: [String] = []
+    private var refundArmedSection: Int? { viewModel.state.refundArmedSection }
+    private var refundedEntries: [String] { viewModel.state.refundedEntries }
 
     private lazy var purchaseDeletedToastLabel: UILabel = {
         let label = UILabel()
@@ -419,17 +415,7 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
     }
 
     private func applySorting() {
-        switch sortBy {
-        case "screening":
-            purchaseTableData.sort {
-                $0.screeningDate > $1.screeningDate
-            }
-
-        default:
-            purchaseTableData.sort {
-                $0.purchaseDate > $1.purchaseDate
-            }
-        }
+        viewModel.applySorting()
     }
 
     private func configureNavigation() {
@@ -504,7 +490,7 @@ class PurchasesVC: UIViewController, UITableViewDataSource, UITableViewDelegate,
         }
 
         let previousSection = refundArmedSection
-        refundArmedSection = indexPath.section
+        viewModel.armRefund(section: indexPath.section)
 
         var reloads: [IndexPath] = [indexPath]
         if let previousSection, previousSection != indexPath.section {

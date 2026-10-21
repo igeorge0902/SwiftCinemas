@@ -21,20 +21,57 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
     }
 
     var appServices: AppServices!
+    private lazy var viewModel: VenuesDetailsViewModel = {
+        injectAppServicesIfNeeded()
+        return VenuesDetailsViewModel(dates: .shared, seats: .shared, movies: .shared, venues: .shared, locations: .shared)
+    }()
     lazy var noPicture: [String: String] = [:]
 
     var nameTextView: UITextView?
-    var selectVenuesPicture: String?
-    var selectLargePicture: String?
-    var selectVenueId: Int?
-    var venueName: String?
-    var selectAddress: String?
-    var movieId: Int!
-    var movieName: String?
-    var movieDetails: String?
-    var screenScreenId: String?
-    var locationId: Int!
-    var iMDB: String?
+    var selectVenuesPicture: String? {
+        get { viewModel.state.context.selectVenuesPicture }
+        set { viewModel.updateInput { $0.selectVenuesPicture = newValue } }
+    }
+    var selectLargePicture: String? {
+        get { viewModel.state.context.selectLargePicture }
+        set { viewModel.updateInput { $0.selectLargePicture = newValue } }
+    }
+    var selectVenueId: Int? {
+        get { viewModel.state.context.selectVenueId }
+        set { viewModel.updateInput { $0.selectVenueId = newValue } }
+    }
+    var venueName: String? {
+        get { viewModel.state.context.venueName }
+        set { viewModel.updateInput { $0.venueName = newValue } }
+    }
+    var selectAddress: String? {
+        get { viewModel.state.context.selectAddress }
+        set { viewModel.updateInput { $0.selectAddress = newValue } }
+    }
+    var movieId: Int! {
+        get { viewModel.state.context.movieId }
+        set { viewModel.updateInput { $0.movieId = newValue } }
+    }
+    var movieName: String? {
+        get { viewModel.state.context.movieName }
+        set { viewModel.updateInput { $0.movieName = newValue } }
+    }
+    var movieDetails: String? {
+        get { viewModel.state.context.movieDetails }
+        set { viewModel.updateInput { $0.movieDetails = newValue } }
+    }
+    var screenScreenId: String? {
+        get { viewModel.state.context.screenScreenId }
+        set { viewModel.updateInput { $0.screenScreenId = newValue } }
+    }
+    var locationId: Int! {
+        get { viewModel.state.context.locationId }
+        set { viewModel.updateInput { $0.locationId = newValue } }
+    }
+    var iMDB: String? {
+        get { viewModel.state.context.iMDB }
+        set { viewModel.updateInput { $0.iMDB = newValue } }
+    }
 
     var popOverY: CGFloat!
 
@@ -78,16 +115,13 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
-        DatesDataManager.shared.resetNavigationContext()
-        LocationsDataManager.shared.activeMapView = nil
+        viewModel.leave()
         NotificationCenter.default.post(name: NSNotification.Name(rawValue: "navigateBack"), object: nil)
     }
 
     override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
         if segue.identifier == "goto_map2" {
-            LocationsDataManager.shared.selectedLocationId = locationId
-            LocationsDataManager.shared.selectedVenueId = selectVenueId
-            LocationsDataManager.shared.isMapFromVenueDetails = true
+            viewModel.selectMap()
         }
         if segue.identifier == "goto_movie_detail2" {
             let nextSegue = segue.destination as? MovieDetailVC
@@ -142,19 +176,15 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
             }
         }
 
-        if DatesDataManager.shared.selectedScreeningDateId == nil {
+        if !viewModel.hasSelectedDate {
             presentAlert(withTitle: "Warning!", message: "Select dates first!")
         } else {
             Task { @MainActor [weak self] in
-                guard let self,
-                      let selectedId = DatesDataManager.shared.selectedScreeningDateId,
-                      let parsedId = Int(selectedId) else { return }
-
-                self.isLoadingSeats = true
-                defer { self.isLoadingSeats = false }
+                guard let self else { return }
+                defer { viewModel.finishSeatPresentation() }
 
                 do {
-                    _ = try await SeatsDataManager.shared.fetchSeats(screeningDateId: parsedId)
+                    guard try await viewModel.loadSeats() else { return }
 
                     let popOver = PopOver()
                     popOver.modalPresentationStyle = UIModalPresentationStyle.popover
@@ -194,7 +224,7 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
 
         Task { @MainActor [weak self] in
             guard let self else { return }
-            if DatesDataManager.shared.availableDates.isEmpty {
+            if !viewModel.hasDates {
                 do {
                     _ = try await self.loadDatesData()
                 } catch {
@@ -203,7 +233,7 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
                 }
             }
 
-            guard !DatesDataManager.shared.availableDates.isEmpty else {
+            guard viewModel.hasDates else {
                 self.presentAlert(withTitle: "Info", message: "No dates available for this venue.")
                 return
             }
@@ -349,8 +379,7 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
     private let playerContainerView = UIView()
     private let heroGradientLayer = CAGradientLayer()
 
-    private var isLoadingDates = false
-    private var isLoadingSeats = false
+    private var isLoadingSeats: Bool { viewModel.state.isLoadingSeats }
     private var hasSetupUI = false
     private var playerViewController: AVPlayerViewController?
     private var hasInitializedPlayer = false
@@ -364,78 +393,11 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
     private let actionButtonFontSize: CGFloat = 16
 
     private var resolvedScreenId: String? {
-        let id = screenScreenId ?? VenuesDataManager.shared.selectedVenue?.screenId
-        guard let id, !id.isEmpty else { return nil }
-        return id
+        viewModel.resolvedScreenId
     }
 
     private func populateSelectionContext() {
-        if movieId == nil {
-            movieId = MoviesDataManager.shared.selectedMovie?.movieId
-        }
-        if movieName == nil {
-            movieName = MoviesDataManager.shared.selectedMovie?.name
-        }
-        if movieDetails == nil {
-            movieDetails = MoviesDataManager.shared.selectedMovie?.detail
-        }
-        if selectLargePicture == nil {
-            selectLargePicture = MoviesDataManager.shared.selectedMovie?.largePicture
-        }
-        if iMDB == nil {
-            iMDB = MoviesDataManager.shared.selectedMovie?.imdbUrl
-        }
-
-        if selectVenueId == nil {
-            selectVenueId = VenuesDataManager.shared.selectedVenue?.venuesId
-        }
-        if venueName == nil {
-            venueName = VenuesDataManager.shared.selectedVenue?.name
-        }
-        if selectAddress == nil {
-            selectAddress = VenuesDataManager.shared.selectedVenue?.address
-        }
-        if selectVenuesPicture == nil {
-            selectVenuesPicture = VenuesDataManager.shared.selectedVenue?.venuesPicture
-        }
-        if screenScreenId == nil {
-            screenScreenId = VenuesDataManager.shared.selectedVenue?.screenId
-        }
-        if locationId == nil {
-            locationId = VenuesDataManager.shared.selectedVenue?.locationId ?? LocationsDataManager.shared.selectedLocationId
-        }
-
-        if let movieId,
-           let movieName,
-           let movieDetails,
-           let selectLargePicture,
-           let iMDB
-        {
-            MoviesDataManager.shared.selectedMovie = Movie(
-                movieId: movieId,
-                movieIdString: String(movieId),
-                name: movieName,
-                detail: movieDetails,
-                largePicture: selectLargePicture,
-                imdbUrl: iMDB
-            )
-        }
-
-        if let selectVenueId,
-           let venueName,
-           let selectAddress,
-           let screenId = screenScreenId,
-           let locationId
-        {
-            VenuesDataManager.shared.selectedVenue = Venue(
-                venuesId: selectVenueId,
-                name: venueName,
-                address: selectAddress,
-                venuesPicture: selectVenuesPicture ?? "",
-                screenId: screenId,
-                locationId: locationId
-            )
-        }
+        viewModel.resolveContext()
     }
 
     // MARK: - Setup Methods
@@ -840,13 +802,6 @@ class VenuesDetailsVC: UIViewController, UIScrollViewDelegate, UIPopoverPresenta
 
     @MainActor
     private func loadDatesData() async throws -> Bool {
-        if isLoadingDates {
-            return !DatesDataManager.shared.availableDates.isEmpty
-        }
-        isLoadingDates = true
-        defer { isLoadingDates = false }
-
-        let screenDates = try await DatesDataManager.shared.fetchDates(locationId: locationId, movieId: movieId)
-        return !screenDates.isEmpty
+        try await viewModel.loadDates()
     }
 }

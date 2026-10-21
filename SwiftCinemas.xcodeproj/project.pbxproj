@@ -7,6 +7,23 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AC2100012026102100000001 /* LoginViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC2100022026102100000001 /* LoginViewModel.swift */; };
+		AC2100012026102100000002 /* SignupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC2100022026102100000002 /* SignupViewModel.swift */; };
+		AC2100012026102100000003 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC2100022026102100000003 /* HomeViewModel.swift */; };
+		AC2100012026102100000004 /* MenuViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC2100022026102100000004 /* MenuViewModel.swift */; };
+		AC2100012026102100000005 /* MoviesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC2100022026102100000005 /* MoviesViewModel.swift */; };
+		AC2100012026102100000006 /* MovieDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC2100022026102100000006 /* MovieDetailViewModel.swift */; };
+		AC2100012026102100000007 /* VenuesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC2100022026102100000007 /* VenuesViewModel.swift */; };
+		AC2100012026102100000008 /* VenueForMoviesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC2100022026102100000008 /* VenueForMoviesViewModel.swift */; };
+		AC2100012026102100000009 /* VenuesDetailsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC2100022026102100000009 /* VenuesDetailsViewModel.swift */; };
+		AC210001202610210000000A /* MapViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC210002202610210000000A /* MapViewModel.swift */; };
+		AC210001202610210000000B /* SeatSelectionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC210002202610210000000B /* SeatSelectionViewModel.swift */; };
+		AC210001202610210000000C /* ScreeningDateSelectionViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC210002202610210000000C /* ScreeningDateSelectionViewModel.swift */; };
+		AC210001202610210000000D /* BasketViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC210002202610210000000D /* BasketViewModel.swift */; };
+		AC210001202610210000000E /* PurchasesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC210002202610210000000E /* PurchasesViewModel.swift */; };
+		AC210001202610210000000F /* TicketsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC210002202610210000000F /* TicketsViewModel.swift */; };
+		AC2100012026102100000010 /* AdminViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC2100022026102100000010 /* AdminViewModel.swift */; };
+		AC2100012026102100000011 /* AdminUpdateViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC2100022026102100000011 /* AdminUpdateViewModel.swift */; };
 		0CE8AB00A0E08330B4D813E1 /* grpcpp.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9D68262ECFCFEA52D4BB2BA9 /* grpcpp.xcframework */; };
 		1C6EDDBBBDB8A2224B7FFD16 /* absl.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = EAE619183417AACB33B1FD23 /* absl.xcframework */; };
 		37EA5B0D570D59486BE82079 /* FBLPromises.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = A34088BB261DEA8873F549A0 /* FBLPromises.xcframework */; };
@@ -310,6 +327,23 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AC2100022026102100000001 /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
+		AC2100022026102100000002 /* SignupViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignupViewModel.swift; sourceTree = "<group>"; };
+		AC2100022026102100000003 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
+		AC2100022026102100000004 /* MenuViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuViewModel.swift; sourceTree = "<group>"; };
+		AC2100022026102100000005 /* MoviesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoviesViewModel.swift; sourceTree = "<group>"; };
+		AC2100022026102100000006 /* MovieDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovieDetailViewModel.swift; sourceTree = "<group>"; };
+		AC2100022026102100000007 /* VenuesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenuesViewModel.swift; sourceTree = "<group>"; };
+		AC2100022026102100000008 /* VenueForMoviesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenueForMoviesViewModel.swift; sourceTree = "<group>"; };
+		AC2100022026102100000009 /* VenuesDetailsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VenuesDetailsViewModel.swift; sourceTree = "<group>"; };
+		AC210002202610210000000A /* MapViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapViewModel.swift; sourceTree = "<group>"; };
+		AC210002202610210000000B /* SeatSelectionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SeatSelectionViewModel.swift; sourceTree = "<group>"; };
+		AC210002202610210000000C /* ScreeningDateSelectionViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreeningDateSelectionViewModel.swift; sourceTree = "<group>"; };
+		AC210002202610210000000D /* BasketViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BasketViewModel.swift; sourceTree = "<group>"; };
+		AC210002202610210000000E /* PurchasesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchasesViewModel.swift; sourceTree = "<group>"; };
+		AC210002202610210000000F /* TicketsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TicketsViewModel.swift; sourceTree = "<group>"; };
+		AC2100022026102100000010 /* AdminViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminViewModel.swift; sourceTree = "<group>"; };
+		AC2100022026102100000011 /* AdminUpdateViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdminUpdateViewModel.swift; sourceTree = "<group>"; };
 		0BC22DE8C6A3EC55C43231B6 /* leveldb.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = leveldb.xcframework; path = Carthage/Build/leveldb.xcframework; sourceTree = "<group>"; };
 		2DF8035243FBEEB94F1311F5 /* GoogleUtilities.xcframework */ = {isa = PBXFileReference; expectedSignature = "AppleDeveloperProgram:EQHXZ8M8AV:Google LLC"; lastKnownFileType = wrapper.xcframework; name = GoogleUtilities.xcframework; path = Carthage/Build/GoogleUtilities.xcframework; sourceTree = "<group>"; };
 		7D230E182FC105D20062B129 /* PurchaseRowCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchaseRowCell.swift; sourceTree = "<group>"; };
@@ -561,6 +595,30 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		AC2100032026102100000001 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				AC2100022026102100000001 /* LoginViewModel.swift */,
+				AC2100022026102100000002 /* SignupViewModel.swift */,
+				AC2100022026102100000003 /* HomeViewModel.swift */,
+				AC2100022026102100000004 /* MenuViewModel.swift */,
+				AC2100022026102100000005 /* MoviesViewModel.swift */,
+				AC2100022026102100000006 /* MovieDetailViewModel.swift */,
+				AC2100022026102100000007 /* VenuesViewModel.swift */,
+				AC2100022026102100000008 /* VenueForMoviesViewModel.swift */,
+				AC2100022026102100000009 /* VenuesDetailsViewModel.swift */,
+				AC210002202610210000000A /* MapViewModel.swift */,
+				AC210002202610210000000B /* SeatSelectionViewModel.swift */,
+				AC210002202610210000000C /* ScreeningDateSelectionViewModel.swift */,
+				AC210002202610210000000D /* BasketViewModel.swift */,
+				AC210002202610210000000E /* PurchasesViewModel.swift */,
+				AC210002202610210000000F /* TicketsViewModel.swift */,
+				AC2100022026102100000010 /* AdminViewModel.swift */,
+				AC2100022026102100000011 /* AdminUpdateViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
 		7D5C0CFF2F786E5A0019481A /* Networking */ = {
 			isa = PBXGroup;
 			children = (
@@ -773,6 +831,7 @@
 		EA62FD521989F6AC00469896 /* SwiftLoginScreen */ = {
 			isa = PBXGroup;
 			children = (
+				AC2100032026102100000001 /* ViewModels */,
 				AC1700012026101700000005 /* Alerts */,
 				A47D8D131E9FB13B00CE8426 /* DataHelpers */,
 				7DC30A532FAE66D80097FC34 /* DataManagers */,
@@ -1025,6 +1084,23 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AC2100012026102100000001 /* LoginViewModel.swift in Sources */,
+				AC2100012026102100000002 /* SignupViewModel.swift in Sources */,
+				AC2100012026102100000003 /* HomeViewModel.swift in Sources */,
+				AC2100012026102100000004 /* MenuViewModel.swift in Sources */,
+				AC2100012026102100000005 /* MoviesViewModel.swift in Sources */,
+				AC2100012026102100000006 /* MovieDetailViewModel.swift in Sources */,
+				AC2100012026102100000007 /* VenuesViewModel.swift in Sources */,
+				AC2100012026102100000008 /* VenueForMoviesViewModel.swift in Sources */,
+				AC2100012026102100000009 /* VenuesDetailsViewModel.swift in Sources */,
+				AC210001202610210000000A /* MapViewModel.swift in Sources */,
+				AC210001202610210000000B /* SeatSelectionViewModel.swift in Sources */,
+				AC210001202610210000000C /* ScreeningDateSelectionViewModel.swift in Sources */,
+				AC210001202610210000000D /* BasketViewModel.swift in Sources */,
+				AC210001202610210000000E /* PurchasesViewModel.swift in Sources */,
+				AC210001202610210000000F /* TicketsViewModel.swift in Sources */,
+				AC2100012026102100000010 /* AdminViewModel.swift in Sources */,
+				AC2100012026102100000011 /* AdminUpdateViewModel.swift in Sources */,
 				AC1700012026101700000001 /* AlertAction.swift in Sources */,
 				AC1700012026101700000002 /* AlertPresenter.swift in Sources */,
 				A416B0291D6115B8008C9CBC /* VenueForMoviesVC.swift in Sources */,

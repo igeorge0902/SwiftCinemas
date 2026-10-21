@@ -16,6 +16,10 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
     // MARK: Internal
 
     var appServices: AppServices!
+    private lazy var viewModel: VenuesViewModel = {
+        injectAppServicesIfNeeded()
+        return VenuesViewModel(venues: .shared, locations: .shared)
+    }()
     var movieId: Int!
     var movieName: String!
     var selectLarge_picture: String!
@@ -24,9 +28,12 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
     var imdb: String!
 
     /// Old flow used mapViewPage global; keep equivalent as per-instance state.
-    var openedFromMapFlow: Bool = false
+    var openedFromMapFlow: Bool {
+        get { viewModel.state.openedFromMapFlow }
+        set { viewModel.setOpenedFromMapFlow(newValue) }
+    }
 
-    var tableData: [VenueModel] = []
+    var tableData: [VenueModel] { viewModel.state.rows }
 
     var mapView: MKMapView?
     var handleMapSearchDelegate: HandleMapSearch?
@@ -39,11 +46,11 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
     override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
         if segue.identifier == "goto_venues_details" {
             if let selectedVenueIndex, selectedVenueIndex < tableData.count {
-                VenuesDataManager.shared.selectedVenue = tableData[selectedVenueIndex]
+                viewModel.commitVenue(at: selectedVenueIndex)
             } else if let indexPath = tableView?.indexPathForSelectedRow,
                       indexPath.row < tableData.count
             {
-                VenuesDataManager.shared.selectedVenue = tableData[indexPath.row]
+                viewModel.commitVenue(at: indexPath.row)
             }
         }
     }
@@ -54,6 +61,8 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
         injectAppServicesIfNeeded()
 
         configureStaticUIIfNeeded()
+        viewModel.onStateChange = { [weak self] _ in self?.tableView?.reloadData() }
+        tableView?.reloadData()
 
         NotificationCenter.default.addObserver(self, selector: #selector(navigateBack), name: NSNotification.Name(rawValue: "navigateBack"), object: nil)
     }
@@ -92,10 +101,7 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
         super.viewWillDisappear(animated)
 
         // Keep map caches while MapViewController is alive; it owns lifecycle reset.
-        if !isMapFlow {
-            LocationsDataManager.shared.locationsForMapPicker.removeAll()
-            LocationsDataManager.shared.locationsToDisplay.removeAll()
-        }
+        viewModel.leave(isMapFlow: isMapFlow)
     }
 
     @objc func navigateBack() {
@@ -109,40 +115,14 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
     func addData() {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            do {
-                self.tableData = try await VenuesDataManager.shared.fetchVenuesForMovie(movieId: String(self.movieId ?? 0))
-                self.tableView?.reloadData()
-            } catch {
-                NSLog("VenuesVC.addData: %@", error.localizedDescription)
-            }
+            await viewModel.load(movieId: self.movieId ?? 0)
         }
     }
 
     func addLocation() {
-        //  if isMapFlow, !LocationsDataManager.shared.locationsToDisplay.isEmpty {
-        //      LocationsDataManager.shared.locationsForMapPicker = LocationsDataManager.shared.locationsToDisplay
-        //      tableView?.reloadData()
-        //      return
-        //  }
-
         Task { @MainActor [weak self] in
             guard let self else { return }
-            do {
-                let locations = try await LocationsDataManager.shared.fetchLocations()
-                LocationsDataManager.shared.locationsToDisplay = locations
-                if self.isMapFlow {
-                    LocationsDataManager.shared.locationsForMapPicker = locations
-                }
-                self.tableView?.reloadData()
-            } catch {
-                // Keep any existing in-memory map data as fallback to avoid empty modal.
-                if self.isMapFlow, !LocationsDataManager.shared.locationsToDisplay.isEmpty {
-                    LocationsDataManager.shared.locationsForMapPicker = LocationsDataManager.shared.locationsToDisplay
-                    self.tableView?.reloadData()
-                    return
-                }
-                NSLog("VenuesVC.addLocation: %@", error.localizedDescription)
-            }
+            await viewModel.loadLocations()
         }
     }
 
@@ -163,7 +143,7 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
             let data_: Location? = if isMapFlow {
                 mapFlowRows[indexPath.row]
             } else {
-                LocationsDataManager.shared.locationsToDisplay[indexPath.row]
+                viewModel.locationRows[indexPath.row]
             }
 
             var s = ""
@@ -235,7 +215,7 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
 
     func tableView(_: UITableView, numberOfRowsInSection _: Int) -> Int {
         if adminPage {
-            LocationsDataManager.shared.locationsToDisplay.count
+            viewModel.locationRows.count
 
         } else if isMapFlow {
             mapFlowRows.count
@@ -256,9 +236,7 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
 
     func tableView(_: UITableView, didSelectRowAt indexPath: IndexPath) {
         if adminPage, tableData.isEmpty {
-            let selectedVenue = LocationsDataManager.shared.locationsToDisplay[indexPath.row]
-            adminSelectedVenueTitle = selectedVenue.title
-            LocationsDataManager.shared.applySelection(selectedVenue, notificationName: "newScreenVenueSelected")
+            viewModel.selectAdminLocation(at: indexPath.row)
             tableView.reloadData()
 
         } else if isMapFlow {
@@ -267,13 +245,12 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
             let selectedVenue = rows[indexPath.row]
             let placemark = MKPlacemark(coordinate: selectedVenue.coordinate)
             handleMapSearchDelegate?.dropPinZoomIn(placemark: placemark)
-            LocationsDataManager.shared.applySelection(selectedVenue, notificationName: "screeningVenueSelected")
+            viewModel.selectMapLocation(selectedVenue)
 
             dismiss(animated: true, completion: nil)
         } else {
             let data = tableData[indexPath.row]
-            VenuesDataManager.shared.selectedVenue = data
-            selectedVenueIndex = indexPath.row
+            viewModel.selectVenue(at: indexPath.row)
             detailsLabel.text = "📍 Venue: \(data.name)\n🏠 Address: \(data.address)"
             continueButton.isEnabled = true
             continueButton.backgroundColor = .black
@@ -297,20 +274,17 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
     private let standardVenueRowHeight: CGFloat = 94
 
     private var backButton: UIButton!
-    private var selectedVenueIndex: Int?
-    private var adminSelectedVenueTitle: String?
-    private var expandedAdminVenueIds = Set<Int>()
+    private var selectedVenueIndex: Int? { viewModel.state.selectedVenueIndex }
+    private var adminSelectedVenueTitle: String? { viewModel.state.adminSelectedVenueTitle }
+    private var expandedAdminVenueIds: Set<Int> { viewModel.state.expandedAdminVenueIds }
     private var hasConfiguredStaticUI = false
 
     private var isMapFlow: Bool {
-        openedFromMapFlow || LocationsDataManager.shared.isVenuesFromMapFlow
+        viewModel.isMapFlow
     }
 
     private var mapFlowRows: [Location] {
-        if !LocationsDataManager.shared.locationsForMapPicker.isEmpty {
-            return LocationsDataManager.shared.locationsForMapPicker
-        }
-        return LocationsDataManager.shared.locationsToDisplay
+        viewModel.mapFlowRows
     }
 
     private func configureStaticUIIfNeeded() {
@@ -350,14 +324,8 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
               adminPage,
               let tableView,
               let indexPath = tableView.indexPathForRow(at: gesture.location(in: tableView)),
-              indexPath.row < LocationsDataManager.shared.locationsToDisplay.count else { return }
-
-        let location = LocationsDataManager.shared.locationsToDisplay[indexPath.row]
-        if expandedAdminVenueIds.contains(location.locationId) {
-            expandedAdminVenueIds.remove(location.locationId)
-        } else {
-            expandedAdminVenueIds.insert(location.locationId)
-        }
+              indexPath.row < viewModel.locationRows.count else { return }
+        viewModel.toggleExpandedLocation(at: indexPath.row)
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         tableView.reloadRows(at: [indexPath], with: .none)
     }
@@ -420,7 +388,7 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
 
     private func resetSelectionState() {
         guard !adminPage, !isMapFlow else { return }
-        selectedVenueIndex = nil
+        viewModel.resetSelection()
         detailsLabel.text = "Select a venue to see details here."
         continueButton?.isEnabled = false
         continueButton?.backgroundColor = VenueUIStyle.disabledButtonBackground
@@ -435,15 +403,14 @@ class VenuesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, Ha
     }
 
     private func sortVenueRowsForAdminFlows() {
-        LocationsDataManager.shared.locationsToDisplay.sort { ($0.title ?? "") < ($1.title ?? "") }
-        LocationsDataManager.shared.locationsForMapPicker.sort { ($0.title ?? "") < ($1.title ?? "") }
+        viewModel.sortLocationRows()
     }
 
     private func isExpandedAdminRow(_ indexPath: IndexPath) -> Bool {
         guard adminPage else { return false }
         sortVenueRowsForAdminFlows()
-        guard indexPath.row < LocationsDataManager.shared.locationsToDisplay.count else { return false }
-        let location = LocationsDataManager.shared.locationsToDisplay[indexPath.row]
+        guard indexPath.row < viewModel.locationRows.count else { return false }
+        let location = viewModel.locationRows[indexPath.row]
         return expandedAdminVenueIds.contains(location.locationId)
     }
 

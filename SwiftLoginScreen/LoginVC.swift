@@ -21,6 +21,7 @@ final class LoginVC: UIViewController, UITextFieldDelegate, HasAppServices {
     }
 
     var appServices: AppServices!
+    private lazy var viewModel = LoginViewModel(auth: .shared)
 
     var username: NSString?
     var password: NSString?
@@ -78,44 +79,27 @@ final class LoginVC: UIViewController, UITextFieldDelegate, HasAppServices {
         let systemVersion = UIDevice.current.systemVersion
 
         let hash: String
-        do {
-            hash = try NativeCrypto.sha3Hex(password! as String, outputLength: 512)
-        } catch {
-            presentAlert(withTitle: "Sign in Failed!", message: ErrorHandler.message(for: AppError.decodingFailed))
+        switch viewModel.passwordHash(username: username! as String, password: password! as String) {
+        case let .success(value):
+            hash = value
+        case let .failure(failure):
+            presentAlert(withTitle: failure.title, message: failure.message)
             return
         }
 
-        if username!.isEqual(to: "") || password!.isEqual(to: "") {
-            presentAlert(withTitle: "Warning", message: ErrorHandler.message(for: AppError.decodingFailed))
-
-        } else {
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                let deviceId = currentDeviceId()
-                NSLog("deviceId ==> %@", deviceId)
-                do {
-                    try await AuthDataManager.shared.signIn(
-                        username: self.username! as String,
-                        passwordHash: hash,
-                        deviceId: deviceId,
-                        systemVersion: systemVersion
-                    )
-                    self.dismiss(animated: true, completion: nil)
-                } catch let err as AppError {
-                    let title: String
-                    switch err {
-                    case .decodingFailed:
-                        title = "Error!"
-                    default:
-                        title = "Sign in Failed!"
-                    }
-                    self.presentAlert(withTitle: title, message: ErrorHandler.message(for: err))
-                } catch {
-                    self.presentAlert(
-                        withTitle: "Sign in Failed!",
-                        message: ErrorHandler.message(for: AppError.networkFailure(underlying: error))
-                    )
-                }
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let deviceId = currentDeviceId()
+            NSLog("deviceId ==> %@", deviceId)
+            if let failure = await viewModel.submit(
+                username: self.username! as String,
+                passwordHash: hash,
+                deviceId: deviceId,
+                systemVersion: systemVersion
+            ) {
+                self.presentAlert(withTitle: failure.title, message: failure.message)
+            } else {
+                self.dismiss(animated: true, completion: nil)
             }
         }
     }

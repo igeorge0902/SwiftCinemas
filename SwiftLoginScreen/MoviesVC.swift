@@ -11,7 +11,6 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
 
     deinit {
         endOfFile = false
-        TableData.removeAll()
         adminPage = false
         adminUpdatePage = false
         print(#function, "\(self)")
@@ -20,36 +19,36 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
     // MARK: Internal
 
     var appServices: AppServices!
-
-    var AdminUpadteData: [AdminScreeningModel] = []
-    var SearchData: [MovieDataModel] = []
-    var TableData: [MovieDataModel] = []
-    var CategoryData = [String]()
+    private lazy var viewModel = MoviesViewModel(movies: .shared, admin: .shared)
+    var AdminUpadteData: [AdminScreeningModel] { viewModel.state.adminRows }
+    var SearchData: [MovieDataModel] { viewModel.state.search }
+    var TableData: [MovieDataModel] { viewModel.state.browse }
+    var CategoryData: [String] { viewModel.state.categories }
     var tableView: UITableView?
     var searchBarFrame: UIView?
     var categoryScrollView: UIScrollView?
     var categoryStack: UIStackView?
-    lazy var section_: Int = 0
-    var category_: String?
-    var searchString: String?
-    var categoryChips: [String] = []
-    var favoritesByMovieId: [Int: Bool] = [:]
-    var ratingsByMovieId: [Int: String] = [:]
-    let fallbackCategories = ["All", "Action", "Drama", "Crime", "Romance", "Troll"]
+    var section_: Int { viewModel.state.section }
+    var category_: String? { viewModel.state.category }
+    var searchString: String? { viewModel.state.searchString }
+    var categoryChips: [String] { viewModel.state.categoryChips }
+    var favoritesByMovieId: [Int: Bool] { viewModel.state.favorites }
+    var ratingsByMovieId: [Int: String] { viewModel.state.ratings }
+    var fallbackCategories: [String] { viewModel.fallbackCategories }
 
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "goto_venues",
            let indexPath = tableView?.indexPathForSelectedRow,
            let movie = selectedMovie(at: indexPath)
         {
-            MoviesDataManager.shared.selectedMovie = movie
+            viewModel.selectMovie(movie)
         }
         if segue.identifier == "goto_movie_detail",
            let tag = (sender as? UIButton)?.tag,
            tag < TableData.count || tag < SearchData.count
         {
             let movie = TableData.indices.contains(tag) ? TableData[tag] : SearchData[tag]
-            MoviesDataManager.shared.selectedMovie = movie
+            viewModel.selectMovie(movie)
         }
     }
 
@@ -57,6 +56,10 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         super.viewDidLoad()
 
         injectAppServicesIfNeeded()
+        viewModel.onStateChange = { [weak self] state in
+            if case .movies = state.rowChange { self?.renderCategoryChips() }
+            self?.tableView?.reloadData()
+        }
 
         veil = true
         searchBar.delegate = self
@@ -66,11 +69,11 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
         searchBar.backgroundImage = UIImage()
 
         definesPresentationContext = true
-        category_ = "nil"
+        viewModel.setCategory("nil")
 
         view.backgroundColor = .white
 
-        loadRatingsFixture()
+        viewModel.loadRatingsFixture()
 
         let sbFrame = UIView(frame: CGRect(x: 12.0, y: 50, width: view.frame.width - 70, height: 40))
         sbFrame.backgroundColor = .white
@@ -112,11 +115,11 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
             (title: "Back", action: #selector(MoviesVC.navigateBack)),
         ])
 
-        resolveCategories(from: TableData)
+        viewModel.resolveCategories(from: TableData)
         renderCategoryChips()
 
         if adminUpdatePage == true {
-            TableData.removeAll()
+            viewModel.clearBrowse()
             addLoadMoviesonVenue()
         } else {
             addData(category: "nil")
@@ -130,8 +133,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
 
-        AdminDataManager.shared.screeningsForAdminUpdate = []
-        AdminDataManager.shared.selectedScreen = nil
+        viewModel.clearAdminContext()
     }
 
     @objc func navigateBack() {
@@ -148,113 +150,45 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
     ///   - category: Name of the category.
     /// - Returns: list of movie models.
     func addData(category: String) {
-        var setFirstResult: Int?
-        var query: [String: String]?
-
-        if category != "nil" {
-            query = ["category": category, "setFirstResult": String(TableData.count)]
-        } else if TableData.count > 0, category == "nil" {
-            setFirstResult = TableData.count
-            query = ["setFirstResult": String(setFirstResult!)]
-        } else {
-            setFirstResult = 0
-            query = ["setFirstResult": String(setFirstResult!)]
-        }
-
+        let query = viewModel.browseQuery(category: category)
         Task { @MainActor [weak self] in
-            guard let self, let query else { return }
-            do {
-                let movies = try await MoviesDataManager.shared.fetchPaging(query: query)
-                self.TableData.append(contentsOf: movies)
-                self.resolveCategories(from: self.TableData)
-                self.renderCategoryChips()
-                endOfFile = movies.isEmpty
-                self.tableView?.reloadData()
-            } catch {
-                NSLog("addData: %@", error.localizedDescription)
-            }
+            guard let self else { return }
+            await viewModel.loadBrowse(query: query)
         }
     }
 
     func addLoadMoviesonVenue(category: String) {
-        var query: [String: String]?
-
-        if category != "nil" {
-            query = ["category": category]
-        }
-
         Task { @MainActor [weak self] in
             guard let self else { return }
-            do {
-                AdminUpadteData = try await AdminDataManager.shared.fetchScreenings(category: query?["category"])
-                self.tableView?.reloadData()
-            } catch {
-                NSLog("addLoadMoviesonVenue(category): %@", error.localizedDescription)
-            }
+            _ = await viewModel.loadAdmin(category: category == "nil" ? nil : category)
         }
     }
 
     func addLoadMoviesonVenue(search: String) {
-        let query = ["match": search]
-
         Task { @MainActor [weak self] in
             guard let self else { return }
-            do {
-                AdminUpadteData = try await AdminDataManager.shared.searchScreenings(match: search)
-                self.tableView?.reloadData()
-            } catch {
-                NSLog("addLoadMoviesonVenue(search): %@", error.localizedDescription)
-            }
+            await viewModel.searchAdmin(search)
         }
     }
 
     func addData_(_ match: String, category: String) {
-        SearchData.removeAll()
-        var setFirstResult: Int?
-        var query: [String: String]?
-
-        if SearchData.count > 0, category != "nil" {
-            setFirstResult = SearchData.count
-            query = ["match": match, "setFirstResult": String(setFirstResult!), "category": category]
-        } else if SearchData.count > 0, category == "nil" {
-            setFirstResult = SearchData.count
-            query = ["match": match, "setFirstResult": String(setFirstResult!)]
-        } else if SearchData.count == 0, category != "nil" {
-            setFirstResult = SearchData.count
-            query = ["match": match, "setFirstResult": String(setFirstResult!), "category": category]
-        } else if SearchData.count == 0, category == "nil" {
-            setFirstResult = SearchData.count
-            query = ["match": match, "setFirstResult": String(setFirstResult!)]
-        }
-
+        let query = viewModel.searchQuery(match, category: category)
         Task { @MainActor [weak self] in
-            guard let self, let query else { return }
-            do {
-                self.SearchData = try await MoviesDataManager.shared.search(query: query)
-                shouldShowSearchResults = true
-                self.resolveCategories(from: self.SearchData)
-                self.renderCategoryChips()
-                endOfFile = self.SearchData.isEmpty
-                self.tableView?.reloadData()
-            } catch {
-                NSLog("addData_: %@", error.localizedDescription)
-            }
+            guard let self else { return }
+            await viewModel.loadSearch(query: query)
         }
     }
 
     @objc func addLoadMoviesonVenue() {
-        AdminUpadteData.removeAll()
+        viewModel.clearAdmin()
 
         Task { @MainActor [weak self] in
             guard let self else { return }
-            do {
-                AdminUpadteData = try await AdminDataManager.shared.fetchScreenings()
+            if await viewModel.loadAdmin(publishRows: false) {
                 if !AdminUpadteData.isEmpty {
                     NotificationCenter.default.post(name: NSNotification.Name(rawValue: "venueSelected"), object: nil)
                 }
                 self.tableView?.reloadData()
-            } catch {
-                NSLog("addLoadMoviesonVenue: %@", error.localizedDescription)
             }
         }
     }
@@ -288,44 +222,26 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
     }
 
     func searchBar(_: UISearchBar, textDidChange searchText: String) {
-        if searchText.substring(from: searchText.startIndex).count > 2 {
-            TableData.removeAll()
-            SearchData.removeAll()
-            if !adminUpdatePage {
-                let backgroundQueue = DispatchQueue.global()
-                let deadline = DispatchTime.now() + .milliseconds(100)
-                backgroundQueue.asyncAfter(deadline: deadline, qos: .background) {
-                    self.addData_(searchText, category: self.category_ ?? "nil")
-                }
+        switch viewModel.searchTextChanged(searchText, isAdminUpdate: adminUpdatePage) {
+        case .delayedSearch:
+            Task { @MainActor in
+                await self.viewModel.delayedSearch(searchText)
             }
-            if adminUpdatePage {
-                AdminUpadteData.removeAll()
-                if section_ == 0 {
-                    addLoadMoviesonVenue(search: searchText)
-                } else if section_ == 1 {
-                    addLoadMoviesonVenue(search: searchText)
-                }
-            }
-        }
-        if searchText.substring(from: searchText.startIndex).count == 0 {
-            SearchData.removeAll()
-            TableData.removeAll()
-
-            if !adminUpdatePage {
-                addData(category: category_ ?? "nil")
-                tableView!.reloadData()
-            }
-
-            if adminUpdatePage {
-                addLoadMoviesonVenue()
-                tableView?.reloadData()
-            }
+        case .adminSearch:
+            addLoadMoviesonVenue(search: searchText)
+        case .browseReload:
+            addData(category: category_ ?? "nil")
+            tableView!.reloadData()
+        case .adminReload:
+            addLoadMoviesonVenue()
+            tableView?.reloadData()
+        case .none: break
         }
         shouldShowSearchResults = true
     }
 
     func updateSearchResults(for searchController: UISearchController) {
-        searchString = searchController.searchBar.text
+        viewModel.setSearchString(searchController.searchBar.text)
         print(searchString!)
     }
 
@@ -335,14 +251,9 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
 
     @objc func valueChanged(_ segmentedControl: UISegmentedControl) {
         print("Coming in : \(segmentedControl.selectedSegmentIndex)")
-        section_ = segmentedControl.selectedSegmentIndex
+        viewModel.selectSection(segmentedControl.selectedSegmentIndex)
         if segmentedControl.selectedSegmentIndex == 0 {
             searchBar.text = ""
-            category_ = nil
-            SearchData.removeAll()
-            TableData.removeAll()
-            CategoryData.removeAll()
-            AdminUpadteData.removeAll()
             if adminUpdatePage {
                 addLoadMoviesonVenue()
             } else {
@@ -350,10 +261,6 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
             }
         } else if section_ == 1 {
             searchBar.text = ""
-            CategoryData = ["Action", "Drama", "Crime", "Romance", "Troll"]
-            SearchData.removeAll()
-            TableData.removeAll()
-            AdminUpadteData.removeAll()
             tableView!.reloadData()
         } else if segmentedControl.selectedSegmentIndex == 2 {}
     }
@@ -449,16 +356,16 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
 
         if adminPage, CategoryData.count == 0 {
             if TableData.count > 0 {
-                MoviesDataManager.shared.selectedMovie = TableData[indexPath.row]
+                viewModel.selectMovie(TableData[indexPath.row])
             } else {
-                MoviesDataManager.shared.selectedMovie = SearchData[indexPath.row]
+                viewModel.selectMovie(SearchData[indexPath.row])
             }
             NotificationCenter.default.post(name: NSNotification.Name(rawValue: "newScreenMovieSelected"), object: nil)
         }
 
         if adminUpdatePage, CategoryData.count == 0 {
             if AdminUpadteData.count > 0 {
-                AdminDataManager.shared.selectedScreen = AdminUpadteData[indexPath.row]
+                viewModel.selectAdminScreen(at: indexPath.row)
             }
 
             NotificationCenter.default.post(name: NSNotification.Name(rawValue: "movieSelected"), object: nil)
@@ -471,9 +378,9 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
             veil = false
             shouldShowSearchResults = false
             if let movie = selectedMovie(at: indexPath) {
-                MoviesDataManager.shared.selectedMovie = movie
+                viewModel.selectMovie(movie)
             }
-            if VenuesFeatureFlags.shouldUseMigration(), let movie = selectedMovie(at: indexPath) {
+            if !VenuesFeatureFlags.shouldUseMigration(), let movie = selectedMovie(at: indexPath) {
                 presentVenuesMigration(for: movie)
             } else {
                 performSegue(withIdentifier: "goto_venues", sender: self)
@@ -484,26 +391,12 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
     func tableView(_: UITableView, willDisplay _: UITableViewCell, forRowAt indexPath: IndexPath) {
         searchBar.isHidden = false
 
-        if TableData.count > 10 || SearchData.count > 10 {
-            if indexPath.row == TableData.count - 3 {
-                if endOfFile == false {
-                    addData(category: category_ ?? "nil")
-                }
-                if indexPath.row == SearchData.count - 3, endOfFile == false {
-                    addData_(searchString ?? "", category: category_ ?? "nil")
-                }
-            }
-        }
-        if adminUpdatePage {
-            if TableData.count > 10 || SearchData.count > 10 {
-                if indexPath.row == TableData.count - 3 {
-                    if endOfFile == false {
-                        addData(category: category_ ?? "nil")
-                    }
-                    if indexPath.row == SearchData.count - 3, endOfFile == false {
-                        addData_(searchString ?? "", category: category_ ?? "nil")
-                    }
-                }
+        for request in viewModel.pagingRequests(for: indexPath.row, isAdminUpdate: adminUpdatePage) {
+            switch request {
+            case .browse:
+                addData(category: category_ ?? "nil")
+            case .search:
+                addData_(searchString ?? "", category: category_ ?? "nil")
             }
         }
     }
@@ -531,7 +424,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
 
     // var searchController: UISearchController?
     private let searchBar = UISearchBar()
-    private var selectedPopoverMovieRow: Int?
+    private var selectedPopoverMovieRow: Int? { viewModel.state.selectedPopoverMovieRow }
 
     private func applyPopoverRowSelection(_ cell: UITableViewCell, indexPath: IndexPath) {
         cell.contentView.backgroundColor = selectedPopoverMovieRow == indexPath.row
@@ -590,8 +483,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
             isFavorite: isFavorite,
             onFavoriteTap: { [weak self] in
                 guard let self else { return }
-                let current = self.favoritesByMovieId[movieId] ?? false
-                self.favoritesByMovieId[movieId] = !current
+                self.viewModel.toggleFavorite(movieId: movieId)
                 self.tableView?.reloadData()
             }
         )
@@ -711,13 +603,7 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
     }
 
     private func selectedMovie(at indexPath: IndexPath) -> MovieDataModel? {
-        if TableData.count > 0 {
-            return TableData[indexPath.row]
-        }
-        if SearchData.count > 0 {
-            return SearchData[indexPath.row]
-        }
-        return nil
+        viewModel.selectedMovie(at: indexPath.row)
     }
 
     private func presentVenuesMigration(for movie: MovieDataModel) {
@@ -795,53 +681,10 @@ class MoviesVC: UIViewController, UITableViewDataSource, UITableViewDelegate, UI
 
     @objc private func didTapCategoryChip(_ sender: UIButton) {
         let title = sender.currentTitle ?? "All"
-        category_ = (title == "All") ? "nil" : title
+        viewModel.selectCategoryChip(title)
         searchBar.text = ""
-        SearchData.removeAll()
-        TableData.removeAll()
         addData(category: category_ ?? "nil")
         renderCategoryChips()
     }
 
-    private func resolveCategories(from movies: [MovieDataModel]) {
-        let extracted = Set(movies.compactMap { extractedCategory(from: $0) })
-        if extracted.isEmpty {
-            categoryChips = fallbackCategories
-            NSLog("MoviesVC categories source=fallback count=%d", categoryChips.count)
-        } else {
-            categoryChips = ["All"] + extracted.sorted()
-            NSLog("MoviesVC categories source=backend count=%d", categoryChips.count)
-        }
-    }
-
-    private func extractedCategory(from _: MovieDataModel) -> String? {
-        nil
-    }
-
-    private func loadRatingsFixture() {
-        guard let url = Bundle.main.url(forResource: "ratings-mock", withExtension: "json") else {
-            ratingsByMovieId = [:]
-            NSLog("MoviesVC ratings source=fallback count=0")
-            return
-        }
-
-        do {
-            let data = try Data(contentsOf: url)
-            let payload = try JSONDecoder().decode(RatingsPayload.self, from: data)
-            ratingsByMovieId = Dictionary(uniqueKeysWithValues: payload.ratings.map { ($0.movieId, $0.rating) })
-            NSLog("MoviesVC ratings source=fixture count=%d", ratingsByMovieId.count)
-        } catch {
-            ratingsByMovieId = [:]
-            NSLog("MoviesVC ratings source=fallback error=%@", error.localizedDescription)
-        }
-    }
-}
-
-private struct RatingsPayload: Codable {
-    let ratings: [RatingItem]
-}
-
-private struct RatingItem: Codable {
-    let movieId: Int
-    let rating: String
 }

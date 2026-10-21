@@ -13,13 +13,14 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
     // MARK: Internal
 
     var appServices: AppServices!
+    private lazy var viewModel = VenueForMoviesViewModel(venues: .shared, movies: .shared, locations: .shared)
     var venuesId: Int!
     var venues_picture: String!
     var locationId: Int!
 
-    var tableData: [VenueMovieSelection] = []
+    var tableData: [VenueMovieSelection] { viewModel.state.rows }
     var searchController: UISearchController!
-    var shouldShowSearchResults = false
+    var shouldShowSearchResults: Bool { viewModel.state.shouldShowSearchResults }
 
     var refreshControl: UIRefreshControl!
     var collectionView: UICollectionView!
@@ -27,18 +28,7 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
     override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
         if segue.identifier == "goto_venues_details2" {
             if let indexPath = collectionView.indexPathsForSelectedItems?.first {
-                let selection = tableData[indexPath.row]
-
-                MoviesDataManager.shared.selectedMovie = selection.movie
-                VenuesDataManager.shared.selectedVenue = Venue(
-                    venuesId: selection.venue.venuesId,
-                    name: selection.venue.name,
-                    address: selection.venue.address,
-                    venuesPicture: selection.venue.venuesPicture,
-                    screenId: selection.venue.screenId,
-                    locationId: locationId
-                )
-                LocationsDataManager.shared.selectedLocationId = locationId
+                viewModel.select(at: indexPath.row, locationId: locationId)
             }
         }
     }
@@ -104,11 +94,13 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
+        viewModel.onStateChange = { [weak self] _ in self?.collectionView.reloadData() }
+        collectionView.reloadData()
     }
 
     override func viewWillAppear(_: Bool) {
         if locationId == nil {
-            locationId = LocationsDataManager.shared.selectedLocationId
+            locationId = viewModel.selectedLocationId
         }
         addData()
         // self.addDatesData()
@@ -119,32 +111,27 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
     }
 
     func addData() {
-        tableData.removeAll()
+        viewModel.clearRows()
 
         Task { @MainActor [weak self] in
             guard let self else { return }
-            do {
-                self.tableData = try await VenuesDataManager.shared.fetchVenueMovieSelections(locationId: String(self.locationId ?? 0))
-                self.collectionView.reloadData()
-            } catch {
-                NSLog("VenueForMoviesVC addData: %@", error.localizedDescription)
-            }
+            await viewModel.load(locationId: self.locationId ?? 0)
         }
     }
 
     func searchBarTextDidBeginEditing(_: UISearchBar) {
-        shouldShowSearchResults = true
+        viewModel.setSearchResultsVisible(true)
         collectionView.reloadData()
     }
 
     func searchBarCancelButtonClicked(_: UISearchBar) {
-        shouldShowSearchResults = false
+        viewModel.setSearchResultsVisible(false)
         collectionView.reloadData()
     }
 
     func searchBarSearchButtonClicked(_: UISearchBar) {
         if !shouldShowSearchResults {
-            shouldShowSearchResults = true
+            viewModel.setSearchResultsVisible(true)
             collectionView.reloadData()
         }
 
@@ -172,7 +159,7 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CELL", for: indexPath) as! MovieCollectionViewCell
 
-        let display = makeDisplayRow(from: tableData[indexPath.row])
+        let display = viewModel.displayRow(from: tableData[indexPath.row])
         cell.configureRedesign(
             title: display.title,
             category: display.categoryText,
@@ -205,28 +192,5 @@ class VenueForMoviesVC: UIViewController, UICollectionViewDataSource, UICollecti
 
     // MARK: Private
 
-    private struct VenueMovieRowDisplay {
-        let title: String
-        let imagePath: String
-        let categoryText: String
-        let screeningDateText: String
-    }
-
     private var backButton: UIButton!
-
-    private func makeDisplayRow(from selection: VenueMovieSelection) -> VenueMovieRowDisplay {
-        let category = (selection.category?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false)
-            ? selection.category!
-            : "N/A"
-        let screeningDate = (selection.screeningDate?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false)
-            ? selection.screeningDate!
-            : "TBA"
-
-        return VenueMovieRowDisplay(
-            title: selection.movie.name,
-            imagePath: selection.movie.largePicture,
-            categoryText: "Category: \(category)",
-            screeningDateText: "Date: \(screeningDate)"
-        )
-    }
 }

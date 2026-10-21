@@ -3,7 +3,9 @@
 
 import UIKit
 
-class SignupVC: UIViewController {
+class SignupVC: UIViewController, HasAppServices {
+    var appServices: AppServices!
+    private lazy var viewModel = SignupViewModel(auth: .shared)
     // MARK: Lifecycle
 
     deinit {
@@ -23,6 +25,7 @@ class SignupVC: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        injectAppServicesIfNeeded()
 
         backgroundDict = ["Signup": "signup"]
 
@@ -51,50 +54,22 @@ class SignupVC: UIViewController {
         let voucher = txtVoucher.text ?? ""
         let email = txtEmail.text ?? ""
         let systemVersion = UIDevice.current.systemVersion
-
-        var missingFields = [String]()
-        if username.isEmpty { missingFields.append("Username") }
-        if password.isEmpty { missingFields.append("Password") }
-        if email.isEmpty { missingFields.append("Email") }
-        if voucher.isEmpty { missingFields.append("Voucher") }
-
-        guard missingFields.isEmpty else {
-            presentAlert(withTitle: "SignUp Failed!", message: "Please enter \(missingFields.minimalDescrption)!")
-            return
-        }
-
-        guard password == confirmPassword else {
-            presentAlert(withTitle: "SignUp Failed!", message: "Passwords do not match")
-            return
-        }
-
-        let hash: String
-        do {
-            hash = try NativeCrypto.sha3Hex(password, outputLength: 512)
-        } catch {
-            presentAlert(withTitle: "SignUp Failed!", message: ErrorHandler.message(for: AppError.decodingFailed))
+        let submission: SignupViewModel.Submission
+        switch viewModel.prepare(username: username, password: password, confirmPassword: confirmPassword,
+                                voucher: voucher, email: email) {
+        case let .success(value):
+            submission = value
+        case let .failure(failure):
+            presentAlert(withTitle: failure.title, message: failure.message)
             return
         }
 
         Task { @MainActor [weak self] in
             guard let self else { return }
-            do {
-                try await AuthDataManager.shared.signUp(
-                    voucher: voucher,
-                    email: email,
-                    username: username,
-                    passwordHash: hash,
-                    deviceId: currentDeviceId(),
-                    systemVersion: systemVersion
-                )
+            if let failure = await viewModel.submit(submission, deviceId: currentDeviceId(), systemVersion: systemVersion) {
+                self.presentAlert(withTitle: failure.title, message: failure.message)
+            } else {
                 self.dismiss(animated: true, completion: nil)
-            } catch let err as AppError {
-                self.presentAlert(withTitle: "SignUp Failed!", message: ErrorHandler.message(for: err))
-            } catch {
-                self.presentAlert(
-                    withTitle: "Connection Failure!",
-                    message: ErrorHandler.message(for: AppError.networkFailure(underlying: error))
-                )
             }
         }
     }

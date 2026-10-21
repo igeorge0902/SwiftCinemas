@@ -12,14 +12,16 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
     // MARK: Lifecycle
 
     deinit {
-        purchaseId = nil
-        collectionData.removeAll()
         print(#function, "\(self)")
     }
 
     // MARK: Internal
 
     var appServices: AppServices!
+    private lazy var viewModel: TicketsViewModel = {
+        injectAppServicesIfNeeded()
+        return TicketsViewModel(checkout: .shared)
+    }()
     var collectionView: UICollectionView!
 
     var ResponseText: String?
@@ -29,14 +31,17 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
     var Amount: String?
     var TaxAmount: String?
     var movieName: String?
-    var purchaseId: String!
+    var purchaseId: String! {
+        get { viewModel.state.purchaseId }
+        set { viewModel.setPurchaseId(newValue) }
+    }
 
     var pdfURL_: URL?
     var pdfNameFromUrl: String?
 
     lazy var filter = CIFilter(name: "CIQRCodeGenerator")
 
-    var collectionData: [TicketDetailModel] = []
+    var collectionData: [TicketDetailModel] { viewModel.state.rows }
     lazy var layout = UICollectionViewFlowLayout()
 
     override func viewDidLoad() {
@@ -69,6 +74,8 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
         collectionView.addGestureRecognizer(longPress)
 
         configureRefreshToast()
+        viewModel.onStateChange = { [weak self] _ in self?.collectionView?.reloadData() }
+        collectionView.reloadData()
 
         addData()
     }
@@ -194,13 +201,7 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
                 self.presentAlert(withTitle: "Warning!", message: "No purchase selected")
                 return
             }
-            do {
-                self.collectionData = try await CheckoutDataManager.shared.fetchTickets(purchaseId: purchaseId)
-                self.collectionData.sort { $0.seatNumber < $1.seatNumber }
-                self.collectionView?.reloadData()
-            } catch {
-                NSLog("TicketsVC addData: %@", error.localizedDescription)
-            }
+            await viewModel.load(purchaseId: purchaseId)
         }
     }
 
@@ -221,9 +222,8 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                if try await CheckoutDataManager.shared.cancelTickets(purchaseId: purchaseId, ticketIds: [ticketId]) {
-                    self.collectionData.remove(at: button.tag)
-                    self.deleteArmedTicketIndex = nil
+                if try await viewModel.cancel(purchaseId: purchaseId, ticketId: ticketId) {
+                    viewModel.removeCancelledTicket(at: button.tag)
                     self.collectionView.reloadData()
                     if self.collectionData.isEmpty {
                         NotificationCenter.default.post(
@@ -341,19 +341,19 @@ class TicketsVC: UIViewController, UICollectionViewDataSource, UICollectionViewD
     }
 
     private var navButtons: [UIButton] = []
-    private var deleteArmedTicketIndex: Int?
+    private var deleteArmedTicketIndex: Int? { viewModel.state.deleteArmedTicketIndex }
     private weak var pdfPreviewController: UIViewController?
     private let ticketsRefreshedToast = UILabel()
 
     private var resolvedPurchaseId: String? {
-        purchaseId ?? CheckoutDataManager.shared.selectedPurchaseId
+        viewModel.resolvedPurchaseId
     }
 
     @objc private func handleLongPress(_ gesture: UILongPressGestureRecognizer) {
         guard gesture.state == .began else { return }
         let location = gesture.location(in: collectionView)
         guard let indexPath = collectionView.indexPathForItem(at: location) else { return }
-        deleteArmedTicketIndex = indexPath.row
+        viewModel.armDelete(at: indexPath.row)
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         collectionView.reloadData()
     }

@@ -19,16 +19,17 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
 
     var appServices: AppServices!
     var collectionView: UICollectionView!
-    var clientToken: String?
+    private lazy var viewModel = BasketViewModel(basket: .shared, checkout: .shared, seats: .shared, dates: .shared)
+    var clientToken: String? { viewModel.state.clientToken }
 
     /// Guards against duplicate checkout submissions: set when the checkout flow starts
     /// (client-token fetch) and cleared on cancel, error, or when the server checkout finishes.
-    private(set) var isCheckoutInProgress = false
+    var isCheckoutInProgress: Bool { viewModel.state.isCheckoutInProgress }
 
     lazy var layout = UICollectionViewFlowLayout()
 
     var values: [BasketItem] {
-        [BasketItem](BasketDataManager.shared.basketItemsBySeatId.values.sorted { $0.movieName < $1.movieName })
+        viewModel.values
     }
 
     override func viewDidLoad() {
@@ -49,6 +50,7 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
 
         view.addSubview(collectionView)
         view.sendSubviewToBack(collectionView)
+        bindViewModel()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -92,11 +94,7 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
     }
 
     func collectionView(_: UICollectionView, numberOfItemsInSection _: Int) -> Int {
-        if !BasketDataManager.shared.basketItemsBySeatId.isEmpty {
-            return BasketDataManager.shared.basketItemsBySeatId.count
-        }
-
-        return 0
+        values.count
     }
 
     func collectionView(_: UICollectionView, shouldHighlightItemAt _: IndexPath) -> Bool {
@@ -114,22 +112,7 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         //   let cell = collectionView.cellForItem(at: indexPath)
 
-        let seatId = values[indexPath.row].seatId
-        let seatNr = values[indexPath.row].seatNumber
-        let screeningDateId = values[indexPath.row].screeningDateId
-
-        if let current = BasketDataManager.shared.seatsToReservePayloadByScreening[screeningDateId] {
-            let updated = current.replacingOccurrences(of: seatNr + "-", with: "")
-            if updated.isEmpty {
-                BasketDataManager.shared.seatsToReservePayloadByScreening.removeValue(forKey: screeningDateId)
-            } else {
-                BasketDataManager.shared.seatsToReservePayloadByScreening[screeningDateId] = updated
-            }
-        }
-
-        BasketDataManager.shared.basketItemsBySeatId.removeValue(forKey: seatId)
-        SeatsDataManager.shared.selectedSeatIds.removeAll { $0 == seatId }
-        SeatsDataManager.shared.selectedSeatNumbers.removeAll { $0 == seatNr }
+        viewModel.remove(at: indexPath.row)
         collectionView.reloadData()
     }
 
@@ -194,7 +177,7 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
      @return
      */
     @objc func book() {
-        if BasketDataManager.shared.basketItemsBySeatId.isEmpty {
+        if values.isEmpty {
             presentAlert(withTitle: "Warning!", message: "Select free seat(s) first!")
 
         } else {
@@ -205,16 +188,14 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
     }
 
     func getClientToken() {
-        isCheckoutInProgress = true
+        viewModel.beginCheckout()
         Task { @MainActor [weak self] in
             guard let self else { return }
             do {
-                let token = try await CheckoutDataManager.shared.fetchClientToken()
-                self.clientToken = token.clientToken
+                let token = try await viewModel.loadClientToken()
                 self.showCardFields(clientTokenOrTokenizationKey: token.clientToken)
             } catch {
                 NSLog("getClientToken: %@", error.localizedDescription)
-                self.isCheckoutInProgress = false
                 self.presentAlert(withTitle: "Payment error", message: error.localizedDescription)
             }
         }
@@ -235,13 +216,13 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
             onError: { [weak self] error in
                 NSLog("CardFields tokenization: %@", error.localizedDescription)
                 hostRef?.dismiss(animated: true) {
-                    self?.isCheckoutInProgress = false
+                    self?.viewModel.cancelCheckout()
                     self?.presentAlert(withTitle: "Payment error", message: error.localizedDescription)
                 }
             },
             onCancel: { [weak self] in
                 hostRef?.dismiss(animated: true) {
-                    self?.isCheckoutInProgress = false
+                    self?.viewModel.cancelCheckout()
                 }
             }
         )
@@ -254,46 +235,13 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
     }
 
     func postNonceToServer(_ paymentMethodNonce: String) {
-        isCheckoutInProgress = true
+        viewModel.beginCheckout()
         Task { @MainActor [weak self] in
             guard let self else { return }
-            defer { self.isCheckoutInProgress = false }
             do {
-                let orderId = String(zeroTime(0).getCurrentMillis())
-                let seatsPayload = try BasketDataManager.shared.makeSeatsToBeReservedPayload()
-                let result = try await CheckoutDataManager.shared.checkout(
-                    paymentMethodNonce: paymentMethodNonce,
-                    orderId: orderId,
-                    seatsToBeReserved: seatsPayload
-                )
-
-                SeatsDataManager.shared.allSeats = result.reservedSeats
-
-                if result.isSuccess {
-                    let ticketSummary = result.tickets.map(\.seatNumber).minimalDescrption
-                    self.presentAlert(
-                        withTitle: "Payment info:",
-                        message: "ResponseText: \(result.responseText ?? "success"), Status: \(result.status ?? "success"), Amount: \(result.amount ?? ""), TaxAmount: \(result.taxAmount ?? ""), Seats: \(ticketSummary)"
-                    )
-
-                    BasketDataManager.shared.resetNavigationContext()
-                    SeatsDataManager.shared.resetNavigationContext()
-                    DatesDataManager.shared.resetNavigationContext()
-                    self.collectionView.reloadData()
-                } else if let failedTicket = result.failedTickets.first {
-                    self.presentAlert(
-                        withTitle: "Booking failed with payment info:",
-                        message: "Failed tickets for movie: \(failedTicket.movieName), seats_seatNumber: \(failedTicket.seatNumber), ResponseText: \(result.errorMessage ?? "Payment failed")"
-                    )
-                } else {
-                    self.presentAlert(
-                        withTitle: "Booking failed with payment info:",
-                        message: "Payment error: \(result.errorMessage ?? "Unknown error")"
-                    )
-                }
+                _ = try await viewModel.submit(nonce: paymentMethodNonce)
             } catch {
-                NSLog("postNonceToServer: %@", error.localizedDescription)
-                self.presentAlert(withTitle: "Payment error", message: error.localizedDescription)
+                // The state observer already handled this terminal error exactly once.
             }
         }
     }
@@ -301,6 +249,25 @@ class BasketVC: UIViewController, UICollectionViewDataSource, UICollectionViewDe
     // MARK: Private
 
     private var topNavigationButtons: [UIButton] = []
+
+    private func bindViewModel() {
+        viewModel.onStateChange = { [weak self] state in
+            guard let self else { return }
+            switch state.phase {
+            case .loaded, .failed:
+                guard viewModel.consumeTerminalSubmission() else { return }
+                presentAlert(withTitle: state.title, message: state.message)
+                if case .loaded = state.phase {
+                    viewModel.finalizeSuccessfulSubmission()
+                    collectionView.reloadData()
+                }
+                viewModel.finishOutcomeHandling()
+            case .idle, .loading: break
+            }
+        }
+        // Initial rendering does not replay a terminal submission.
+        collectionView.reloadData()
+    }
 }
 
 // MARK: - CardCheckoutView

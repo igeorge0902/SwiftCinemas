@@ -4,6 +4,7 @@
 import UIKit
 
 class PopOverDates: UIViewController, UIPickerViewDelegate, UIPickerViewDataSource {
+    private lazy var viewModel = ScreeningDateSelectionViewModel(dates: .shared)
     // MARK: Lifecycle
 
     deinit {
@@ -27,7 +28,7 @@ class PopOverDates: UIViewController, UIPickerViewDelegate, UIPickerViewDataSour
         view.addSubview(pickerView)
         pickerView.isHidden = false
 
-        if !DatesDataManager.shared.availableDates.isEmpty {
+        if viewModel.hasDates {
             pickerView.selectRow(1, inComponent: 0, animated: false)
             pickerView(pickerView, didSelectRow: 1, inComponent: 0)
         }
@@ -49,31 +50,22 @@ class PopOverDates: UIViewController, UIPickerViewDelegate, UIPickerViewDataSour
     }
 
     func pickerView(_: UIPickerView, numberOfRowsInComponent _: Int) -> Int {
-        DatesDataManager.shared.availableDates.count + 1
+        viewModel.rowCount
     }
 
     func pickerView(_: UIPickerView, titleForRow row: Int, forComponent _: Int) -> String? {
-        if row == 0 {
-            return "Select a date"
-        }
-        let titleData = DatesDataManager.shared.availableDates[row - 1].date
-        let myDateString_ = titleData.split(separator: ".")
-        let date_ = Date.formatDate(dateString: String(myDateString_.first!))
-        return String.formatDate(date: date_)
+        viewModel.title(at: row)
     }
 
     func pickerView(_: UIPickerView, didSelectRow row: Int, inComponent _: Int) {
-        guard !DatesDataManager.shared.availableDates.isEmpty else { return }
+        guard viewModel.hasDates else { return }
 
         if row == 0 {
             pickerView.selectRow(1, inComponent: 0, animated: true)
             return
         } else {
-            guard (row - 1) < DatesDataManager.shared.availableDates.count else { return }
-            let selectedDate = DatesDataManager.shared.availableDates[row - 1]
-            let selectedDateText = selectedDate.date
-            DatesDataManager.shared.selectedScreeningDateText = selectedDateText
-            DatesDataManager.shared.selectedScreeningDateId = selectedDate.screeningDateId
+            guard row > 0, row < viewModel.rowCount else { return }
+            viewModel.selectDate(atPickerRow: row)
         }
     }
 }

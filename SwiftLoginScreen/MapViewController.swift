@@ -20,11 +20,21 @@ class MapViewController: UIViewController, MKMapViewDelegate, UIViewControllerTr
     }
     
     var appServices: AppServices!
+    private lazy var viewModel: MapViewModel = {
+        injectAppServicesIfNeeded()
+        return MapViewModel(locations: .shared)
+    }()
     var icons: [String: String] = Dictionary()
     var imageView: UIImageView!
     var locationManager: CLLocationManager!
-    var locationId_: Int!
-    var selectVenueId: Int!
+    var locationId_: Int! {
+        get { viewModel.state.locationId }
+        set { viewModel.setLocationInput(newValue) }
+    }
+    var selectVenueId: Int! {
+        get { viewModel.state.selectVenueId }
+        set { viewModel.setVenueInput(newValue) }
+    }
     
     @IBOutlet var mapView: MKMapView!
     
@@ -32,12 +42,14 @@ class MapViewController: UIViewController, MKMapViewDelegate, UIViewControllerTr
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        injectAppServicesIfNeeded()
+        viewModel.onStateChange = { [weak self] _ in self?.renderLocations() }
         
         if selectVenueId == nil {
             selectVenueId = VenuesDataManager.shared.selectedVenue?.venuesId
         }
         
-        LocationsDataManager.shared.isVenuesFromMapFlow = true
+        viewModel.enterMapFlow()
         locationManager = CLLocationManager()
         locationManager.requestWhenInUseAuthorization()
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
@@ -61,7 +73,7 @@ class MapViewController: UIViewController, MKMapViewDelegate, UIViewControllerTr
         mapView.delegate = self
         mapView.showsUserLocation = true
         mapView.mapType = MKMapType.standard
-        mapView.userTrackingMode = LocationsDataManager.shared.isMapFromVenueDetails ? .none : .follow
+        mapView.userTrackingMode = viewModel.isFromVenueDetails ? .none : .follow
         // mapView.userTrackingMode = MKUserTrackingMode(rawValue: 2)!
         
         mapView.showsScale = true
@@ -91,13 +103,13 @@ class MapViewController: UIViewController, MKMapViewDelegate, UIViewControllerTr
         super.viewWillAppear(true)
         
         addData()
-        mapView.addAnnotations(LocationsDataManager.shared.locationsToDisplay)
+        mapView.addAnnotations(viewModel.rows)
     }
     
     override func viewDidAppear(_: Bool) {
         super.viewDidAppear(true)
         
-        if LocationsDataManager.shared.isMapFromVenueDetails {
+        if viewModel.isFromVenueDetails {
             return
         }
         
@@ -112,15 +124,13 @@ class MapViewController: UIViewController, MKMapViewDelegate, UIViewControllerTr
         super.viewWillDisappear(animated)
         
         if isMovingFromParent {
-            LocationsDataManager.shared.isVenuesFromMapFlow = false
-            LocationsDataManager.shared.locationsToDisplay = []
-            LocationsDataManager.shared.locationsForMapPicker = []
+            viewModel.leaveParent()
         }
     }
     
     override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
         if segue.identifier == "goto_venues_for_movies" {
-            LocationsDataManager.shared.selectedLocationId = locationId_
+            viewModel.selectLocation(id: locationId_)
         }
     }
     
@@ -129,7 +139,7 @@ class MapViewController: UIViewController, MKMapViewDelegate, UIViewControllerTr
     }
     
     @objc func listVenues() {
-        LocationsDataManager.shared.isVenuesFromMapFlow = true
+        viewModel.enterMapFlow()
         DispatchQueue.main.async {
             let popOver = VenuesVC()
             popOver.openedFromMapFlow = true
@@ -161,35 +171,17 @@ class MapViewController: UIViewController, MKMapViewDelegate, UIViewControllerTr
     func addData() {
         Task { @MainActor [weak self] in
             guard let self else { return }
-            let locationsManager = LocationsDataManager.shared
-            do {
-                if locationsManager.isVenuesFromMapFlow {
-                    let all = try await locationsManager.fetchLocations()
-                    locationsManager.locationsToDisplay = locationsManager.isMapFromVenueDetails ? all.filter { $0.locationId == locationsManager.selectedLocationId } : all
-                    locationsManager.locationsForMapPicker = locationsManager.locationsToDisplay
-                }
-                
-                if locationsManager.isMapFromVenueDetails {
-                    if let venueId = self.selectVenueId ?? locationsManager.selectedVenueId {
-                        locationsManager.locationsToDisplay = try [await locationsManager.fetchLocationForVenue(venuesId: String(venueId))]
-                    }
-                }
-                
-                // Update pins
-                mapView.removeAnnotations(mapView.annotations.filter { !($0 is MKUserLocation) })
-                mapView.addAnnotations(locationsManager.locationsToDisplay)
-                
-                // Focus on venue when coming from details
-                if locationsManager.isMapFromVenueDetails, let pin = locationsManager.locationsToDisplay.first {
-                    mapView.setRegion(MKCoordinateRegion(
-                        center: pin.coordinate,
-                        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
-                    ), animated: true)
-                    mapView.selectAnnotation(pin, animated: true)
-                }
-            } catch {
-                NSLog("MapViewController addData: %@", error.localizedDescription)
-            }
+            await viewModel.load()
+        }
+    }
+
+    private func renderLocations() {
+        mapView.removeAnnotations(mapView.annotations.filter { !($0 is MKUserLocation) })
+        mapView.addAnnotations(viewModel.rows)
+        if viewModel.isFromVenueDetails, let pin = viewModel.rows.first {
+            mapView.setRegion(MKCoordinateRegion(center: pin.coordinate,
+                span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)), animated: true)
+            mapView.selectAnnotation(pin, animated: true)
         }
     }
     
@@ -238,7 +230,7 @@ class MapViewController: UIViewController, MKMapViewDelegate, UIViewControllerTr
                  button.addTarget(self, action:#selector(self.showActionSheetTapped), forControlEvents: UIControlEvents.TouchUpInside)
                  */
                 
-                if !LocationsDataManager.shared.isMapFromVenueDetails {
+                if !viewModel.isFromVenueDetails {
                     let infoButton = UIButton() as UIView
                     
                     infoButton.frame.size.width = 44
@@ -267,11 +259,11 @@ class MapViewController: UIViewController, MKMapViewDelegate, UIViewControllerTr
             // Fallback on earlier versions
         }
         
-        if !LocationsDataManager.shared.isMapFromVenueDetails {
+        if !viewModel.isFromVenueDetails {
             if control == view.leftCalloutAccessoryView {
                 let location = view.annotation as! Location
                 locationId_ = location.locationId
-                LocationsDataManager.shared.selectedLocationId = location.locationId
+                viewModel.selectLocation(id: location.locationId)
                 control.isHighlighted = true
                 control.isSelected = true
                 showActionSheetTapped()
@@ -366,4 +358,3 @@ extension MapViewController: @MainActor CLLocationManagerDelegate {
         NSLog("Exit region")
     }
 }
-

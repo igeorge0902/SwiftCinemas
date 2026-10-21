@@ -12,6 +12,7 @@ nonisolated(unsafe) var tickets = [String: String]()
  */
 nonisolated(unsafe) var tableView_: UITableView?
 class PopOver: UIViewController, UITableViewDelegate, UITableViewDataSource, UIViewControllerTransitioningDelegate {
+    private lazy var viewModel = SeatSelectionViewModel(seats: .shared, basket: .shared, dates: .shared, movies: .shared, venues: .shared)
     // MARK: Lifecycle
 
     // lazy var braintreeClient = BTAPIClient(authorization: "sandbox_dpdzm97y_j3ndqpzrhy4gp2p7")!
@@ -37,10 +38,7 @@ class PopOver: UIViewController, UITableViewDelegate, UITableViewDataSource, UIV
         label.textAlignment = NSTextAlignment.left
 
         let myTextAttribute = [convertFromNSAttributedStringKey(NSAttributedString.Key.font): UIFont(name: "Courier New", size: 13.0)!]
-        let selectedDateText = DatesDataManager.shared.selectedScreeningDateText ?? ""
-        let normalizedDateString = selectedDateText.split(separator: ".").first.map(String.init) ?? selectedDateText
-        let displayDate = normalizedDateString.isEmpty ? Date() : Date.formatDate(dateString: normalizedDateString)
-        let detailText = NSMutableAttributedString(string: String.formatDate(date: displayDate), attributes: convertToOptionalNSAttributedStringKeyDictionary(myTextAttribute))
+        let detailText = NSMutableAttributedString(string: viewModel.displayDate, attributes: convertToOptionalNSAttributedStringKeyDictionary(myTextAttribute))
 
         label.attributedText = detailText
 
@@ -82,8 +80,7 @@ class PopOver: UIViewController, UITableViewDelegate, UITableViewDataSource, UIV
         super.viewWillDisappear(animated)
 
         if isMovingFromParent {
-            SeatsDataManager.shared.selectedSeatIds = []
-            SeatsDataManager.shared.selectedSeatNumbers = []
+            viewModel.resetSeatSelection()
         }
     }
 
@@ -122,23 +119,12 @@ class PopOver: UIViewController, UITableViewDelegate, UITableViewDataSource, UIV
     }
 
     @objc func clearSeatsToBeReserved() {
-        guard let screeningDateId = DatesDataManager.shared.selectedScreeningDateId else { return }
-
-        BasketDataManager.shared.seatsToReservePayloadByScreening.removeValue(forKey: screeningDateId)
-
-        for seat in SeatsDataManager.shared.allSeats {
-            let seatId = seat.seatId
-            BasketDataManager.shared.basketItemsBySeatId.removeValue(forKey: seatId)
-        }
-
-        SeatsDataManager.shared.selectedSeatIds = []
-        SeatsDataManager.shared.selectedSeatNumbers = []
-
+        guard viewModel.clear() else { return }
         tableView_?.reloadData()
     }
 
     @objc func openBasket() {
-        if BasketDataManager.shared.basketItemsBySeatId.isEmpty {
+        if viewModel.isBasketEmpty {
             presentAlert(withTitle: "Warning!", message: "No free seat(s) to be reserved!")
 
         } else {
@@ -156,28 +142,15 @@ class PopOver: UIViewController, UITableViewDelegate, UITableViewDataSource, UIV
 
 private extension PopOver {
     var rowKeys: [String] {
-        SeatsDataManager.shared.getRows(SeatsDataManager.shared.allSeats)
+        viewModel.rowKeys
     }
 
     func seats(forRowTag tag: Int) -> [SeatModel] {
-        guard tag >= 0, tag < rowKeys.count else { return [] }
-        let row = rowKeys[tag]
-        return SeatsDataManager.shared.allSeats.filter { $0.seatRow == row }
+        viewModel.seats(forRowTag: tag)
     }
 
     var selectedSeatsById: [Int: String] {
-        BasketDataManager.shared.basketItemsBySeatId.reduce(into: [Int: String]()) { result, element in
-            result[element.key] = element.value.seatNumber
-        }
-    }
-
-    func updateSeatPayload(for screeningDateId: String) {
-        let concatenated = selectedSeatsById.values.sorted().map { "\($0)-" }.joined()
-        if concatenated.isEmpty {
-            BasketDataManager.shared.seatsToReservePayloadByScreening.removeValue(forKey: screeningDateId)
-        } else {
-            BasketDataManager.shared.seatsToReservePayloadByScreening[screeningDateId] = concatenated
-        }
+        viewModel.selectedSeatsById
     }
 }
 
@@ -236,53 +209,8 @@ extension PopOver: UICollectionViewDelegate, UICollectionViewDataSource {
         let seatsForRow = seats(forRowTag: collectionView.tag)
         guard indexPath.row < seatsForRow.count else { return }
         let selectedSeat = seatsForRow[indexPath.row]
-        let seatId = selectedSeat.seatId
-        let seatNumber = selectedSeat.seatNumber
-
-        let seatIds = [Int](selectedSeatsById.keys.sorted(by: { $0 < $1 }))
-        if !seatIds.contains(seatId), !selectedSeat.isReserved {
-            guard let screeningDateId = DatesDataManager.shared.selectedScreeningDateId,
-                  let movieName = MoviesDataManager.shared.selectedMovie?.name,
-                  let moviePicturePath = MoviesDataManager.shared.selectedMovie?.largePicture,
-                  let venueName = VenuesDataManager.shared.selectedVenue?.name,
-                  let dateString = DatesDataManager.shared.selectedScreeningDateText?.split(separator: ".").first
-            else {
-                return
-            }
-
-            let date_ = Date.formatDate(dateString: String(dateString))
-
-            let basketItem = BasketItem(
-                movieName: movieName,
-                seatId: seatId,
-                seatRow: selectedSeat.seatRow,
-                seatNumber: seatNumber,
-                price: selectedSeat.price,
-                tax: selectedSeat.tax,
-                screeningDateId: screeningDateId,
-                moviePicture: URLManager.image(moviePicturePath),
-                venuePicture: "",
-                venueName: venueName,
-                screeningDateText: String.formatDate(date: date_)
-            )
-
-            BasketDataManager.shared.basketItemsBySeatId[seatId] = basketItem
-            SeatsDataManager.shared.selectedSeatIds = [Int](selectedSeatsById.keys.sorted())
-            SeatsDataManager.shared.selectedSeatNumbers = selectedSeatsById.values.sorted()
-            updateSeatPayload(for: screeningDateId)
-
-            NSLog("SeatId is: \(seatNumber)")
-
-        } else {
-            cell?.layer.borderWidth = 1
-            BasketDataManager.shared.basketItemsBySeatId.removeValue(forKey: seatId)
-            SeatsDataManager.shared.selectedSeatIds = [Int](selectedSeatsById.keys.sorted())
-            SeatsDataManager.shared.selectedSeatNumbers = selectedSeatsById.values.sorted()
-            if let screeningDateId = DatesDataManager.shared.selectedScreeningDateId {
-                updateSeatPayload(for: screeningDateId)
-            }
-            NSLog("SeatId is: \(seatNumber) is already added!")
-        }
+        guard let selected = viewModel.toggle(selectedSeat) else { return }
+        if !selected { cell?.layer.borderWidth = 1 }
 
         print("Collection view at row \(collectionView.tag) selected index path \(indexPath), section is \(indexPath.section), \(indexPath.row)")
     }
@@ -291,12 +219,7 @@ extension PopOver: UICollectionViewDelegate, UICollectionViewDataSource {
         let seatsForRow = seats(forRowTag: collectionView.tag)
         guard indexPath.row < seatsForRow.count else { return true }
         let seatId = seatsForRow[indexPath.row].seatId
-        BasketDataManager.shared.basketItemsBySeatId.removeValue(forKey: seatId)
-        SeatsDataManager.shared.selectedSeatIds = [Int](selectedSeatsById.keys.sorted())
-        SeatsDataManager.shared.selectedSeatNumbers = selectedSeatsById.values.sorted()
-        if let screeningDateId = DatesDataManager.shared.selectedScreeningDateId {
-            updateSeatPayload(for: screeningDateId)
-        }
+        viewModel.deselect(seatId: seatId)
 
         return true
     }

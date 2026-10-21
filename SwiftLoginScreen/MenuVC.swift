@@ -9,6 +9,7 @@ class MenuVC: UIViewController, HasAppServices {
     // MARK: Internal
 
     var appServices: AppServices!
+    private lazy var viewModel = MenuViewModel(auth: .shared, gateway: appServices.loginGateway, images: appServices.images)
 
     lazy var session: URLSession = .sharedCustomSession
 
@@ -18,6 +19,7 @@ class MenuVC: UIViewController, HasAppServices {
         super.viewDidLoad()
         injectAppServicesIfNeeded()
         setupUI()
+        bindViewModel()
         loadCookies()
         getUser()
         loadNewsScreen()
@@ -26,21 +28,14 @@ class MenuVC: UIViewController, HasAppServices {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         // Refresh after returning from another screen, including a cancelled save.
-        if newsScreenTask == nil {
+        if !viewModel.hasNewsRequest {
             loadNewsScreen()
         }
     }
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
-        newsScreenTask?.cancel()
-        newsScreenTask = nil
-        screenNewsSwitch.isEnabled = false
-        screenNewsSwitch.setOn(confirmedNewsScreen ?? false, animated: false)
-    }
-
-    deinit {
-        newsScreenTask?.cancel()
+        viewModel.disappear()
     }
 
     override func prepare(for segue: UIStoryboardSegue, sender _: Any?) {
@@ -55,31 +50,7 @@ class MenuVC: UIViewController, HasAppServices {
         Task { [weak self] in
             guard let self else { return }
 
-            do {
-                let profile = try await AuthDataManager.shared.fetchUserProfile()
-
-                self.usernameValueLabel.text = profile.username.isEmpty
-                    ? "No logged-in user"
-                    : profile.username
-
-                self.emailValueLabel.text = profile.email.isEmpty
-                    ? "No email"
-                    : profile.email
-
-                let urlString = profile.profilePicture
-
-                let imagedata = try await self.appServices.images.getData(
-                    urlString: urlString,
-                    realmCache: true
-                )
-
-                self.imageView.image = UIImage(data: imagedata)
-
-            } catch let err as AppError {
-                self.presentMenuError(err, title: "No valid session!")
-            } catch {
-                self.presentMenuError(error)
-            }
+            await viewModel.loadProfile()
         }
     }
 
@@ -97,9 +68,6 @@ class MenuVC: UIViewController, HasAppServices {
     private let screenNewsSwitch = UISwitch()
     private let screenNewsStatusLabel = UILabel()
     private lazy var screenNewsRow = createScreenNewsRow()
-
-    private var confirmedNewsScreen: Bool?
-    private var newsScreenTask: Task<Void, Never>?
 
     private let url = URL(string: URLManager.login("/logout"))
     private var sessionCookieValue = ""
@@ -190,50 +158,30 @@ class MenuVC: UIViewController, HasAppServices {
     // MARK: - Screen-news Subscription
 
     private func loadNewsScreen() {
-        requestNewsScreen(enabled: nil)
+        viewModel.requestNewsScreen(enabled: nil)
     }
 
     @objc private func screenNewsChanged(_ sender: UISwitch) {
-        guard let confirmed = confirmedNewsScreen, newsScreenTask == nil else { return }
+        guard let confirmed = viewModel.state.confirmedNewsScreen, !viewModel.hasNewsRequest else { return }
         let wanted = sender.isOn
         // Keep displaying the last confirmed value until the server acknowledges the change.
         sender.setOn(confirmed, animated: true)
-        requestNewsScreen(enabled: wanted)
+        viewModel.requestNewsScreen(enabled: wanted)
     }
 
-    private func requestNewsScreen(enabled: Bool?) {
-        guard newsScreenTask == nil else { return }
-        let gateway = appServices.loginGateway
-        let previousConfirmed = confirmedNewsScreen
-        screenNewsSwitch.isEnabled = false
-        screenNewsStatusLabel.text = enabled == nil ? "Loading…" : "Saving…"
+    private func bindViewModel() {
+        viewModel.onStateChange = { [weak self] state in self?.render(state, animated: true) }
+        viewModel.onError = { [weak self] error, title in self?.presentMenuError(error, title: title) }
+        render(viewModel.state, animated: false)
+    }
 
-        // Capture the service, not the controller, across the network suspension.
-        newsScreenTask = Task { @MainActor [weak self] in
-            guard !Task.isCancelled else { return }
-            do {
-                let settings: ScreenNews
-                if let enabled {
-                    settings = try await gateway.putNewsScreen(enabled: enabled)
-                } else {
-                    settings = try await gateway.getNewsScreen()
-                }
-                guard !Task.isCancelled, let self else { return }
-                self.newsScreenTask = nil
-                self.confirmedNewsScreen = settings.enabled
-                self.screenNewsSwitch.setOn(settings.enabled, animated: true)
-                self.screenNewsSwitch.isEnabled = true
-                self.screenNewsStatusLabel.text = settings.enabled ? "Enabled" : "Disabled"
-            } catch {
-                // Leaving the screen cancels UI delivery; the next appearance re-reads the server.
-                guard !Task.isCancelled, let self else { return }
-                self.newsScreenTask = nil
-                self.screenNewsSwitch.setOn(previousConfirmed ?? false, animated: true)
-                self.screenNewsSwitch.isEnabled = enabled != nil && previousConfirmed != nil
-                self.screenNewsStatusLabel.text = enabled == nil ? "Unavailable" : "Not saved"
-                self.presentMenuError(error)
-            }
-        }
+    private func render(_ state: MenuViewModel.State, animated: Bool) {
+        if let username = state.username { usernameValueLabel.text = username }
+        if let email = state.email { emailValueLabel.text = email }
+        if state.hasAvatarResult { imageView.image = state.avatarData.flatMap { UIImage(data: $0) } }
+        screenNewsSwitch.setOn(state.confirmedNewsScreen ?? false, animated: animated && state.animateNewsChanges)
+        screenNewsSwitch.isEnabled = state.isNewsScreenEnabled
+        screenNewsStatusLabel.text = state.newsStatus
     }
 
     private func presentMenuError(_ error: Error, title: String = "Error!") {
@@ -358,7 +306,7 @@ class MenuVC: UIViewController, HasAppServices {
             let deviceId = currentDeviceId()
             NSLog("deviceId ==> %@", deviceId)
             do {
-                try await AuthDataManager.shared.logOut()
+                try await viewModel.logout()
                 self.presentAlert(withTitle: "Logout Successful", message: "Bye!")
                 self.clearCookies()
                // self.dismiss(animated: true, completion: nil)
@@ -370,19 +318,12 @@ class MenuVC: UIViewController, HasAppServices {
     }
 
     private func clearCookies() {
-        newsScreenTask?.cancel()
-        newsScreenTask = nil
-        confirmedNewsScreen = nil
-        screenNewsSwitch.setOn(false, animated: false)
-        screenNewsSwitch.isEnabled = false
-        screenNewsStatusLabel.text = "Unavailable"
+        viewModel.clearNewsScreen()
 
         let cookieStorage = HTTPCookieStorage.shared
         cookieStorage.cookies?.forEach { cookieStorage.deleteCookie($0) }
 
-        usernameValueLabel.text = "No logged-in user"
-        emailValueLabel.text = "No email"
-        self.imageView.image = nil
+        viewModel.clearProfile()
         sessionCookieValue = ""
 
         UserDefaults.standard.removePersistentDomain(forName: Bundle.main.bundleIdentifier!)

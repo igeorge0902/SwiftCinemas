@@ -22,6 +22,7 @@ class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIVi
     }
 
     var appServices: AppServices!
+    private lazy var viewModel = AdminViewModel(admin: .shared, movies: .shared, locations: .shared)
     @IBOutlet var movieName: UITextField!
     @IBOutlet var screeningDate: UITextField!
     @IBOutlet var nrOfRows: UITextField!
@@ -52,6 +53,10 @@ class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIVi
         category.placeholder = "Optional (Action/Drama/Crime/Romance/Troll)"
         styleSelectButtons()
         showDatePicker()
+        for field in [movieName, venueName, screeningDate, nrOfRows, nrOfSeatsInRow, ScreeningID, category] {
+            field?.addTarget(self, action: #selector(captureForm), for: .editingChanged)
+        }
+        captureForm()
 
         NotificationCenter.default.addObserver(self, selector: #selector(AdminVC.refresh), name: NSNotification.Name(rawValue: "newScreenMovieSelected"), object: nil)
 
@@ -96,11 +101,13 @@ class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIVi
     }
 
     @objc func refresh() {
-        movieName.text = MoviesDataManager.shared.selectedMovie?.name
+        viewModel.refreshMovie()
+        movieName.text = viewModel.state.form.movie
     }
 
     @objc func refreshVenue() {
-        venueName.text = LocationsDataManager.shared.selectedLocation?.title
+        viewModel.refreshVenue()
+        venueName.text = viewModel.state.form.venue
     }
 
     @objc func navigateBack() {
@@ -112,36 +119,14 @@ class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIVi
     }
 
     @objc func addNewScreen() {
-        let venue: NSString = venueName.text! as NSString
-        let date: NSString = screeningDate.text! as NSString
-        let movie: NSString = movieName.text! as NSString
-        let nrOfRows_: NSString = nrOfRows.text! as NSString
-        let nrOfSeatsInRow_: NSString = nrOfSeatsInRow.text! as NSString
-        let ScreeningID_: NSString = ScreeningID.text! as NSString
-        let category_: NSString = category.text! as NSString
-
-        let testdata: [String: Any] = [
-            "venue": venue as String,
-            "movie": movie as String,
-            "date": date as String,
-            "nrOfRows": nrOfRows_ as String,
-            "nrOfSeatsInRow": nrOfSeatsInRow_ as String,
-            "ScreeningId": ScreeningID_ as String,
-            "category": category_ as String,
-        ]
+        captureForm()
+        let testdata = viewModel.submissionBody()
+        let screeningId = viewModel.state.form.screeningId
 
         Task { @MainActor [weak self] in
             guard let self else { return }
-            do {
-                let screenResult = try await AdminDataManager.shared.addScreen(body: testdata)
-                if screenResult.screeningId.contains("Error") {
-                    self.presentAlert(withTitle: "Error:", message: "Duplicate ScreeningId: \(ScreeningID_)")
-
-                } else {
-                    self.presentAlert(withTitle: "Info:", message: "New screen added:, Screen: \(screenResult.movie)")
-                }
-            } catch {
-                NSLog("addNewScreen: %@", error.localizedDescription)
+            if let notice = await viewModel.submit(body: testdata, screeningId: screeningId) {
+                self.presentAlert(withTitle: notice.title, message: notice.message)
             }
         }
     }
@@ -217,9 +202,8 @@ class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIVi
     }
 
     @objc func donedatePicker() {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        screeningDate.text = formatter.string(from: datePicker.date)
+        viewModel.setDate(datePicker.date)
+        screeningDate.text = viewModel.state.form.date
         view.endEditing(true)
     }
 
@@ -228,12 +212,10 @@ class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIVi
     }
 
     func textFieldDidEndEditing(_: UITextField) {
-        var CategoryData = [String]()
-        CategoryData = ["Action", "Drama", "Crime", "Romance", "Troll"]
-
-        if !CategoryData.contains(category.text!), category.text != "" {
+        captureForm()
+        if !viewModel.validateCategory() {
             // self.presenAlertView(withTitle: "Hello", message: "Invalid category")
-            category.text = ""
+            category.text = viewModel.state.form.category
             TrollErrorLabel.isHidden = false
         }
         view.frame.origin.y = 0
@@ -276,6 +258,18 @@ class AdminVC: UIViewController, UITextFieldDelegate, UIScrollViewDelegate, UIVi
     private var didBuildCardLayout = false
     private weak var movieSelectButton: UIButton?
     private weak var venueSelectButton: UIButton?
+
+    @objc private func captureForm() {
+        viewModel.editForm {
+            $0.movie = movieName.text
+            $0.venue = venueName.text
+            $0.date = screeningDate.text ?? ""
+            $0.rows = nrOfRows.text ?? ""
+            $0.seatsInRow = nrOfSeatsInRow.text ?? ""
+            $0.screeningId = ScreeningID.text ?? ""
+            $0.category = category.text ?? ""
+        }
+    }
 
     private func updateScrollInsetsForBottomAction() {
         let buttonHeight = saveButtonHeightConstraint?.constant ?? 38
