@@ -54,12 +54,6 @@ jobs:
             exit 1
           }
 
-      - name: Verify toolchain
-        run: |
-          xcodebuild -version
-          xcrun swift --version
-          xcode-select -p
-
       - name: Locate iOS project
         id: ios-project
         shell: bash
@@ -94,8 +88,10 @@ jobs:
           )"
           echo "hash=$toolchain_hash" >> "$GITHUB_OUTPUT"
 
-      - name: Cache Carthage XCFrameworks
-        uses: actions/cache@v4
+      # Explicit restore/save: the implicit post-job save is skipped whenever tests fail.
+      - name: Restore Carthage XCFrameworks
+        id: carthage-cache
+        uses: actions/cache/restore@v4
         with:
           path: ${{ steps.ios-project.outputs.directory }}/Carthage/Build
           key: ${{ runner.os }}-${{ runner.arch }}-carthage-xcframeworks-v1-${{ steps.toolchain.outputs.hash }}-${{ hashFiles('Cartfile', 'Cartfile.resolved', 'SwiftCinemas/Cartfile', 'SwiftCinemas/Cartfile.resolved') }}
@@ -122,6 +118,13 @@ jobs:
             exit 1
           fi
 
+      - name: Save Carthage XCFrameworks
+        if: ${{ steps.carthage-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ steps.ios-project.outputs.directory }}/Carthage/Build
+          key: ${{ steps.carthage-cache.outputs.cache-primary-key }}
+
       # Existing iOS/XCTest step, retained.
       - name: Run Tests on iPhone Simulator
         if: ${{ env.TEST_SUITE == 'xcui' }}
@@ -134,7 +137,6 @@ jobs:
         run: |
           set -euo pipefail
           xcodebuild -list -workspace SwiftCinemas.xcworkspace
-          set -o pipefail
           SWIFT_REST_BACKEND="$MODE" xcodebuild test \
             -workspace SwiftCinemas.xcworkspace \
             -scheme SwiftCinemas \
@@ -158,8 +160,14 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-          cache: maven
-          cache-dependency-path: appium-test-repo/pom.xml
+
+      - name: Restore Maven repository
+        if: ${{ env.TEST_SUITE == 'appium' }}
+        id: maven-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-${{ runner.arch }}-maven-${{ hashFiles('appium-test-repo/pom.xml') }}
 
       - name: Set up Node.js for Appium
         if: ${{ env.TEST_SUITE == 'appium' }}
@@ -216,6 +224,8 @@ jobs:
           test -n "$runtime_id" || { echo "No available iOS simulator runtime" >&2; exit 1; }
           echo "Creating $SIM_DEVICE_TYPE_ID on $runtime_id"
           udid="$(xcrun simctl create "$simulator_name" "$SIM_DEVICE_TYPE_ID" "$runtime_id")"
+          # Only used for cleanup; the Appium framework auto-discovers the single booted simulator
+          # and launches the installed app by bundle id.
           echo "SIM_UDID=$udid" >> "$GITHUB_ENV"
           xcrun simctl boot "$udid"
           xcrun simctl bootstatus "$udid" -b
@@ -249,7 +259,16 @@ jobs:
           SWIFT_REST_BACKEND: mocked
           TESTNG_XML: ${{ inputs.appium_testng_xml || 'testng-inspect.xml' }}
         shell: bash
-        run: mvn -B clean test -DtestngXml="$TESTNG_XML"
+        run: |
+          mvn -B clean test -DtestngXml="$TESTNG_XML"
+
+      # Saved after the test run (which resolves surefire/TestNG plugins), even when tests fail.
+      - name: Save Maven repository
+        if: ${{ always() && env.TEST_SUITE == 'appium' && steps.maven-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ steps.maven-cache.outputs.cache-primary-key }}
 
       - name: Upload iOS and Appium test artifacts
         if: ${{ always() }}
@@ -265,6 +284,7 @@ jobs:
             appium-test-repo/target/surefire-reports/**
             appium-test-repo/target/page-sources/**
             appium-test-repo/target/selector-inventory.csv
+            appium-test-repo/test-output/**
             ${{ runner.temp }}/SwiftCinemas-Appium-DerivedData/Logs/**
 
       - name: Delete dedicated Appium simulator
