@@ -1,0 +1,19 @@
+swiftcinemas-documentation.html
+  s_d0debd4ad4404c::t_419ee020d472ba 6-7,11,16,18-25,27-30,33,36-37,40-45,47-49,51-52,55-73,75-90,95,97-106,108-117,120,122-128,130-137,139-140,143-239,242-277,280-326,329-386,388-431,433-483,485-530,532-563,565-578,580-592,594-601,603-682,685-731,734-774,776-780,783-800
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "41b0a00a607fccd0976fc1062ad8da5eb1b44450",
+  "prompts": {},
+  "sessions": {
+    "s_d0debd4ad4404c": {
+      "agent_id": {
+        "tool": "github-copilot-cli",
+        "id": "6e90c60d-c70f-486d-bd7d-883da6a283dd",
+        "model": "unknown"
+      },
+      "human_author": "GASPAR, GYORGY <gyorgy.gaspar@lhsystems.com>"
+    }
+  }
+}
